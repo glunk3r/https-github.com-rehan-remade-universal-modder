@@ -40,7 +40,10 @@ repo, they almost always want to **mod a game**, or to learn how a game was modd
 
 ## Rules (full reasoning in `skills/mod-any-game/references/safety.md`)
 - **What you can mod:** any game the user owns: single-player, multiplayer, or servers the user hosts.
-  - Never touch online clients protected by anti-cheat.
+  - Never run, inject into or instrument online clients protected by anti-cheat.
+  - **Remaking a multiplayer game** (study it, rebuild it as original work) is allowed, including
+    anti-cheat-protected and live-service titles, through **offline static analysis** of the files on
+    disk and the user's own servers only: see `skills/multiplayer-remake`.
   - Never write cheats against other players (aimbots, ESP, speed hacks).
   - Never bypass anti-cheat, DRM or ownership checks.
 - **Saves:** `um backup` saves before modded launches.
