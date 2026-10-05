@@ -461,3 +461,350 @@ def test_skill_copies_match():
         assert tree(root / copy) == src, (f"{copy} differs from skills/: rm -rf .agents/skills .claude/skills && "
                                           "cp -r skills .agents/skills && cp -r skills .claude/skills")
     assert not any((root / d).exists() for d in (".gemini/skills", ".github/skills")), "agents read .agents/skills"
+
+
+
+# --------------------------------------------------------------------------- remake (no Godot needed)
+
+from um import remake  # noqa: E402
+
+
+def _remake_tree(root: Path, files: dict):
+    make(root, files)
+    return root
+
+
+def test_remake_revision_ignores_derived_files_and_tracks_content(tmp_path):
+    root = _remake_tree(tmp_path / "p", {"project.godot": "config_version=5\n", "a.gd": "xy", "b.gd": "z"})
+    rev = remake.revision(root)
+    assert len(rev) == 12
+    make(root, {".godot/imported/x.ctex": b"\1", ".gd_remake/results.json": "{}", "exports/web/index.html": "<html>",
+                "SPEC.md": "# spec", "icon.png.import": "[remap]", "a.gd.uid": "uid://abc"})
+    assert remake.revision(root) == rev
+    make(root, {"a.gd": "x", "b.gd": "yz"})            # same bytes in total, moved across a file boundary
+    assert remake.revision(root) != rev
+    make(root, {"a.gd": "xy", "b.gd": "z"})
+    assert remake.revision(root) == rev
+    (root / "b.gd").rename(root / "c.gd")             # same bytes under another path
+    assert remake.revision(root) != rev
+
+
+def _acc(checks):
+    return {"game": "demo", "boot_frames": 10, "checks": checks}
+
+
+def _res(rev, status="pass", msg=""):
+    return {"revision": rev, "status": status, "messages": [msg] if msg else [], "cases": []}
+
+
+def test_remake_status_keeps_the_four_facts_apart(tmp_path):
+    root = _remake_tree(tmp_path / "p", {"project.godot": "", "tests/scenarios/jump.gd": "", "tests/scenarios/run.gd": "",
+                                          "tests/scenarios/hit.gd": "", "tests/scenarios/extra.gd": ""})
+    acc = _acc([
+        {"id": "jump", "slice": "movement", "scenario": "res://tests/scenarios/jump.gd"},
+        {"id": "run", "slice": "movement", "scenario": "res://tests/scenarios/run.gd"},
+        {"id": "feel", "slice": "movement", "scenario": None, "claim": "feels like the original"},
+        {"id": "extra", "slice": "movement", "scenario": "res://tests/scenarios/extra.gd", "required": False},
+        {"id": "hit", "slice": "combat", "scenario": "res://tests/scenarios/hit.gd"},
+    ])
+    acc = {**acc, "checks": [{**c, "required": c.get("required", True)} for c in acc["checks"]]}
+    cur, old = "aaaaaaaaaaaa", "bbbbbbbbbbbb"
+    results = {"jump": _res(cur), "run": _res(cur), "extra": _res(cur, "fail", "x"), "hit": _res(old), "boot": _res(cur)}
+    plays = [{"revision": old, "capture": "c.mp4"}]
+    st = remake.compute_status(root, acc, results, plays, cur)
+    s = {r["slice"]: r for r in st["slices"]}
+    assert s["movement"]["checks_pass"]["state"] == "yes"          # failing optional check does not block
+    assert s["movement"]["manual"] == ["feel"] and s["movement"]["implemented"]["state"] == "yes"
+    assert s["combat"]["checks_pass"]["state"] == "stale"          # old pass is not a pass
+    assert st["integrated"]["state"] == "yes" and st["played"]["state"] == "stale"
+    assert not st["done"] and "NOT done" in remake.format_status(st)
+
+    results["hit"] = _res(cur)
+    st = remake.compute_status(root, acc, results, plays, cur)
+    assert st["done"] and st["played"]["state"] == "stale"          # done never implies played
+    assert "overall: done" in remake.format_status(st)
+
+    results["boot"] = _res(cur, "error", "SCRIPT ERROR: boom")
+    st = remake.compute_status(root, acc, results, plays + [{"revision": cur, "capture": "d.mp4"}], cur)
+    assert not st["done"] and st["integrated"]["state"] == "no" and st["played"]["state"] == "yes"
+
+    results["boot"], results["hit"] = _res(cur), _res(cur, "fail", "hp 90 != 80")
+    (root / "tests/scenarios/run.gd").unlink()
+    st = remake.compute_status(root, acc, results, plays, cur)
+    s = {r["slice"]: r for r in st["slices"]}
+    assert s["movement"]["implemented"]["state"] == "no" and s["movement"]["checks_pass"]["state"] == "no"
+    assert {"id": "hit", "reason": "hp 90 != 80"} in s["combat"]["checks_pass"]["blocking"] and not st["done"]
+
+
+RUNNER_LOG = """Godot Engine v4.7.stable.official - https://godotengine.org
+GDR_BEGIN res://tests/scenarios/a.gd|load
+GDR_END res://tests/scenarios/a.gd|load pass
+GDR_BEGIN res://tests/scenarios/a.gd|default
+GDR_END res://tests/scenarios/a.gd|default pass
+GDR_BEGIN res://tests/scenarios/b.gd|walk left
+SCRIPT ERROR: Invalid access to property or key 'hp' on a base object of type 'Nil'.
+          at: run (res://tests/scenarios/b.gd:12)
+GDR_END res://tests/scenarios/b.gd|walk left pass
+GDR_BEGIN res://tests/scenarios/b.gd|walk right
+GDR_END res://tests/scenarios/b.gd|walk right fail
+ERROR: Condition "!is_inside_tree()" is true.
+   at: get_global_transform (scene/2d/node_2d.cpp:416)
+GDR_BEGIN res://tests/scenarios/c.gd|default
+"""
+
+
+def test_remake_runner_errors_are_attributed_to_the_case_in_progress():
+    data = {"results": [
+        {"scenario": "res://tests/scenarios/a.gd", "case": "default", "status": "pass", "message": "", "failures": []},
+        {"scenario": "res://tests/scenarios/b.gd", "case": "walk left", "status": "pass", "message": "", "failures": []},
+        {"scenario": "res://tests/scenarios/b.gd", "case": "walk right", "status": "fail", "message": "x 3 != 4",
+         "failures": ["x 3 != 4"]},
+    ]}
+    scen = ["res://tests/scenarios/a.gd", "res://tests/scenarios/b.gd", "res://tests/scenarios/c.gd", "res://tests/scenarios/d.gd"]
+    by, loose = remake.merge_cases(scen, data, RUNNER_LOG, 1)
+    a, b, c, d = (by[s] for s in scen)
+    assert [(x["case"], x["status"]) for x in a] == [("default", "pass")]           # load step is no case
+    left = next(x for x in b if x["case"] == "walk left")
+    assert left["status"] == "error" and left["message"].startswith("SCRIPT ERROR: Invalid access") and "b.gd:12" in left["message"]
+    assert next(x for x in b if x["case"] == "walk right")["status"] == "fail"
+    assert c[0]["status"] == "error" and "during this case" in c[0]["message"]      # began, crashed, never reported
+    assert d[0]["status"] == "error"                                                 # never ran at all
+    assert loose and loose[0].startswith('ERROR: Condition "!is_inside_tree()"')     # between cases: not pinned on one
+    assert remake.aggregate(b) == "error" and remake.aggregate(a) == "pass"
+
+
+def test_remake_variants_promote(tmp_path):
+    root = _remake_tree(tmp_path / "p", {
+        "project.godot": "", "variants/hero/v1.png": b"one", "variants/hero/v2.png": b"two",
+        "variants/hero/v2.png.import": "[remap]", "variants/sword/a.png": b"s",
+        "assets/hero.webp": b"old", "assets/hero.webp.import": "[remap]", "assets/heron.png": b"keep",
+        "ASSETS.md": "# Assets\n- hero: generated", "assets.json": json.dumps([
+            {"path": "variants/hero/v2.png", "brief": "hero", "ref": "chars/hero.png", "generator": "fal-ai/x"},
+            {"path": "res://variants/hero/v1.png", "brief": "hero"},
+            {"path": "assets/hero.webp", "brief": "hero (old)"},
+            {"path": "assets/heron.png", "brief": "bird"}])})
+    out = remake.promote(root, "hero", "v2")
+    assert (root / "assets/hero.png").read_bytes() == b"two"
+    assert not (root / "assets/hero.webp").exists() and not (root / "assets/hero.webp.import").exists()
+    assert (root / "assets/heron.png").exists() and (root / "variants/sword/a.png").exists()
+    assert not (root / "variants/hero").exists()
+    entries = json.loads((root / "assets.json").read_text())
+    assert [(e["path"], e["brief"]) for e in entries] == [("assets/hero.png", "hero"), ("assets/heron.png", "bird")]
+    assert entries[0]["ref"] == "chars/hero.png"
+    assert (root / "ASSETS.md").read_text().splitlines()[-1] == "promoted hero: v2"
+    assert out["replaced"] == ["assets/hero.webp"]
+    with pytest.raises(SystemExit):
+        remake.promote(root, "sword", "nope")
+
+
+def test_remake_measure_image(tmp_path):
+    im = Image.new("RGBA", (40, 30), (0, 0, 0, 0))
+    im.paste((255, 0, 0, 255), (5, 4, 15, 10))      # 10x6 red
+    im.paste((0, 0, 255, 255), (15, 4, 20, 10))     # 5x6 blue
+    im.save(tmp_path / "s.png")
+    m = remake.image_metrics(tmp_path / "s.png")
+    assert (m["w"], m["h"], m["has_alpha"], m["bbox_w"], m["bbox_h"]) == (40, 30, True, 15, 6)
+    pal = {p["hex"]: p["share"] for p in m["palette"]}
+    assert pal == pytest.approx({"#ff0000": 2 / 3, "#0000ff": 1 / 3}, abs=0.01)
+    assert m["mean_luminance"] == pytest.approx((2 * 0.2126 + 0.0722) / 3, abs=0.01)
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="needs ffmpeg")
+def test_remake_measure_audio(tmp_path):
+    import math
+    import wave
+    rate, n = 22050, int(22050 * 1.5)
+    with wave.open(str(tmp_path / "beep.wav"), "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(b"".join(struct.pack("<h", int(16384 * math.sin(2 * math.pi * 440 * i / rate))) for i in range(n)))
+    k, m = remake.measure_file(tmp_path / "beep.wav")
+    assert k == "audio" and "error" not in m, m
+    assert m["duration_s"] == pytest.approx(1.5, abs=0.01) and (m["sample_rate"], m["channels"]) == (22050, 1)
+    assert m["peak_dbfs"] == pytest.approx(-6.0, abs=0.3)          # half scale
+    assert -12 < m["loudness_lufs"] < -6
+
+
+def _gltf():
+    return {"asset": {"version": "2.0"}, "scene": 0, "scenes": [{"nodes": [0]}],
+            "nodes": [{"name": "root", "scale": [2, 2, 2], "translation": [0, 1, 0], "children": [1]},
+                      {"name": "body", "mesh": 0, "translation": [1, 0, 0], "skin": 0}, {"name": "j0"}, {"name": "j1"}],
+            "meshes": [{"primitives": [{"attributes": {"POSITION": 0}, "indices": 1}, {"attributes": {"POSITION": 0}}]}],
+            "skins": [{"joints": [2, 3]}],
+            "accessors": [{"count": 24, "type": "VEC3", "componentType": 5126, "min": [-1, 0, -0.5], "max": [1, 2, 0.5]},
+                          {"count": 36, "type": "SCALAR", "componentType": 5123},
+                          {"count": 3, "type": "SCALAR", "componentType": 5126, "min": [0], "max": [1.25]}],
+            "animations": [{"name": "walk", "samplers": [{"input": 2, "output": 0}], "channels": []}, {"samplers": []}]}
+
+
+def test_remake_measure_gltf_and_glb(tmp_path):
+    g = _gltf()
+    (tmp_path / "m.gltf").write_text(json.dumps(g))
+    body = json.dumps(g).encode()
+    body += b" " * (-len(body) % 4)
+    (tmp_path / "m.glb").write_bytes(b"glTF" + struct.pack("<II", 2, 20 + len(body)) + struct.pack("<I", len(body)) + b"JSON" + body)
+    for name in ("m.gltf", "m.glb"):
+        k, m = remake.measure_file(tmp_path / name)
+        assert k == "model" and "error" not in m, m
+        assert (m["primitives"], m["tris"], m["vertices"], m["joints"]) == (2, 12 + 8, 48, 2)
+        assert m["size"] == pytest.approx([4, 4, 2])                 # parent scale 2 applies to the child mesh
+        assert m["bounds"]["min"] == pytest.approx([0, 1, -1])         # (-1 + 1) * 2 + 0, 0 * 2 + 1, -0.5 * 2
+        assert m["animations"] == [{"name": "walk", "duration_s": 1.25}, {"name": "animation_1", "duration_s": None}]
+
+
+def _noise_pattern(seed, size=32):
+    import random
+    rnd = random.Random(seed)
+    im = Image.new("RGB", (8, 8))
+    im.putdata([(rnd.randrange(256),) * 3 for _ in range(64)])
+    return im.resize((size, size), Image.Resampling.BILINEAR)
+
+
+def test_remake_leak_scan_hits(tmp_path):
+    dirty, rem = tmp_path / "dirty", tmp_path / "remake"
+    blob = bytes(range(256)) * 2
+    decompiled = """
+    /* WARNING: Removing unreachable block (ram,0x00401a2c) */
+    void FUN_00401000(int param_1)
+    {
+      int iVar1;
+      iVar1 = param_1 * 0x14 + DAT_00403000;
+      if (iVar1 > 100) { player_health = player_health - iVar1; uVar2 = spawn_particles("blood_splat", iVar1 / 4); }
+      local_8 = boss_rage_timer * 0.25 + param_1; FUN_00401200(local_8, iVar1);
+    }
+    """
+    make(dirty, {"raw/blob.bin": blob, "decomp/combat.c": decompiled})
+    _noise_pattern(1).save(dirty / "raw" / "tex.png")
+    copied = """
+    // damage, reworked from my notes (every 12-token window touches a decompiler name or 0x14)
+    void apply_damage(int param_2) {
+      int local_c;
+      local_c = param_2 * 20 + DAT_00499999;   // base
+      if (local_c > 100) { player_health = player_health - local_c; uVar7 = spawn_particles("blood_splat", local_c / 4); }
+      local_10 = boss_rage_timer * 0.25 + param_2; FUN_00409999(local_10, local_c);
+    }
+    """
+    make(rem, {"project.godot": "", "data/blob.dat": blob, "src/Combat.cs": copied,
+               "scenes/x.tscn": f'[ext_resource path="{(dirty / "raw" / "tex.png").as_posix()}"]',
+               "addons/gd_remake/copy.bin": blob})              # the toolkit's own addon is not scanned
+    import numpy as np                                      # upscaled, re-noised, resampled copy
+    near = np.asarray(_noise_pattern(1).resize((96, 96), Image.Resampling.NEAREST), dtype=np.int16)
+    near = near + np.random.default_rng(0).integers(-12, 13, near.shape)
+    Image.fromarray(near.clip(0, 255).astype(np.uint8)).resize((80, 80), Image.Resampling.BICUBIC).save(rem / "tex_big.png")
+    _noise_pattern(2).save(rem / "other.png")
+    hits = remake.leak_scan(rem, dirty)["hits"]
+    got = {(h["kind"], h["remake"], h["dirty"]) for h in hits}
+    assert ("identical", "data/blob.dat", "raw/blob.bin") in got
+    assert ("near-duplicate", "tex_big.png", "raw/tex.png") in got
+    assert ("code", "src/Combat.cs", "decomp/combat.c") in got
+    assert any(k == "path" and r == "scenes/x.tscn" for k, r, _ in got)
+    assert not any(r.startswith("addons/") or r == "other.png" for _, r, _ in got)
+    assert (dirty / ".leak_cache.json").exists()
+
+
+def test_remake_leak_scan_clean_remake_has_no_hits(tmp_path):
+    dirty, rem = tmp_path / "dirty", tmp_path / "remake"
+    make(dirty, {"decomp/player.c": """
+    void FUN_00402000(int param_1) { if (param_1 > 0) { DAT_00405000 = DAT_00405000 + param_1; } return; }
+    """, "raw/flat.png": b""})
+    Image.new("RGB", (16, 16), (40, 40, 40)).save(dirty / "raw" / "flat.png")
+    _noise_pattern(3).save(dirty / "raw" / "t.png")
+    make(rem, {"project.godot": "", "player.gd": """
+extends CharacterBody2D
+# original movement code
+@export var speed := 220.0
+func _physics_process(delta: float) -> void:
+    if Input.is_action_pressed("jump") and is_on_floor():
+        velocity.y = -speed * 1.6
+    velocity.x = Input.get_axis("left", "right") * speed
+    move_and_slide()
+"""})
+    Image.new("RGB", (32, 32), (200, 200, 200)).save(rem / "flat_light.png")   # flat images have no structure to match
+    box = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    box.paste((220, 40, 40, 255), (8, 8, 56, 60))
+    box.save(dirty / "raw" / "hero.png")
+    box = Image.new("RGBA", (64, 80), (0, 0, 0, 0))     # a redrawn sprite may share the silhouette
+    box.paste((200, 60, 50, 255), (10, 10, 54, 70))
+    box.save(rem / "hero.png")
+    _noise_pattern(4, 64).save(rem / "t.png")
+    assert remake.leak_scan(rem, dirty)["hits"] == []
+
+
+def test_remake_init_is_idempotent_and_keeps_user_files(tmp_path):
+    root = tmp_path / "demo"
+    make(root, {"project.godot": 'config_version=5\n\n[application]\n\nconfig/name="Mine"\nrun/main_scene="res://game.tscn"\n\n'
+                                 '[autoload]\n\nVariants="*res://my/variants.gd"\n',
+                "acceptance.json": '{"checks": [{"id": "x"}]}'})
+    remake.init_project(root, "demo")
+    pg = (root / "project.godot").read_text()
+    assert 'GdBridge="*res://addons/gd_remake/bridge.gd"' in pg and 'Variants="*res://my/variants.gd"' in pg
+    assert pg.count("Variants=") == 1 and 'run/main_scene="res://game.tscn"' in pg and not (root / "main.tscn").exists()
+    assert json.loads((root / "acceptance.json").read_text()) == {"checks": [{"id": "x"}]}
+    assert json.loads((root / "assets.json").read_text()) == []
+    preset = (root / "export_presets.cfg").read_text()
+    assert 'name="Web"' in preset and 'export_path="exports/web/index.html"' in preset and "variant/thread_support=false" in preset
+    addon = sorted(p.relative_to(remake.ADDON_SRC).as_posix() for p in remake.ADDON_SRC.rglob("*") if p.is_file())
+    assert addon and all((root / "addons/gd_remake" / a).is_file() for a in addon)
+    (root / "addons/gd_remake" / addon[0]).write_text("stale")
+    (root / "addons/gd_remake/gone.gd").write_text("old file")
+    before = {p: p.read_bytes() for p in (root / "project.godot", root / "export_presets.cfg", root / ".gitignore")}
+    remake.init_project(root, "demo")
+    assert (root / "addons/gd_remake" / addon[0]).read_bytes() == (remake.ADDON_SRC / addon[0]).read_bytes()
+    assert not (root / "addons/gd_remake/gone.gd").exists()
+    assert {p: p.read_bytes() for p in before} == before
+    assert (root / ".gitignore").read_text().splitlines() == [".godot/", ".gd_remake/", "exports/"]
+    fresh = tmp_path / "fresh"
+    remake.init_project(fresh)
+    assert 'run/main_scene="res://main.tscn"' in (fresh / "project.godot").read_text() and (fresh / "main.tscn").exists()
+
+
+def test_remake_compare_flags_and_refuses_report_in_remake(tmp_path, capsys):
+    dirty, rem = tmp_path / "dirty", tmp_path / "remake"
+    dirty.mkdir()
+    Image.new("RGBA", (32, 32), (200, 10, 10, 255)).save(dirty / "hero.png")
+    remake._write_json(dirty / "manifest.json", remake.measure_paths([dirty]))
+    make(rem, {"assets.json": json.dumps([{"path": "assets/hero.png", "brief": "hero", "ref": "hero.png"},
+                                          {"path": "assets/tree.png", "brief": "tree", "ref": "nope.png"}])})
+    (rem / "assets").mkdir()
+    Image.new("RGBA", (32, 48), (200, 10, 10, 255)).save(rem / "assets/hero.png")
+    rows = {r["brief"]: r for r in remake.compare_assets(rem, dirty, 0.10)}
+    flagged = {x["key"] for x in rows["hero"]["rows"] if x["flag"]}
+    assert flagged == {"h", "aspect", "bbox_h"}
+    assert "clean file missing" in rows["tree"]["problems"] and any("not in dirty manifest" in p for p in rows["tree"]["problems"])
+    from um import cli
+    with pytest.raises(SystemExit):
+        cli.main(["remake", "compare", "demo", "--dirty", str(dirty), "--remake", str(rem), "--out", str(rem / "c.html")])
+    cli.main(["remake", "compare", "demo", "--dirty", str(dirty), "--remake", str(rem)])
+    page = (dirty / "compare" / "index.html").read_text(encoding="utf-8")
+    assert "../hero.png" in page and "#c80a0a" in page
+    assert "FLAG hero" in capsys.readouterr().out
+
+
+def test_remake_bridge_cli_exits_nonzero_on_error(capsys):
+    import socket
+    import threading
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen()
+    port = srv.getsockname()[1]
+    seen = []
+
+    def serve():
+        for _ in range(2):
+            c, _ = srv.accept()
+            req = json.loads(c.makefile().readline())
+            seen.append(req)
+            ok = req["cmd"] != "get"
+            c.sendall((json.dumps({"id": req["id"], "ok": ok, "result": {"echo": req["args"]}} if ok else
+                                  {"id": req["id"], "ok": False, "error": "no such node"}) + "\n").encode())
+            c.close()
+
+    threading.Thread(target=serve, daemon=True).start()
+    from um import cli
+    cli.main(["remake", "bridge", str(port), "set", "path=/root/Player", "prop=position", "value=[1, 2.5]", "pressed=true"])
+    assert json.loads(capsys.readouterr().out) == {"echo": {"path": "/root/Player", "prop": "position", "value": [1, 2.5], "pressed": True}}
+    with pytest.raises(SystemExit) as e:
+        cli.main(["remake", "bridge", str(port), "get", '{"path": "/root/Nope", "prop": "x"}'])
+    assert e.value.code != 0 and seen[1]["args"] == {"path": "/root/Nope", "prop": "x"}
+    srv.close()

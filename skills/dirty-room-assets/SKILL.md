@@ -36,7 +36,9 @@ One entry per asset that matters to the remake, with numbers a generator or anim
 - **SFX/music:** duration, loudness (LUFS), peak, frequency character, layers, loop points, triggers.
 - **VFX:** emitters, particle counts, lifetimes, colours over life, timing relative to the event.
 - **UI:** layout grid, font metrics, colours, icon sizes.
-Use contact sheets (`um sprite`, Blender renders) to review whole sets at once.
+`um remake measure dirty/<game>/raw --root dirty/<game>/raw --out dirty/<game>/manifest.json` fills the
+image, audio and glTF numbers; add the rest (contact frames, VFX timing, UI grid) by hand. Use contact
+sheets (`um sprite`, Blender renders) to review whole sets at once.
 
 ## 3. Brief (the hand-off)
 Write `remakes/<game>/ASSET_BRIEFS.md`: one brief per asset or family - purpose, the measured targets from
@@ -46,8 +48,11 @@ must differ. This file is the only thing that crosses from dirty to clean.
 ## 4. Produce and match (clean room)
 Generate or build new assets from the briefs (`fal-assets`, `asset-pipeline`, Blender), then compare
 against the dirty reference **by measurement**: proportions, durations, frame timings, loudness, palette
-distance. Iterate until the numbers match and the side-by-side reads as the same game feel - not the same
-pixels. Record each asset's brief, generator and settings in `remakes/<game>/ASSETS.md` (provenance).
+distance. `um remake compare <game>` builds the side-by-side page (it stays in `dirty/<game>/compare/`)
+from `remakes/<game>/assets.json`, which maps each asset to its brief and dirty manifest id. Iterate until
+the numbers match and the side-by-side reads as the same game feel - not the same pixels. Record each
+asset's brief, generator and settings in `assets.json` and `remakes/<game>/ASSETS.md` (provenance), and
+run `um remake leak <game>` before anything is committed. Candidates and in-game picking: `godot-remake`.
 
 ## Never
 Commit, publish or ship anything from `dirty/`. Feed an original file to a generator. Re-export an

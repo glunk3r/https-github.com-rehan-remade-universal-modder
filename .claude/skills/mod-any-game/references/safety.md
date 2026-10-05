@@ -25,6 +25,20 @@ legal advice. When a game's EULA or mod policy matters, read it (search "<publis
 - Tools running next to a protected game (debuggers, Cheat Engine, overlays that inject) can trip its
   anti-cheat even when you don't touch it. Close protected games before RE sessions.
 
+## Multiplayer games you are remaking
+Rebuilding a game as original work needs its rules, not its live client, so the bright line above still
+holds and this adds what IS allowed (workflow in `skills/multiplayer-remake`):
+- **Static analysis of the files on disk**, for any multiplayer title the user owns, anti-cheat or not:
+  decompile client and dedicated-server binaries, read data tables, configs, network message schemas.
+  Ghidra/ILSpy on a file is not running the game, so the anti-cheat is never engaged.
+- **Dynamic analysis only where nothing official is involved:** official offline/LAN modes, a dedicated
+  server the user hosts on their own machine, private sessions between the user's own clients, and the
+  remake itself. Capture traffic only from those.
+- **Never:** reverse-engineer the anti-cheat module itself, connect an instrumented or modified client to
+  official servers, probe, scrape or load-test official servers or APIs, or reuse account credentials.
+- The remake gets its own netcode and servers. Do not re-implement a private protocol to talk to the
+  original game's live services.
+
 ## Ownership and redistribution
 - Mod games the user owns, from their own install or dumps of cartridges and discs they own. Don't download
   ROMs, ISOs or game files.

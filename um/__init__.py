@@ -11,6 +11,7 @@ Subcommands (see `um --help`):
   backup    snapshot and restore save folders before you touch them
   publish   lint a mod folder before sharing: game files, decompiled code, secrets, credits
   kb        the knowledge base: search prior field notes, write your own, check it, open a PR
+  remake    Godot remakes: scenario checks, slice status, game bridge, variants, asset metrics, leak scan
 """
 
 __version__ = "0.2.0"

@@ -42,7 +42,11 @@ scheme, session state machine - each claim with its evidence or marked "unverifi
   authoritative by default; client prediction where the original had it.
 - Your own protocol, your own servers. The remake never talks to the original game's services.
 - Verify with a headless server plus 2+ clients on one machine (Godot `--headless` for the server),
-  scripted inputs, and assertions on synced state - not by eye.
+  scripted inputs, and assertions on synced state - not by eye. Each NETCODE.md claim (rates, authority,
+  reconciliation) becomes an `acceptance.json` check (`godot-remake` skill); `um remake bridge` reads
+  synced state from each running peer.
+- Browser playtests: web builds have no ENet, so use `GdNet` (WebSocket) from the `gd_remake` addon and
+  `um remake serve --with-server` for a join link.
 
 ## 5. Record
 Field note (`share-field-notes`): the netcode architecture you found, how you verified it, and the traps.

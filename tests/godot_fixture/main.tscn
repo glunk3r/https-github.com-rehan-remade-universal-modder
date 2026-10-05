@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://counter.gd" id="2_counter"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(480, 40)
+
+[node name="Main" type="Node2D"]
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(240, 230)
+
+[node name="Shape" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="Ground" type="Polygon2D" parent="Floor"]
+color = Color(0.35, 0.25, 0.15, 1)
+polygon = PackedVector2Array(-240, -20, 240, -20, 240, 20, -240, 20)
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(240, 100)
+
+[node name="Counter" type="Node" parent="."]
+script = ExtResource("2_counter")
