@@ -27,6 +27,20 @@ Every claim in `SPEC.md` that the remake must reproduce gets an entry in `accept
   confirms it in play.
 - Write the checks **before** the slice's code, from SPEC.md alone.
 
+### What SPEC.md must pin down (methods from DevilutionX, The Force Engine, fallout2-ce, openage)
+- **One mechanic per file** (`mechanics/<name>.md`) with sources and a **Quirks** section; every quirk
+  becomes a case in `cases()`.
+- **Evidence level per claim**: `static` (read in the decompile, `fn:<addr>`), `observed` (debugger
+  experiment, `exp:<id>`), `golden` (output captured from the original, e.g. seed -> generated level),
+  `unverified`. Prefer `golden` for anything a player can measure; a golden table becomes a check that
+  diffs the remake's output line by line.
+- **Timing**: the original tick rate and its rounding (TFE runs Dark Forces at 145 Hz), what runs per
+  tick vs per frame. Set Godot's physics rate to match instead of converting numbers to 60 Hz.
+- **RNG**: algorithm, constants, seed source, call order. Reproduce it exactly and add a known-value
+  check (the value after 10000 draws), including the original's own bugs.
+- **Original bugs**: faithful by default. Each deviation is a named flag in the claim (`fix_flag:`),
+  off by default; acceptance checks run with all flags off. An unflagged deviation is a review finding.
+
 ## 2. Scenarios: one mechanic, every edge case
 A scenario builds a tiny world, drives input and asserts. `cases()` is the edge-case matrix: walk the
 SPEC's edge cases (zero, max, boundary values, simultaneous inputs, slopes, frame-1 input, network loss)

@@ -12,6 +12,8 @@ The reviewer does not edit code, specs or checks.
   finding.
 - Tuning constants in code (speeds, timers, damage, gravity) equal the SPEC.md values, or the deviation is
   written in SPEC.md with a reason.
+- Every behaviour that differs from the original is a named fix flag in SPEC.md, off by default. A
+  silent fix (an original bug quietly not reproduced) is a finding.
 - Scenarios assert the claim itself (an apex height, a cooldown in frames), not a proxy that always holds.
 - `um remake status` shows checks pass and integrated at the **current** revision. Stale counts as no.
 
