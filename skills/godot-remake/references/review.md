@@ -17,6 +17,10 @@ The reviewer does not edit code, specs or checks.
 - Scenarios assert the claim itself (an apex height, a cooldown in frames), not a proxy that always holds.
 - `um remake status` shows checks pass and integrated at the **current** revision. Stale counts as no.
 
+- No level/asset special cases in `src/core/`; overrides are data listed in `docs/overrides.md`.
+- No check deleted, case removed or tolerance loosened without a SPEC.md line citing evidence.
+- Evidence citations are pinned (`<exe sha>:<addr>`, experiment/run id + git SHA).
+
 ## Clean room
 - `um remake leak <game>` exits 0. Read every hit it reports even if someone marked it "fine".
 - No file in the remake was copied, re-exported, traced or renamed from `dirty/`; `assets.json` lists a
@@ -25,6 +29,8 @@ The reviewer does not edit code, specs or checks.
 - No code reads like a translation of decompiled functions: same odd constants in the same order, same
   quirky control flow, decompiler-style names (`FUN_`, `param_1`, `uVar3`) or comments with addresses.
   Shared numbers from SPEC.md are fine; shared structure is not.
+- Each module has `docs/provenance/<module>.md`, and its implementer was not the agent that read the
+  decompile.
 - Nothing under the remake references `dirty/` paths (scripts, `.tscn` ext_resources, export presets).
 
 ## Report

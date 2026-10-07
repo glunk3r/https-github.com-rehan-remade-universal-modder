@@ -38,6 +38,10 @@ Every claim in `SPEC.md` that the remake must reproduce gets an entry in `accept
   tick vs per frame. Set Godot's physics rate to match instead of converting numbers to 60 Hz.
 - **RNG**: algorithm, constants, seed source, call order. Reproduce it exactly and add a known-value
   check (the value after 10000 draws), including the original's own bugs.
+- **Citations are pinned**: decompile evidence as `<exe sha256 prefix>:<addr>`, observed/golden evidence
+  with the experiment or run id and the git SHA it ran at. "The latest run" is not a citation.
+- **Open questions**: a divergence you can't explain from evidence goes here and to the human. Never
+  close it with a fudge constant tuned until the check passes (PortPS5's "if it needs a hack, stop").
 - **Original bugs**: faithful by default. Each deviation is a named flag in the claim (`fix_flag:`),
   off by default; acceptance checks run with all flags off. An unflagged deviation is a review finding.
 
@@ -76,6 +80,19 @@ um remake grid remakes/<game> tests/scenarios/jump.gd --out /tmp/jump.png --cell
 ```
 Grid cases run at once and share input, so give grids their own input-free scenario (see below).
 
+### Clean-room split: spec writer and implementer are different agents
+For each mechanic, the agent that read the decompile writes `SPEC.md` + `acceptance.json` + fixtures and
+stops. A **fresh** agent with no conversation history implements it from those files only, told not to
+read `dirty/`, the reference room or prior code for that module. Record it in
+`docs/provenance/<module>.md`: inputs given, what replaced what, and the limits (procedural isolation on
+one machine; says nothing about model training data). Constants not measured from the original are
+marked "policy, not measured". (iw4l replaced a module this way after a similarity report.)
+
+### Engine vs content
+Generic systems (`src/core/`: movement, combat, AI, netcode) contain no level names, asset ids or
+per-level branches. Per-level behaviour is data (`data/levels/<id>.tres|json`) under a named mechanism
+key, listed with its reason in `docs/overrides.md`. A special case in core is a review finding.
+
 ## 3. Status is four facts, never one
 `um remake status` reports per slice, and never merges them:
 - **implemented**: every check has a scenario file;
@@ -83,7 +100,17 @@ Grid cases run at once and share input, so give grids their own input-free scena
 - **integrated**: the main scene boots headless for `boot_frames` with no engine errors;
 - **played**: `um remake played remakes/<game> --capture clip.mp4` recorded a real play capture at this
   revision (`showcase-video` / `um win` to record).
-Report exactly those facts. "Checks pass" is not "played"; a worker finishing is not a pass.
+Report exactly those facts. "Checks pass" is not "played"; a worker finishing is not a pass. Verdicts are
+computed by `um remake`, never typed by an agent.
+- **Prove the run before reading the result.** A scenario asserts its own preconditions first (subject
+  spawned, on floor, in frame, input reached it), with failures named "precondition: ...". A failed
+  precondition means the run proves nothing: fix the setup, don't read the verdict. A reported bug is
+  closed only by reproducing it at the reported spot and showing it clean there and in one neighbouring
+  state; green unrelated checks are not evidence.
+- **Checks only grow.** Never delete a check or case, loosen a tolerance or flip `required` without a
+  line in SPEC.md saying why, citing evidence. Every confirmed bug gets a failing-first case.
+- **Probe scenarios are temporary.** Throwaway debug scenarios are deleted before handoff; only
+  scenarios tied to `acceptance.json` stay.
 The revision hashes the project (not `.md`, `.godot/`, `.import`), so any code or asset change makes old
 results stale.
 
@@ -149,7 +176,16 @@ Web builds can't use ENet: networked remakes use `GdNet.server(port)` / `GdNet.c
 (WebSocket, works on desktop and web) and read `GdNet.url_param("room")` / `GdNet.url_param("server")`
 from the link. The headless server is the authority, as in `multiplayer-remake`.
 
-## 9. Record and improve the instructions
+## 9. Handoff
+Long work is split across sessions and agents. Each task keeps an append-only folder
+`remakes/<game>/.work/<task>/` (gitignored) of numbered reports `<N>-<name>-<SUFFIX>.md`:
+- `FINAL`: done, nobody's move; `PART`: another agent continues; `READY`: the human must play or decide.
+  When unsure, pick the suffix that keeps the work on the agent's side.
+- Never rewrite an old report; correct it in the next one. Every report has **What was not done** and
+  says whether the cause or only the symptom was fixed.
+- A fresh agent picking up a stuck task restates the problem from the latest report before touching code.
+
+## 10. Record and improve the instructions
 At the end of a session, add to the field note (`share-field-notes`) what the checks caught and what they
 missed. If a check or a step here was wrong or missing, propose the exact edit to this skill or SOUL.md as
 a diff for the human to approve; never apply it unasked.
