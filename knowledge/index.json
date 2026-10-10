@@ -1601,6 +1601,85 @@
   ]
  },
  {
+  "path": "games/hitman-world-of-assassination/new-suit-and-replacement-pistol-smf-prim-rebuild.md",
+  "kind": "game",
+  "title": "A new selectable suit and a replacement default pistol from custom meshes (SMF, rpkg PRIM rebuild)",
+  "game": "HITMAN World of Assassination",
+  "games_also": [],
+  "game_version": "Steam PC, HITMAN3.exe from the 2026-08-27 patch (app 1659040)",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "data",
+  "tools": [
+   "Simple Mod Framework 2.33.42",
+   "rpkg-cli 2.34.0",
+   "HMTextureTools (bundled with SMF)",
+   "GlacierKit 1.12.15",
+   "Peacock 8.9.1",
+   "Blender 5.2",
+   "io_scene_glacier 0.7.2 (reference only)",
+   "fal (trellis-2, hi3d multi-view)",
+   "um win"
+  ],
+  "anti_cheat": "none in offline play; tested only under Peacock (offline server)",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [],
+  "date": "2026-10-10",
+  "links": [],
+  "tags": [
+   "glacier-2",
+   "smf",
+   "quickentity",
+   "prim",
+   "rpkg",
+   "textures",
+   "materials",
+   "outfit",
+   "weapons",
+   "peacock"
+  ]
+ },
+ {
+  "path": "games/hitman-world-of-assassination/telekinesis-powers-zhmmodsdk-plugin.md",
+  "kind": "game",
+  "title": "Telekinesis powers (rip, hold, throw, push) as a ZHMModSDK plugin",
+  "game": "HITMAN World of Assassination",
+  "games_also": [],
+  "game_version": "Steam PC, HITMAN3.exe from the 2026-08-27 patch (app 1659040)",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "native-hook",
+  "tools": [
+   "ZHMModSDK 4.1.1 (DevPkg)",
+   "Peacock 8.9.1",
+   "Simple Mod Framework 2.33.42",
+   "MSVC 14.51 + CMake + Ninja + vcpkg",
+   "um win",
+   "dbghelp"
+  ],
+  "anti_cheat": "none in offline play; the game is online-connected, so it ran only under Peacock (offline server, leaderboards=false) and never against IOI's servers",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [],
+  "date": "2026-10-10",
+  "links": [],
+  "tags": [
+   "glacier-2",
+   "zhmmodsdk",
+   "peacock",
+   "telekinesis",
+   "physics",
+   "ragdoll",
+   "imgui",
+   "powers"
+  ]
+ },
+ {
   "path": "games/just-cause-3/vehicle-mesh-editing-displacement-works-adding-geometry-does.md",
   "kind": "game",
   "title": "Vehicle mesh editing: displacement works; our count-changing edits crashed",
