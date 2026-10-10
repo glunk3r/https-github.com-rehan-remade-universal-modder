@@ -11,7 +11,7 @@ tools: ["Simple Mod Framework 2.33.42", "rpkg-cli 2.34.0", "HMTextureTools (bund
 anti_cheat: "none in offline play; tested only under Peacock (offline server)"
 status: working
 agents: ["Claude Code (Opus 5.5)"]
-humans: []
+humans: ["@skurtyyskirts"]
 date: 2026-10-10
 links: []
 tags: ["glacier-2", "smf", "quickentity", "prim", "rpkg", "textures", "materials", "outfit", "weapons", "peacock"]
@@ -81,8 +81,23 @@ textures and materials. No code. Meshes go: model → Blender → GLB with the v
    the repo.
 2. Edit or generate meshes. Name the objects as the vanilla PRIM's, weld before decimating, and keep each linked
    part under the vanilla per-LOD vertex counts.
-3. `rpkg-cli -rebuild_prim_in`, then repair every rebuilt PRIM (Gotchas 1-3 and 9).
-4. Build TEXT/TEXD yourself and write the metas (Gotchas 4 and 5). Build only MATIs (Gotcha 6).
+3. `rpkg-cli -rebuild_prim_in`, then repair every rebuilt PRIM. The repair pass and the TEXT/TEXD builder were
+   one-off Python scripts and are not published, so the steps they performed are spelled out here:
+   - Linked PRIMs: write each vertex's bone index back into position w with pos_scale.w 32767 and
+     pos_bias.w 0 (Gotcha 1, PRIM layout facts).
+   - Linked PRIMs: regenerate the collision block in the H3 layout above, one box per 32 triangles over the
+     new triangles (Gotcha 2).
+   - Hair and other cloth PRIMs: zero `cloth_id` and the sub-mesh `cloth_offset` and drop the cloth rows, unless
+     the vanilla topology is kept (Gotcha 9).
+   - Characters: copy the container's COLOR_0 into the new vertices (Gotcha 7).
+   - Check the vertex budget per linked part and the u16 per-bone triangle count before shipping (Gotcha 10).
+4. Build TEXT/TEXD yourself instead of letting SMF convert:
+   - Encode the mips with any BC encoder (BC7 colour, BC5 normal, BC1 masks). TEXD holds the full mip chain and
+     TEXT a downscaled copy, as in the vanilla pair you start from.
+   - Copy the vanilla texture's meta and set the tonymeta format and size code (PRIM layout facts).
+   - Set video memory to the sum of the TEXD mips at the format's block size (16 bytes per 4x4 block for BC7/BC5,
+     8 for BC1), and TEXD `hash_size` to 0 (Gotchas 4 and 5).
+   - Build only MATIs and keep the source's MATT/MATB (Gotcha 6).
 5. Write the entity, repository, unlockables and ORES files. Deploy with SMF, restart Peacock, and launch.
 
 ## Verification

@@ -11,7 +11,7 @@ tools: ["ZHMModSDK 4.1.1 (DevPkg)", "Peacock 8.9.1", "Simple Mod Framework 2.33.
 anti_cheat: "none in offline play; the game is online-connected, so it ran only under Peacock (offline server, leaderboards=false) and never against IOI's servers"
 status: in-progress
 agents: ["Claude Code (Opus 5.5)"]
-humans: []
+humans: ["@skurtyyskirts"]
 date: 2026-10-10
 links: []
 tags: ["glacier-2", "zhmmodsdk", "peacock", "telekinesis", "physics", "ragdoll", "imgui", "powers"]
@@ -66,10 +66,29 @@ hook and an ImGui overlay. An SMF content mod (QuickEntity) cannot run per-frame
   `mouse,mb5`), and only while HITMAN has focus.
 
 ## Build steps
+The plugin source is not published, so there is no repository to link. These steps rebuild it against the SDK's
+DevPkg, and the outline below lists the SDK calls each power uses.
+
 1. Install Peacock and ZHMModSDK as above, and back up saves (`um backup`) and `Retail\mods.ini`.
-2. Build the plugin against the DevPkg, link `implot`, and copy the DLL to `Retail\mods\`.
+2. Write one `IPluginInterface` class, modelled on the mods bundled with the SDK. Add `implot` to the vcpkg
+   manifest and to `target_link_libraries`, then build Release from an x64 MSVC prompt:
+   `cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake`
+   and `cmake --build build`. Copy the DLL to `Retail\mods\`.
 3. Add `[<plugin>]` to `Retail\mods.ini`. `~` opens the SDK overlay, where the plugin's menu items live.
 4. Start Peacock, then launch.
+
+### Plugin outline
+- `OnEngineInitialized`: register one `eUpdatePlayMode` frame update and hook `ClearScene` to drop held state.
+- Every frame: return until every `EngineFunction` used `Exists()`, then read the bound inputs.
+- **Launch (rip):** raycast from the camera. A `Prop` hit within range is grabbed. A `Surface` hit spawns
+  `Melee_Brick` with `ZItemSpawner` + `RequestContentLoad` at the hit point and grabs it once it appears in
+  `m_aItems`.
+- **Hold:** each frame, set the kinematic transform on the item's `geom` and `root` to a point beside 47.
+- **Throw:** pick the target NPC by aim assist (camera cone, range from 47), move the item along a computed
+  arc each frame, and on arrival check `ActorsNear`: ragdoll + pelvis impulse for a knockdown, or
+  `ZActor_KillActor(eDE_DeadlyThrow, eDB_IMPACT_ANIM)` for a kill.
+- **Push:** every NPC in a cone from the camera, within range of 47, gets ragdoll + an impulse away from 47.
+- ImGui: menu toggles in the SDK overlay, and a reticle and energy bar in the HUD draw.
 
 ## Verification
 - `um win` drove the game: keyboard menus, screenshots via gfxcapture, and crash events from `Get-WinEvent`
