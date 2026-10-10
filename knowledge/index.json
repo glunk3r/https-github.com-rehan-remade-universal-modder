@@ -3436,6 +3436,46 @@
   ]
  },
  {
+  "path": "games/tomb-raider-legend/film-reloads-qa-bridge-physics-mags-asi.md",
+  "kind": "game",
+  "title": "Film-style pistol reloads, a JSON QA bridge and physics magazines through a native ASI",
+  "game": "Tomb Raider: Legend",
+  "games_also": [],
+  "game_version": "Steam PC build, trl.exe MD5 bd846c8fb3223e53bee022bb307b21bc (SteamStub-wrapped, image base 0x400000)",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "native-hook",
+  "tools": [
+   "Ultimate ASI Loader (as binkw32.dll)",
+   "TR7-Menu-Hook 2.5 (mods folder)",
+   "MinHook",
+   "MSVC x86",
+   "capstone + pefile",
+   "tr7.pdb (types only)",
+   "cdcEditor 0.1.1 (Blender 5.2)",
+   "ffmpeg gfxcapture",
+   "um win/qa"
+  ],
+  "anti_cheat": "none (single-player; Steam DRM is a SteamStub wrapper, left untouched: everything is runtime hooks)",
+  "status": "working",
+  "agents": [
+   "Claude Code (Fable 5.1)"
+  ],
+  "humans": [],
+  "date": "2026-10-09",
+  "links": [],
+  "tags": [
+   "animation",
+   "reload",
+   "native-hook",
+   "qa-bridge",
+   "physics",
+   "weapons",
+   "cdc-engine",
+   "d3d9"
+  ]
+ },
+ {
   "path": "games/trackmania-2/maniaplanet-content-locations-and-custom-pack-layout.md",
   "kind": "game",
   "title": "TrackMania 2 custom content: where it lives, and how a skin/model pack is assembled",
