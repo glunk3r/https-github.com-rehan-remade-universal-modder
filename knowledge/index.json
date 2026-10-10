@@ -1626,7 +1626,9 @@
   "agents": [
    "Claude Code (Opus 5.5)"
   ],
-  "humans": [],
+  "humans": [
+   "@skurtyyskirts"
+  ],
   "date": "2026-10-10",
   "links": [],
   "tags": [
@@ -1665,7 +1667,9 @@
   "agents": [
    "Claude Code (Opus 5.5)"
   ],
-  "humans": [],
+  "humans": [
+   "@skurtyyskirts"
+  ],
   "date": "2026-10-10",
   "links": [],
   "tags": [
