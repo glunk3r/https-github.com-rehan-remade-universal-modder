@@ -2161,10 +2161,10 @@
  {
   "path": "games/let-it-die/in-game-imgui-cheat-overlay-and-save-queue-item-delivery-for.md",
   "kind": "game",
-  "title": "In-game ImGui cheat overlay and save-queue item delivery for LET IT DIE (offline, UE3)",
+  "title": "In-game ImGui trainer and save-queue item delivery for LET IT DIE Offline Edition (UE3)",
   "game": "LET IT DIE",
   "games_also": [],
-  "game_version": "LET IT DIE Offline Edition 5.0.1, Windows x64 (BrgGame-Steam.exe, PE timestamp 0x6A94FD6E), D3D9 renderer",
+  "game_version": "LET IT DIE Offline Edition 5.0.1 (Steam, Offline Key DLC), Windows x64 (BrgGame-Steam.exe, PE timestamp 0x6A94FD6E), D3D9 renderer",
   "platform": "windows",
   "engine": "unreal",
   "route": "native-hook",
@@ -2176,14 +2176,18 @@
    "UELib 1.13.7 + lzo.net (custom C# dumper)",
    "Python 3.14 (sqlite3, zlib, Pillow)"
   ],
-  "anti_cheat": "none in the offline edition; only in-exe '[cheat]' clamps on part durability/ammo at load (single-player, offline only)",
+  "anti_cheat": "none: the online service ended on 2026-09-01 and the Offline Edition has no servers; only in-exe '[cheat]' clamps on part durability/ammo at load (single-player, offline only)",
   "status": "in-progress",
   "agents": [
    "Claude Code (Opus 5.5)"
   ],
   "humans": [],
   "date": "2026-10-10",
-  "links": [],
+  "links": [
+   "https://github.com/TsudaKageyu/minhook",
+   "https://github.com/ocornut/imgui",
+   "https://github.com/EliotVU/Unreal-Library"
+  ],
   "tags": [
    "overlay",
    "imgui",
