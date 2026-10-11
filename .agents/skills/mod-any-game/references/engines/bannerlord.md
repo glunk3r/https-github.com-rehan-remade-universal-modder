@@ -4,6 +4,13 @@
 assemblies in `bin/Win64_Shipping_Client/`. Bannerlord has managed gameplay code and native engine
 components. For single-player mods, start with the game's official module system.
 
+## Version basis
+
+The install layout and version lookup were checked read-only against a local **v1.4.8** installation.
+`MBSubModuleBase` lifecycle declarations and `CampaignBehaviorBase.RegisterEvents` / `SyncData` were
+also checked in that installation's DLLs. These are static checks; no modded game was launched for
+this playbook. Recheck exact APIs, assets and runtime behavior for the user's own build.
+
 ## Routes
 
 1. **Data:** put the mod in `Modules/<id>/` with its own `SubModule.xml` and `ModuleData/` XML.
