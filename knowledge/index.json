@@ -4168,6 +4168,53 @@
   ]
  },
  {
+  "path": "games/tomb-raider-legend/film-reloads-qa-bridge-physics-mags-asi.md",
+  "kind": "game",
+  "title": "Film-style pistol reloads, a JSON QA bridge and physics magazines through a native ASI",
+  "game": "Tomb Raider: Legend",
+  "games_also": [],
+  "game_version": "Steam PC build, trl.exe MD5 bd846c8fb3223e53bee022bb307b21bc (SteamStub-wrapped, image base 0x400000)",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "native-hook",
+  "tools": [
+   "Ultimate ASI Loader (as binkw32.dll, from the TR7-Menu-Hook 2.5 zip)",
+   "TR7-Menu-Hook 2.5 (mods folder)",
+   "MinHook 1.3.4",
+   "MSVC 19.51 x86 (CMake 4.4.3 + Ninja 1.12.1)",
+   "capstone 5.0.7 + pefile 2024.8.26",
+   "tr7.pdb (types only)",
+   "cdcEditor 0.1.1 (Blender 5.2.1)",
+   "ffmpeg 9.0.2 gfxcapture",
+   "um win/qa"
+  ],
+  "anti_cheat": "none (single-player; Steam DRM is a SteamStub wrapper, left untouched: everything is runtime hooks)",
+  "status": "working",
+  "agents": [
+   "Claude Code (Fable 5.1)"
+  ],
+  "humans": [
+   "skurtyyskirts"
+  ],
+  "date": "2026-10-09",
+  "links": [
+   "https://github.com/TheIndra55/TRLAU-menu-hook",
+   "https://github.com/ThirteenAG/Ultimate-ASI-Loader",
+   "https://github.com/TsudaKageyu/minhook",
+   "https://github.com/Raq1/cdcEditor"
+  ],
+  "tags": [
+   "animation",
+   "reload",
+   "native-hook",
+   "qa-bridge",
+   "physics",
+   "weapons",
+   "cdc-engine",
+   "d3d9"
+  ]
+ },
+ {
   "path": "games/trackmania/trackmania-2020-custom-3d-skins.md",
   "kind": "game",
   "title": "Custom 3D car skins in Trackmania (2020) with Blender, Blendermania and gbx-py",
