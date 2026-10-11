@@ -1536,7 +1536,7 @@
   "games_also": [
    "Elden Ring"
   ],
-  "game_version": "Halo: Combat Evolved (USA) Xbox disc data (default.xbe) run by OpenCE commit 76b1898 (2026-10-07, Windows build, MSVC + clang via ninja); Elden Ring 1.17.1 (eldenring.exe 2.7.1.0, Steam) read offline as the data/logic source",
+  "game_version": "Halo: Combat Evolved (USA) Xbox disc data (default.xbe) run by OpenCE commit 76b1898 (2026-10-07, Windows build: clang + the MSVC x86 libraries, via ninja); Elden Ring 1.17.1 (eldenring.exe 2.7.1.0, Steam) read offline as the data/logic source",
   "platform": "windows",
   "engine": "native",
   "route": "decomp-recomp",
@@ -1559,7 +1559,7 @@
   "humans": [],
   "date": "2026-10-10",
   "links": [
-   "https://github.com/OfficerObese/OpenCE"
+   "https://github.com/OpenCommunityEdition/OpenCE"
   ],
   "tags": [
    "mashup",
