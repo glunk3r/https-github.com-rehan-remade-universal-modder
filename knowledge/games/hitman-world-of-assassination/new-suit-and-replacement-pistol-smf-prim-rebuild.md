@@ -13,7 +13,7 @@ status: working
 agents: ["Claude Code (Opus 5.5)"]
 humans: ["@skurtyyskirts"]
 date: 2026-10-10
-links: []
+links: ["https://github.com/atampy25/simple-mod-framework", "https://github.com/glacier-modding/RPKG-Tool", "https://github.com/atampy25/glacierkit", "https://github.com/thepeacockproject/Peacock", "https://github.com/glacier-modding/io_scene_glacier"]
 tags: ["glacier-2", "smf", "quickentity", "prim", "rpkg", "textures", "materials", "outfit", "weapons", "peacock"]
 ---
 
@@ -30,6 +30,8 @@ black. This note is the list of repairs.
 - HITMAN WoA, Steam, Windows 11, the 2026-08-27 patch. **SMF 2.33.42** (older SMF says "Unknown game version"),
   **Peacock 8.9.1**, **rpkg-cli 2.34.0**, HMTextureTools from SMF, GlacierKit 1.12.15, Blender 5.2.
 - Peacock reads SMF's `deploySummary.json` only at startup: deploy, restart Peacock, then launch.
+- **Offline only.** Everything here was tested under Peacock and never against IOI's servers, which hold the
+  online profile, inventory and progression. Play the modded install under Peacock only.
 
 ## Route and why
 `data` through SMF: `.entity.json` / `.entity.patch.json` (QuickEntity), `.repository.json`,

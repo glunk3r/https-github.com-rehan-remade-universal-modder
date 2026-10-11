@@ -13,7 +13,7 @@ status: in-progress
 agents: ["Claude Code (Opus 5.5)"]
 humans: ["@skurtyyskirts"]
 date: 2026-10-10
-links: []
+links: ["https://github.com/OrfeasZ/ZHMModSDK", "https://github.com/thepeacockproject/Peacock", "https://github.com/atampy25/simple-mod-framework"]
 tags: ["glacier-2", "zhmmodsdk", "peacock", "telekinesis", "physics", "ragdoll", "imgui", "powers"]
 ---
 
@@ -30,8 +30,12 @@ IOI-placed level item on camera.
 - HITMAN WoA, Steam, Windows 11, the 2026-08-27 patch. Plain `steam://rungameid/1659040` launches it when
   Steam's launch options pass `-SKIP_LAUNCHER`. `steam://run/1659040//-skip_launcher/` hangs on a hidden Steam
   "launch arguments" prompt.
-- **Peacock 8.9.1** as the offline server (`options.ini`: `leaderboards=false` so modded runs never post
-  scores). Start the server, then `PeacockPatcher.exe`, then the game.
+- **Offline only, under Peacock 8.9.1** (the community server replacement). HITMAN WoA keeps progression,
+  challenges and leaderboards on IOI's servers, and this plugin changes how NPCs die, so it was only ever run
+  under Peacock and never against IOI's servers. Keep it that way: start the server, then `PeacockPatcher.exe`,
+  then the game, and take the plugin out of `Retail\mods.ini` before any session on the official servers.
+- Set `leaderboards=false` in Peacock's `options.ini`. It defaults to `true`, which submits your times to
+  Peacock's shared leaderboards, and modded runs don't belong there.
 - **ZHMModSDK 4.1.1:** extract the release zip into `Retail\`. It installs `dinput8.dll`, `ZHMModSDK.dll` and
   `mods\`. Enable a plugin with a `[<name>]` section in `Retail\mods.ini`. Uninstall by deleting those files.
 - Build: the SDK's DevPkg with CMake/Ninja/vcpkg (MSVC 14.51). The plugin must also link `implot`, because
