@@ -9,9 +9,11 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       # ffmpeg is only for test_compile_small_edl. Without recommends apt skips mesa, VA/VDPAU drivers and
       # pocketsphinx-en-us (about half the download), and with man-db's auto-update off dpkg skips the man-page
-      # reindex that can take minutes on the runner. The timeouts make a hung mirror fail fast, not run for 6 hours.
+      # reindex that can take minutes on the runner. When the Ubuntu mirror crawls (it has, at ~150 KB/s), the step
+      # gives up after 8 minutes and the run goes on: that one test skips without ffmpeg instead of failing the build.
       - name: ffmpeg
-        timeout-minutes: 5
+        timeout-minutes: 8
+        continue-on-error: true
         run: |
           sudo rm -f /var/lib/man-db/auto-update
           sudo apt-get update

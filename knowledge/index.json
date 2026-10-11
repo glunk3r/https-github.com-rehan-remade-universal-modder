@@ -3028,6 +3028,75 @@
   ]
  },
  {
+  "path": "games/terraria/super-smash-bros-melee-s-decompiled-engine-inside-terraria-a.md",
+  "kind": "game",
+  "title": "Super Smash Bros. Melee's decompiled engine inside Terraria: a native DLL under tModLoader, 3D fighters, its engine replayed bit-exact against Slippi Dolphin recordings",
+  "game": "Terraria",
+  "games_also": [
+   "Super Smash Bros. Melee"
+  ],
+  "game_version": "Terraria 1.4.4.9 on tModLoader 2026.08.3.0 (Steam, Windows 11, .NET 8, FNA 23.10); guest: Super Smash Bros. Melee NTSC-U 1.02 (GALE01, revision 2) with Slippi's $Required codes, minus UCF",
+  "platform": "windows",
+  "engine": "xna-fna",
+  "route": "decomp-recomp",
+  "tools": [
+   "tModLoader 2026.08.3.0",
+   "melee-pc (PC port of doldecomp/melee)",
+   "mingw-w64 GCC 13 (posix) in WSL Ubuntu 24.04",
+   "CMake 3.28 + Ninja",
+   "Slippi Dolphin 3.6.4",
+   "libmelee 0.47.3",
+   "DolphinTool",
+   "HSDRaw (HSDLib)",
+   "FNA 23.10",
+   "own PowerPC disassembler and interpreter",
+   "own read-only Dolphin RAM reader",
+   "Grok"
+  ],
+  "anti_cheat": "none. Terraria single player in a separate lab save folder; Melee runs only offline, in a lab copy of Slippi Dolphin used as the oracle, never on Slippi online or netplay",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code and agents",
+   "Grok"
+  ],
+  "humans": [
+   "DarkameMaster"
+  ],
+  "date": "2026-10-10",
+  "links": [
+   "https://github.com/999sian/melee-pc",
+   "https://github.com/doldecomp/melee",
+   "https://github.com/Ploaj/HSDLib",
+   "https://github.com/project-slippi/Ishiiruka",
+   "https://github.com/project-slippi/slippi-ssbm-asm",
+   "https://github.com/altf4/libmelee",
+   "https://dolphin-emu.org/",
+   "https://github.com/tModLoader/tModLoader",
+   "https://github.com/FNA-XNA/FNA",
+   "https://www.mingw-w64.org/",
+   "https://github.com/rehan-remade/universal-modder"
+  ],
+  "tags": [
+   "mashup",
+   "decomp",
+   "native-dll",
+   "pinvoke",
+   "trace-replay",
+   "bit-exact",
+   "float32",
+   "fma",
+   "slippi",
+   "libmelee",
+   "gamecube",
+   "3d",
+   "cpu-skinning",
+   "lighting",
+   "xinput",
+   "hit-bridge",
+   "multi-agent"
+  ]
+ },
+ {
   "path": "games/test-drive-unlimited/opentdu-source-port-and-tdu1-file-formats.md",
   "kind": "game",
   "title": "OpenTDU \u2014 decompilation-based source port of Test Drive Unlimited (MC 1.66A)",
@@ -4465,6 +4534,47 @@
   ]
  },
  {
+  "path": "techniques/bit-exact-decomp-ports-reproduce-the-original-compiler-s-and.md",
+  "kind": "technique",
+  "title": "Bit-exact decomp ports: reproduce the original compiler's and math library's floating point (and the oracle's own patches)",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code and agents",
+   "Grok"
+  ],
+  "humans": [
+   "DarkameMaster"
+  ],
+  "date": "2026-10-10",
+  "links": [
+   "https://github.com/999sian/melee-pc",
+   "https://github.com/doldecomp/melee",
+   "https://github.com/project-slippi/slippi-ssbm-asm",
+   "https://github.com/altf4/libmelee"
+  ],
+  "tags": [
+   "decomp",
+   "port",
+   "floating-point",
+   "float32",
+   "fma",
+   "fmadds",
+   "paired-singles",
+   "mwcc",
+   "msl",
+   "musl",
+   "mingw",
+   "bit-exact",
+   "trace-replay",
+   "determinism",
+   "oracle",
+   "slippi",
+   "gecko",
+   "gamecube",
+   "powerpc"
+  ]
+ },
+ {
   "path": "techniques/bridge-contracts-ownership-units-and-lifecycle.md",
   "kind": "technique",
   "title": "Bridge contracts for two-game mods: ownership, units, transport and lifecycle",
@@ -5214,6 +5324,44 @@
   ]
  },
  {
+  "path": "techniques/hosting-a-decompiled-console-engine-as-a-native-dll-inside-a.md",
+  "kind": "technique",
+  "title": "Hosting a decompiled console engine as a native DLL inside a .NET game mod",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code and agents",
+   "Grok"
+  ],
+  "humans": [
+   "DarkameMaster"
+  ],
+  "date": "2026-10-10",
+  "links": [
+   "https://github.com/999sian/melee-pc",
+   "https://github.com/doldecomp/melee",
+   "https://github.com/tModLoader/tModLoader",
+   "https://www.mingw-w64.org/"
+  ],
+  "tags": [
+   "decomp",
+   "native-dll",
+   "pinvoke",
+   "tmodloader",
+   "dotnet",
+   "c-api",
+   "abi",
+   "stubs",
+   "arena",
+   "crash-guard",
+   "snapshot",
+   "rollback",
+   "determinism",
+   "versioning",
+   "mashup",
+   "gamecube"
+  ]
+ },
+ {
   "path": "techniques/installers-load-order-and-loaded-code-checks.md",
   "kind": "technique",
   "title": "Installers, load order and loaded-code checks for multi-part mods",
@@ -5381,6 +5529,31 @@
    "@rehan_shei"
   ],
   "links": []
+ },
+ {
+  "path": "techniques/prove-your-replay-bench-can-fail-mutant-builds-exposed-four-.md",
+  "kind": "technique",
+  "title": "Prove your replay bench can fail: mutant builds exposed four false greens and two false reds",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code and agents"
+  ],
+  "humans": [
+   "DarkameMaster"
+  ],
+  "date": "2026-10-10",
+  "links": [],
+  "tags": [
+   "oracle",
+   "verification",
+   "mutation-testing",
+   "bench",
+   "replay",
+   "determinism",
+   "rollback",
+   "native-dll",
+   "false-green"
+  ]
  },
  {
   "path": "techniques/ps3-elf-analysis-in-ghidra.md",
@@ -5587,12 +5760,13 @@
    "audio-sync",
    "showcase"
   ],
-  "date": "2026-09-30",
+  "date": "2026-10-10",
   "agents": [
    "Claude Code (Opus 5.5)"
   ],
   "humans": [
-   "@rehan_shei"
+   "@rehan_shei",
+   "DarkameMaster"
   ],
   "links": []
  },
@@ -5673,6 +5847,33 @@
   ]
  },
  {
+  "path": "techniques/running-several-isolated-tmodloader-test-instances-in-parall.md",
+  "kind": "technique",
+  "title": "Running several isolated tModLoader test instances in parallel, and never touching the player's own",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code and agents"
+  ],
+  "humans": [
+   "DarkameMaster"
+  ],
+  "date": "2026-10-10",
+  "links": [
+   "https://github.com/tModLoader/tModLoader"
+  ],
+  "tags": [
+   "tmodloader",
+   "terraria",
+   "lab",
+   "parallel",
+   "process-classification",
+   "safety",
+   "automation",
+   "windows",
+   "harness"
+  ]
+ },
+ {
   "path": "techniques/running-xedit-and-windows-modding-tools-on-linux.md",
   "kind": "technique",
   "title": "Running xEdit (and other Delphi/Windows modding tools) on Linux: Wine/Proton patches",
@@ -5702,6 +5903,43 @@
    "https://gitlab.winehq.org/wine/wine",
    "https://github.com/TES5Edit/TES5Edit",
    "https://github.com/j00ru/windows-syscalls"
+  ]
+ },
+ {
+  "path": "techniques/skinned-3d-models-inside-tmodloader-posed-by-an-external-eng.md",
+  "kind": "technique",
+  "title": "Skinned 3D models inside tModLoader, posed by an external engine and matched to the original frame by frame",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code and agents",
+   "Grok"
+  ],
+  "humans": [
+   "DarkameMaster"
+  ],
+  "date": "2026-10-10",
+  "links": [
+   "https://github.com/Ploaj/HSDLib",
+   "https://github.com/FNA-XNA/FNA",
+   "https://github.com/tModLoader/tModLoader",
+   "https://github.com/project-slippi/slippi-ssbm-asm"
+  ],
+  "tags": [
+   "tmodloader",
+   "terraria",
+   "fna",
+   "3d",
+   "cpu-skinning",
+   "render-target",
+   "pose",
+   "animation",
+   "dynamic-bones",
+   "lighting",
+   "oracle",
+   "ram-dump",
+   "mashup",
+   "hsd",
+   "gamecube"
   ]
  },
  {
@@ -5877,6 +6115,30 @@
   ],
   "humans": [
    "Selene0623"
+  ]
+ },
+ {
+  "path": "techniques/when-the-first-real-run-fails-suspect-the-oracle-re-deriving.md",
+  "kind": "technique",
+  "title": "When the first real run fails, suspect the oracle: re-deriving failures from raw traces and mutating real data",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code and agents"
+  ],
+  "humans": [
+   "DarkameMaster"
+  ],
+  "date": "2026-10-10",
+  "links": [],
+  "tags": [
+   "oracle",
+   "verification",
+   "first-real-run",
+   "trace-analysis",
+   "mutation-testing",
+   "collision",
+   "tmodloader",
+   "mashup"
   ]
  },
  {
