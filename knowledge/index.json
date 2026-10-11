@@ -1021,6 +1021,41 @@
   ]
  },
  {
+  "path": "games/deltarune/jevil-practice-mod.md",
+  "kind": "game",
+  "title": "Jevil fight practice mode for DELTARUNE Chapter 1",
+  "game": "DELTARUNE",
+  "games_also": [],
+  "game_version": "Steam Chapters 1-5 release (Chapter 1 data.win, GameMaker 2.3+, bytecode 17, VM), Windows 10",
+  "platform": "windows",
+  "engine": "gamemaker",
+  "route": "data",
+  "tools": [
+   "UndertaleModTool CLI 0.9.2.0"
+  ],
+  "anti_cheat": "none (single-player, DRM-free runner, no steam_api.dll)",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [
+   "@italalaev"
+  ],
+  "date": "2026-10-10",
+  "links": [],
+  "tags": [
+   "gamemaker",
+   "data.win",
+   "undertalemodtool",
+   "gml",
+   "boss-practice",
+   "jevil",
+   "input-blocking",
+   "save-isolation",
+   "csx"
+  ]
+ },
+ {
   "path": "games/detroit-become-human/segs-data-container-mesh-animation-and-cloth-in-blender.md",
   "kind": "game",
   "title": "Detroit: Become Human: SEGS/DATA_CONTAINER editing (mesh, animation, cloth) in Blender",
