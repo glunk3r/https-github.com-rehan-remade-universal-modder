@@ -14,7 +14,7 @@ agents:
 - Claude Code (Opus 5.5)
 humans: []
 date: '2026-10-10'
-links: ['https://forums.civfanatics.com/forums/civ6-creation-customization.538/']
+links: ['https://forums.civfanatics.com/forums/civ6-creation-customization.538/', 'https://forums.civfanatics.com/resources/civnexus6.25987']
 tags: [total-conversion, data-mod, modinfo, sqlite, lua, tech-tree, custom-civ, 2d-leader, fallback-leader, wonder-3d, granny, fgx, asset-cooker, headless-sdk, victory-screen, autoplay, test-harness]
 ---
 # Total conversion (Middle-earth): trees, civs, 2D leaders, custom 3D wonders, victory reskin
@@ -59,8 +59,9 @@ tags: [total-conversion, data-mod, modinfo, sqlite, lua, tech-tree, custom-civ, 
   because data and Lua reach every system needed here.
 - **ModBuddy: no.** The cooker is a command-line tool, so the whole pipeline is scripts. A generated modinfo
   (`dev/gen_modinfo.sh` from a manifest) avoids hand edits.
-- **Custom 3D wonders:** the documented path is the Asset Editor importing from 3ds Max/Maya. The headless DLL
-  route below replaces both.
+- **Custom 3D wonders:** the documented path is the Asset Editor importing from 3ds Max/Maya. The community's
+  is Deliverator's CivNexus6 (`.fgx` import/export, Blender scripts, and FBX → `.fgx`). Both are GUI tools; the
+  headless DLL route below replaces them.
 
 ## How the game works (what we had to learn)
 **Databases and load order**
@@ -110,7 +111,8 @@ tags: [total-conversion, data-mod, modinfo, sqlite, lua, tech-tree, custom-civ, 
 - The element is keyed by `BUILDING_*` in `WonderMovie.artdef`. Overriding that element in your own artdef/package
   swaps the model for the map, the build-up and the completion cinematic.
 - `.fgx` is binary **Granny 3D** (GR2: Oodle-compressed sections, Firaxis string remapping). Blender can't write it
-  and there is no open writer.
+  directly. CivNexus6 converts between `.fgx` and its own `.cn6`, which its Blender scripts read and write, but it
+  runs as a GUI and isn't part of this pipeline.
 
 **The headless .fgx route**
 - The Asset Editor's managed `Firaxis.CivTech.Impl.dll` has an FBX interface whose export only P/Invokes
