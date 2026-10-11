@@ -13,18 +13,20 @@ status: working
 agents: ["Claude Code (Fable 5.1)"]
 humans: ["skurtyyskirts"]
 date: 2026-10-09
-links: []
+links: ["https://github.com/TheIndra55/TRLAU-menu-hook", "https://github.com/ThirteenAG/Ultimate-ASI-Loader", "https://github.com/TsudaKageyu/minhook", "https://github.com/Raq1/cdcEditor"]
 tags: ["animation", "reload", "native-hook", "qa-bridge", "physics", "weapons", "cdc-engine", "d3d9"]
 ---
 
 # Film-style pistol reloads, a JSON QA bridge and physics magazines through a native ASI
 
 Tomb Raider: Legend (PC, Steam) was modded with a C++ ASI (MinHook inline hooks, no on-disk exe edits) plus
-replacement DRM files served from a `mods\` folder: new pistol models with extra rigid segments, re-authored and
-newly added reload animations hosted on the weapon objects, a reload selector, pistol slide/magazine/hammer motion,
-a slide-lock release mechanic, dropped magazines simulated by the mod, and a JSON-lines QA bridge that lets an agent
-read game state and drive the game. The bridge, the reload selector and the slide/magazine FX run in the real game
-(logs and screenshots); the animation variants, the magazine physics and the slide lock ran in game the next morning: every variant played with its own animation id, the dropped
+replacement `.drm` files served from a `mods\` folder. (`.drm` is the cdc engine's data container for models,
+animations and levels, not copy protection.) The mod adds new pistol models with extra rigid segments,
+re-authored and newly added reload animations hosted on the weapon objects, a reload selector, pistol
+slide/magazine/hammer motion, a slide-lock release mechanic, dropped magazines simulated by the mod, and a
+JSON-lines QA bridge that lets an agent read game state and drive the game. The bridge, the reload selector and
+the slide/magazine FX run in the real game (logs and screenshots). The animation variants, the magazine physics
+and the slide lock ran in game the next morning: every variant played with its own animation id, the dropped
 magazines fell, bounced and slept on the engine's own collision meshes (215 line-probe hits, no fallbacks), the
 backpack tree deployed under the pack, and the slide lock engaged after every empty reload.
 
@@ -34,8 +36,8 @@ backpack tree deployed under the pack, and the slide lock engaged after every em
   the Steam wrapper only means "never edit the exe".
 - Loader: Ultimate ASI Loader renamed `binkw32.dll` (the original Bink DLL kept as `binkw32Hooked.dll`), because
   input is DirectInput8 over COM (a `dinput8.dll` proxy is never loaded) and `binkw32.dll` is a static import. The
-  loader used is the copy shipped in the TR7-Menu-Hook v2.5 release zip; its version resource only says 1.0.0.0, so
-  identify it by hash (sha1 `9c349fc1c0d9bb721f1d28e6c77dee08f1a32abe`).
+  loader used is the copy shipped in `TR7-Menu-Hook.zip` from TheIndra55's TRLAU-menu-hook v2.5 release; its version
+  resource only says 1.0.0.0, so identify it by hash (sha1 `9c349fc1c0d9bb721f1d28e6c77dee08f1a32abe`).
   TR7-Menu-Hook v2.5 (`TR7-Menu-Hook.asi`, sha1 `bcc67ed1642f32ff07da91313d42b0dcd7f7d668`) serves `pc-w\X.drm`
   from `<game>\mods\X.drm` by hooking archive init.
 - tr7.pdb (from a different build) gives struct layouts only; every address was re-derived from this exe and is
@@ -125,9 +127,8 @@ the idea. Decompiling the whole game was never needed: eight hooked functions an
 
 ## Gotchas
 1. **"Failed to open BIGFILE.000" right after launch.** The exe was started with another working directory
-   (`um win launch` did that). **Fix:** start it from its own folder (`Start-Process -WorkingDirectory <game>`).
-   `um win launch` now passes `start /D <exe folder>` (the same PR as this note, with a test); with an older
-   toolkit, use `Start-Process` instead.
+   (older `um win launch` did that). **Fix:** start it from its own folder. `um win launch` now does this
+   itself (`start /D <exe folder>`); with an older toolkit, use `Start-Process -WorkingDirectory <game>`.
 2. **The level-start cutscene looks like gameplay.** `playerControl` is true but the player state is PuppetShow;
    fire/jump/teleport do nothing and `PLAYER_DebugSwitchPlayerCharacter` raised an access violation there and the
    game exited. **Fix:** skip the cutscene (Esc, Up, Enter) and require a non-PuppetShow state before switching
