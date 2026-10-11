@@ -200,6 +200,55 @@
   ]
  },
  {
+  "path": "games/balatro/five-nights-at-balatros.md",
+  "kind": "game",
+  "title": "Five Nights at Balatro's: a FNaF night shift as a Balatro deck",
+  "game": "Balatro",
+  "games_also": [
+   "Five Nights at Freddy's"
+  ],
+  "game_version": "Balatro 1.0.1o (Steam 2379780) + lovely 0.10.0 + Steamodded 26.829.0; FNaF 1 (Steam 319510, Clickteam Fusion 2.5 build 284)",
+  "platform": "windows",
+  "engine": "love2d",
+  "route": "loader-api",
+  "tools": [
+   "lovely 0.10.0",
+   "Steamodded 26.829.0",
+   "CTFAK 2.0 (master f38ba79, built locally)",
+   ".NET 8 SDK (portable)",
+   "Python + Pillow",
+   "luaparser (syntax check)"
+  ],
+  "anti_cheat": "none (Balatro single-player; FNaF is only read from disk, never launched or patched)",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [],
+  "date": "2026-10-11",
+  "links": [
+   "https://github.com/Steamodded/smods",
+   "https://github.com/ethangreen-dev/lovely-injector",
+   "https://github.com/CTFAK/CTFAK2.0"
+  ],
+  "tags": [
+   "mashup",
+   "total-conversion",
+   "steamodded",
+   "lovely",
+   "love2d",
+   "clickteam",
+   "ctfak",
+   "fnaf",
+   "deck",
+   "blinds",
+   "shop",
+   "deck-skin",
+   "main-menu",
+   "audio"
+  ]
+ },
+ {
   "path": "games/baldur-s-gate-3/act-2-load-hang-one-bad-level-layer.md",
   "kind": "game",
   "title": "Act 2 never loads (hang at 50% or crash): one modded NPC on a bad level layer, found by bisecting a pak",
