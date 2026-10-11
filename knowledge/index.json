@@ -1725,6 +1725,47 @@
   ]
  },
  {
+  "path": "games/let-it-die/in-game-imgui-cheat-overlay-and-save-queue-item-delivery-for.md",
+  "kind": "game",
+  "title": "In-game ImGui cheat overlay and save-queue item delivery for LET IT DIE (offline, UE3)",
+  "game": "LET IT DIE",
+  "games_also": [],
+  "game_version": "LET IT DIE Offline Edition 5.0.1, Windows x64 (BrgGame-Steam.exe, PE timestamp 0x6A94FD6E), D3D9 renderer",
+  "platform": "windows",
+  "engine": "unreal",
+  "route": "native-hook",
+  "tools": [
+   "MSVC 2026 Build Tools (cl, x64)",
+   "MinHook",
+   "Dear ImGui 1.91.5 (DX9 + Win32 backends)",
+   "Ghidra 12.1.4 (headless, Java scripts)",
+   "UELib 1.13.7 + lzo.net (custom C# dumper)",
+   "Python 3.14 (sqlite3, zlib, Pillow)"
+  ],
+  "anti_cheat": "none in the offline edition; only in-exe '[cheat]' clamps on part durability/ammo at load (single-player, offline only)",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [],
+  "date": "2026-10-10",
+  "links": [],
+  "tags": [
+   "overlay",
+   "imgui",
+   "d3d9",
+   "dinput8-proxy",
+   "ue3",
+   "processevent",
+   "processinternal",
+   "save-editing",
+   "sqlite",
+   "cheats",
+   "item-spawner",
+   "icons"
+  ]
+ },
+ {
   "path": "games/limbo/pngatlas-a8l8-format.md",
   "kind": "game",
   "title": "Limbo A8L8 texture format, standalone sprites, and a live-verified menu-title mod",
