@@ -21,8 +21,8 @@ tags: [gamemaker, data.win, undertalemodtool, gml, boss-practice, jevil, input-b
 
 > A practice menu for the Jevil fight, injected as GML into Chapter 1's `data.win` with an UndertaleModTool C# script.
 > It warps to the fight from any save, retries on defeat, can force any of Jevil's 14 attacks, starts at any phase, and
-> tracks his TIRED (pacify) counters. It runs from a copy of the install with its own save folder. Every feature was
-> verified in the real game with screenshots of the running window.
+> tracks his TIRED (pacify) counters. It runs from a copy of the install with its own save folder. Each feature was
+> verified in the real game with screenshots of the running window; the few gaps are listed under Verification.
 
 ## Setup
 - DELTARUNE from Steam: `steamapps/common/DELTARUNE`. `DELTARUNE.exe` plus a launcher `data.win` (chapter select),
