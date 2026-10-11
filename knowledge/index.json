@@ -2025,7 +2025,13 @@
    "@skurtyyskirts"
   ],
   "date": "2026-10-10",
-  "links": [],
+  "links": [
+   "https://github.com/atampy25/simple-mod-framework",
+   "https://github.com/glacier-modding/RPKG-Tool",
+   "https://github.com/atampy25/glacierkit",
+   "https://github.com/thepeacockproject/Peacock",
+   "https://github.com/glacier-modding/io_scene_glacier"
+  ],
   "tags": [
    "glacier-2",
    "smf",
@@ -2066,7 +2072,11 @@
    "@skurtyyskirts"
   ],
   "date": "2026-10-10",
-  "links": [],
+  "links": [
+   "https://github.com/OrfeasZ/ZHMModSDK",
+   "https://github.com/thepeacockproject/Peacock",
+   "https://github.com/atampy25/simple-mod-framework"
+  ],
   "tags": [
    "glacier-2",
    "zhmmodsdk",
