@@ -3,7 +3,7 @@ kind: game
 title: Elden Ring's real combat, AI, animation and bodies running inside the Halo CE decomp (OpenCE)
 game: 'Halo: Combat Evolved'
 games_also: ["Elden Ring"]
-game_version: 'Halo: Combat Evolved (USA) Xbox disc data (default.xbe) run by OpenCE commit 76b1898 (2026-10-07, Windows build, MSVC + clang via ninja); Elden Ring 1.17.1 (eldenring.exe 2.7.1.0, Steam) read offline as the data/logic source'
+game_version: 'Halo: Combat Evolved (USA) Xbox disc data (default.xbe) run by OpenCE commit 76b1898 (2026-10-07, Windows build: clang + the MSVC x86 libraries, via ninja); Elden Ring 1.17.1 (eldenring.exe 2.7.1.0, Steam) read offline as the data/logic source'
 platform: windows
 engine: native
 route: decomp-recomp
@@ -14,7 +14,7 @@ agents:
 - Claude Code (Opus 5.5)
 humans: []
 date: '2026-10-10'
-links: ["https://github.com/OfficerObese/OpenCE"]
+links: ["https://github.com/OpenCommunityEdition/OpenCE"]
 tags: [mashup, decomp, hks, havok, behavior-graph, retarget, hitboxes, poise, ai-goals, wwise, co-op, skinned-mesh, lua-vm]
 ---
 # Elden Ring's real combat, AI, animation and bodies running inside the Halo CE decomp (OpenCE)
@@ -27,13 +27,17 @@ tags: [mashup, decomp, hks, havok, behavior-graph, retarget, hitboxes, poise, ai
 > screenshots, a 16-check headless Lua suite and a two-instance co-op test.
 
 ## Setup
-- **Host:** OpenCE at commit 76b1898 (Windows build via `python -m ninja windows`), run against the user's own
-  *Halo: Combat Evolved (USA)* Xbox disc data. The game is 32-bit, LARGE_ADDRESS_AWARE (4 GB).
+- **Host:** [OpenCE](https://github.com/OpenCommunityEdition/OpenCE) at commit 76b1898. Windows build:
+  `python configure.py`, then `ninja windows` (`python -m ninja windows` with pip's ninja); it compiles with clang
+  for 32-bit x86 against the MSVC x86 libraries. OpenCE ships no game data: at first start it extracts `maps/`
+  from a disc image, here the user's own *Halo: Combat Evolved (USA)* Xbox disc. The game is 32-bit,
+  LARGE_ADDRESS_AWARE (4 GB).
 - **Guest:** Elden Ring 1.17.1, exe 2.7.1.0, Steam. Its files are only read. Nothing extracted is committed;
   generated packs live in `%TEMP%` and in a private local copy of the game.
 - **Tools** (each download was approved one at a time by the human):
   - WitchyBND 3.0.1.0 (params, binders; run it from PowerShell, see Gotchas);
-  - Nuxe 1.2.1, used only for its `BinderKeys` file-name hash lists; my own `er_extract.py` does the reading;
+  - Nuxe 1.2.1, used only for its `BinderKeys` file-name hash lists (BinderKeys is also on GitHub as
+    [JKAnderson/BinderKeys](https://github.com/JKAnderson/BinderKeys)); my own `er_extract.py` does the reading;
   - DSLuaDecompiler, built locally with the .NET 9 SDK;
   - HKLib CLI v0.1.2 (v0.1.3-NR rejects Elden Ring's behaviour hash). Run it with `DOTNET_ROLL_FORWARD=Major`;
   - Ghidra 12.1.4 with Temurin JDK 21;
@@ -51,18 +55,22 @@ tags: [mashup, decomp, hks, havok, behavior-graph, retarget, hitboxes, poise, ai
   dialect).
   - `c0000.hks` decompiles to about 24k lines of plain Lua 5.1 and runs unmodified once the host supplies the
     `env()`/`act()` functions and the `hkb*` behaviour calls.
-  - Enemy AI goal scripts (`aiscript`) run the same way.
+  - Enemy AI goal scripts (`aiscript`) are Lua 5.0 bytecode rather than HKS; DSLuaDecompiler handles both, and
+    they run in the same VM.
   - The rest (behaviour graph, TAE events, damage, poise, turning, camera, bullets) is reimplemented in Lua/C.
     Its numbers and rules come from the exe (Ghidra on a copy) and the params, not from wikis.
 - **Rejected:**
-  - Passthrough (two processes): Elden Ring can't be run or hooked under EAC.
+  - Passthrough (two processes): Elden Ring can't be hooked while EAC runs. Launching it offline without EAC
+    through me3 or ModEngine 2 is the allowed way to run it modded, but this project never launches Elden Ring
+    and only reads its files.
   - A community env/act list: unverified for this version. Every id was mapped from the exe's dispatchers.
 
 ## How the game works (what we had to learn)
 **Elden Ring scripting surface**
 - The `env` dispatcher is at 0x140421310 and the `act` dispatcher at 0x14040d100. There are 119 env ids and
   about 70 act ids.
-- Both were found without waiting for Ghidra's full analysis (which never finished on the 87 MB exe):
+- Both were found without waiting for Ghidra's full analysis (which didn't finish on the 87 MB exe in this
+  project's sessions):
   1. a raw scan for RIP-relative `lea` instructions pointing at the name strings;
   2. a lookup of the containing functions in `.pdata`;
   3. headless Ghidra decompiles of those functions only, in a `-noanalysis` project.
@@ -78,7 +86,7 @@ tags: [mashup, decomp, hks, havok, behavior-graph, retarget, hitboxes, poise, ai
 - **Characters run at 60 Hz** (two Elden Ring steps per Halo 30 Hz tick). Input is sampled every render frame
   and split into two windows per tick.
 
-**Combat rules, from the exe**
+**Combat rules, from the exe** (addresses are for eldenring.exe 2.7.1.0)
 - **Defence and damage:** the defence curve is at 0x140691b40 (piecewise quadratic on the attack/defence
   ratio). CalcCorrectGraph evaluation is at 0x140691d80, and weapon AR scaling at 0x1406911e0 / 0x1406916c0.
 - **Guard:**
@@ -130,6 +138,9 @@ tags: [mashup, decomp, hks, havok, behavior-graph, retarget, hitboxes, poise, ai
   camo.
 
 ## Build steps
+The scripts named here (`er_extract.py`, `build_pack.py`, the `tools_er/` harness and `source/game/eldering.c`)
+are the project's own tooling and aren't published yet.
+
 1. **Extract** read-only from the Elden Ring install: `er_extract.py <Game dir> <Nuxe BinderKeys dir> <out>
    /chr/...`.
 2. **Unpack** with WitchyBND from PowerShell (params need `--passive`).
@@ -169,9 +180,9 @@ tags: [mashup, decomp, hks, havok, behavior-graph, retarget, hitboxes, poise, ai
     Halo's double-multiply convention.
 
 ## Gotchas
-1. **Ghidra full analysis never finishes on eldenring.exe.** **Cause:** 87 MB of code. **Fix:** scan raw bytes for
-   RIP-relative references to the strings you need. Find the functions through `.pdata`, then decompile only
-   those in a `-noanalysis` project (seconds each).
+1. **Ghidra's full analysis of eldenring.exe didn't finish in this project's sessions.** **Cause:** 87 MB of code.
+   **Fix:** scan raw bytes for RIP-relative references to the strings you need. Find the functions through
+   `.pdata`, then decompile only those in a `-noanalysis` project (seconds each).
 2. **`env(1000) <= 0` style checks misbehave.** **Cause:** an unknown env/act stub returned 0, and 0 is *truthy*
    in Lua. **Fix:** unknown predicates return `false`, and every id gets mapped from the exe.
 3. **Player input silently dead under LuaJIT.** **Cause:** HKS and AI scripts call `math.mod`, which LuaJIT
@@ -228,7 +239,18 @@ scripts:
 - UI Flash timelines and atlases;
 - Wwise sounds decoded to PCM.
 
-The output goes into a private local pack. Halo assets are the user's own Xbox disc.
+The output goes into a private local pack. It holds converted Elden Ring data and decompiled HKS/AI scripts, so
+it stays on the user's machine: don't commit, upload or share the pack or the `eldering/` folder. Halo assets are
+the user's own Xbox disc.
+
+## Credits
+- [OpenCE](https://github.com/OpenCommunityEdition/OpenCE), the PC port of the Halo CE decompilation, which
+  starts from [bnunu/halo-1](https://github.com/bnunu/halo-1), a fork of
+  [punpckhdq/halo](https://github.com/punpckhdq/halo).
+- [DSLuaDecompiler](https://github.com/katalash/DSLuaDecompiler) (katalash),
+  [WitchyBND](https://github.com/ividyon/WitchyBND), [HKLib](https://github.com/The12thAvenger/HKLib),
+  [BinderKeys](https://github.com/JKAnderson/BinderKeys) (via Nuxe), [vgmstream](https://github.com/vgmstream/vgmstream),
+  Ghidra, Lua and LuaJIT.
 
 ## Cost and time
 Four days of agent sessions (2026-10-07 to 2026-10-10), several context compactions. About 150 targeted Ghidra
