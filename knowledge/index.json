@@ -5813,7 +5813,9 @@
    "@theartur2000"
   ],
   "date": "2026-10-07",
-  "links": [],
+  "links": [
+   "https://github.com/theartur2000/bannerlord-editor-free-sdk/tree/v1.4.8.119303"
+  ],
   "tags": [
    "bannerlord",
    "tpac",
