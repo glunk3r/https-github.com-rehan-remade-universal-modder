@@ -621,7 +621,28 @@ def test_kb_impossible_date_is_reported_not_raised(tmp_path):
     kb.build_index(root)
 
 
-@pytest.mark.parametrize("url", ["https://github.com/alice/universal-modder.git", "https://github.com/alice/universal-modder",
+def test_kb_check_rejects_unquoted_list_items(tmp_path):
+    # YAML reads `[Cataclysm: Dark Days Ahead]` as a dict and `2004` as an int, and splits `Python (a, b)` on the comma;
+    # the dict reached the index as "{'Cataclysm': ...}" and `kb search --game` crashed on .lower()
+    root = tmp_path / "knowledge"
+    (root / "games" / "x").mkdir(parents=True)
+    note = root / "games" / "x" / "n.md"
+    front = "kind: game\ntitle: t\ngame: Project Zomboid\ngames_also: [Cataclysm: Dark Days Ahead]\ntools: [Python 3.12 (a, b), grep]\ntags: [rts, 2004]\n"
+    note.write_text(f"---\n{front}---\n# t\n", encoding="utf-8")
+    fails, _ = kb.check_note(note, root)
+    for key in ("games_also", "tools", "tags"):
+        assert any(f.startswith(key) and "quote" in f for f in fails), (key, fails)
+    assert [r["path"] for r in kb.search(root, [], game="cataclysm")] == ["games/x/n.md"]
+    assert kb.search(root, ["python"], game="zomboid")
+    kb.build_index(root)
+    for bare in ("Cataclysm: Dark Days Ahead", "Python 3.12 (a, b)", "2004"):
+        front = front.replace(bare, f'"{bare}"')
+    note.write_text(f"---\n{front}---\n# t\n", encoding="utf-8")
+    fails, _ = kb.check_note(note, root)
+    assert not [f for f in fails if f.startswith(("games_also", "tools", "tags"))], fails
+
+
+@pytest.mark.parametrize("url", ["https://github.com/alice/universal-modder.git","https://github.com/alice/universal-modder",
                                  "git@github.com:alice/universal-modder.git", "ssh://git@github.com/alice/universal-modder.git"])
 def test_pr_head_from_fork(url):
     # gh looks a bare --head branch up in the base repo; a PR from a fork needs "<owner>:<branch>"
