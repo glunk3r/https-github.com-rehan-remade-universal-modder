@@ -226,6 +226,24 @@ def test_kenshi_loaders_and_route(tmp_path):
     assert "Kenshi Mod Manager" not in scan.scan(str(tmp_path / "Other"))["mod_loaders_installed"]
 
 
+@pytest.mark.parametrize("name", ["Dwarf Fortress", "df_53_16"])
+def test_dwarf_fortress_route_and_dfhack(tmp_path, name):
+    # DF is native with no engine signature: the raws route must outrank the proxy-DLL one, also in a renamed folder
+    r = _named_game(tmp_path, name, {"dwarfort": b"\x7fELF", "data/vanilla/vanilla_creatures_graphics/info.txt": "[ID:x]",
+                                     "libdfhooks_dfhack.so": b"\x7fELF"})
+    assert r["routes"][0]["route"] == scan.KNOWN["dwarf fortress"][0] and r["routes"][0]["why"] == "known game"
+    assert "DFHack" in r["mod_loaders_installed"]
+
+
+@pytest.mark.parametrize("name", ["Mindustry", "mdt"])
+def test_mindustry_route(tmp_path, name):
+    # the packaged game (Mindustry.exe + jre/desktop.jar) scans as Java; its own mod API comes first, not jar patching
+    r = _named_game(tmp_path, name, {"Mindustry.exe": _pe(False), "Mindustry.json": "{}", "jre/desktop.jar": b"PK"})
+    assert r["engine"]["key"] == "java"
+    assert r["routes"][0]["route"] == scan.KNOWN["mindustry"][0] and "mod.hjson" in r["routes"][0]["route"]
+    assert all(rt["route"] != scan.ENGINES["java"][2] for rt in r["routes"])
+
+
 def test_vdf():
     d = scan._vdf('"AppState" { "appid" "105600" "name" "Terraria" "installdir" "Terraria" }')
     assert d["AppState"]["installdir"] == "Terraria"
@@ -515,6 +533,17 @@ def test_publish_check(tmp_path, capsys):
     assert "decompiler header x1 in src/Mod.cs" in normalized and "README.md" not in normalized.split("decompiler header")[-1].split("\n")[0]
 
 
+def test_publish_check_mod_inside_game(tmp_path, capsys):
+    # a Dwarf Fortress mod in <install>/mods/<name> matched itself: every file "game file copied verbatim"
+    game, mod = tmp_path / "game", tmp_path / "game" / "mods" / "mine"
+    make(game, {"data/big.bin": b"x" * 4096, "mods/mine/README.md": "My mod", "mods/mine/graphics/page.png": b"y" * 4096})
+    assert publish.check(str(mod), str(game)) == 0
+    (mod / "copied.bin").write_bytes(b"x" * 4096)
+    assert publish.check(str(mod), str(game)) == 1
+    out = capsys.readouterr().out
+    assert "copied.bin" in out and "page.png" not in out
+
+
 @pytest.mark.parametrize("label,key", [
     # assembled at runtime so this file doesn't trip the toolkit's own publish check
     ("OpenAI key", "sk-" + "proj-" + "Ab3_dE-f" + "Gh1jK2lM3nO4pQ5rS6tU7vW8xY9z0" * 4),
@@ -621,7 +650,28 @@ def test_kb_impossible_date_is_reported_not_raised(tmp_path):
     kb.build_index(root)
 
 
-@pytest.mark.parametrize("url", ["https://github.com/alice/universal-modder.git", "https://github.com/alice/universal-modder",
+def test_kb_check_rejects_unquoted_list_items(tmp_path):
+    # YAML reads `[Cataclysm: Dark Days Ahead]` as a dict and `2004` as an int, and splits `Python (a, b)` on the comma;
+    # the dict reached the index as "{'Cataclysm': ...}" and `kb search --game` crashed on .lower()
+    root = tmp_path / "knowledge"
+    (root / "games" / "x").mkdir(parents=True)
+    note = root / "games" / "x" / "n.md"
+    front = "kind: game\ntitle: t\ngame: Project Zomboid\ngames_also: [Cataclysm: Dark Days Ahead]\ntools: [Python 3.12 (a, b), grep]\ntags: [rts, 2004]\n"
+    note.write_text(f"---\n{front}---\n# t\n", encoding="utf-8")
+    fails, _ = kb.check_note(note, root)
+    for key in ("games_also", "tools", "tags"):
+        assert any(f.startswith(key) and "quote" in f for f in fails), (key, fails)
+    assert [r["path"] for r in kb.search(root, [], game="cataclysm")] == ["games/x/n.md"]
+    assert kb.search(root, ["python"], game="zomboid")
+    kb.build_index(root)
+    for bare in ("Cataclysm: Dark Days Ahead", "Python 3.12 (a, b)", "2004"):
+        front = front.replace(bare, f'"{bare}"')
+    note.write_text(f"---\n{front}---\n# t\n", encoding="utf-8")
+    fails, _ = kb.check_note(note, root)
+    assert not [f for f in fails if f.startswith(("games_also", "tools", "tags"))], fails
+
+
+@pytest.mark.parametrize("url", ["https://github.com/alice/universal-modder.git","https://github.com/alice/universal-modder",
                                  "git@github.com:alice/universal-modder.git", "ssh://git@github.com/alice/universal-modder.git"])
 def test_pr_head_from_fork(url):
     # gh looks a bare --head branch up in the base repo; a PR from a fork needs "<owner>:<branch>"
