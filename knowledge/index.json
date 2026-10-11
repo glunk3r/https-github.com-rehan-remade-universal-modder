@@ -2586,8 +2586,7 @@
   "engine": "java",
   "route": "loader-api",
   "tools": [
-   "Python 3.12 (own scripts for mod.info scanning",
-   "preset writing and log triage)",
+   "Python 3.12 (own scripts for mod.info scanning, preset writing and log triage)",
    "Steam Web API",
    "grep"
   ],
@@ -3397,7 +3396,7 @@
    "fog",
    "dgvoodoo",
    "rts",
-   2004
+   "2004"
   ]
  },
  {
@@ -3933,8 +3932,7 @@
   "route": "data",
   "tools": [
    "StormLib / smpq (in WSL)",
-   "Python 3.12 (BLP scanner",
-   "repair and encoder)",
+   "Python 3.12 (BLP scanner, repair and encoder)",
    "a minidump parser",
    "capstone"
   ],
@@ -3974,9 +3972,7 @@
   "engine": "native",
   "route": "data",
   "tools": [
-   "Python 3.12 (CASC/DB2 readers",
-   "BLP writer",
-   "M2/skin editor)",
+   "Python 3.12 (CASC/DB2 readers, BLP writer, M2/skin editor)",
    "numpy",
    "scipy",
    "Pillow",
@@ -4140,8 +4136,7 @@
   "engine": "native",
   "route": "asset-only",
   "tools": [
-   "Python 3.12 (own M2/.skin writer",
-   "BLP and DBC tools)",
+   "Python 3.12 (own M2/.skin writer, BLP and DBC tools)",
    "numpy",
    "Pillow",
    "Blender",
