@@ -2311,7 +2311,6 @@
    "numpy",
    "pillow",
    "hgrep on limbo.exe",
-   "Ghidra (decompile of a memory-dumped unpacked exe)",
    "um win"
   ],
   "anti_cheat": "none (single-player; SteamStub DRM wrapper on the exe, which this route never touches)",
