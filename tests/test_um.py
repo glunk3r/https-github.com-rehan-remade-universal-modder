@@ -87,6 +87,69 @@ def test_managed_pe(tmp_path):
     assert scan.pe_info(p) == {"arch": "x86", "managed": True}
 
 
+@pytest.mark.parametrize("bin_dir", ["Win64_Shipping_Client", "Gaming.Desktop.x64_Shipping_Client"])
+@pytest.mark.parametrize("name", ["Mount & Blade II Bannerlord", "RenamedGame"])
+def test_bannerlord_route_and_live_version(tmp_path, bin_dir, name):
+    # Identify the module layout even when the folder is renamed; don't send it to generic .NET/native loaders.
+    r = _named_game(tmp_path, name, {
+        f"bin/{bin_dir}/Bannerlord.exe": _pe(arch=0x8664),
+        f"bin/{bin_dir}/TaleWorlds.MountAndBlade.dll": _pe(arch=0x8664),
+        f"bin/{bin_dir}/Version.xml": '<Version><Singleplayer Value="v1.4.8"/></Version>',
+        "Modules/Native/SubModule.xml": '<Module><Id value="Native"/></Module>',
+    })
+    assert r["engine"]["key"] == "bannerlord" and r["engine"]["version"] == "v1.4.8"
+    assert r["engine"]["version_file"] == f"bin/{bin_dir.lower()}/version.xml"
+    assert r["routes"][0]["route"] == scan.BANNERLORD_ROUTE
+    assert r["playbook"].endswith("bannerlord.md") and "modules" in r["mod_folders"]
+    assert all(rt["playbook"] == "bannerlord.md" for rt in r["routes"])
+
+
+@pytest.mark.parametrize("version_xml", [None, "<Version>", "<Version><Singleplayer/></Version>"])
+def test_bannerlord_missing_or_invalid_version(tmp_path, version_xml):
+    files = {
+        "bin/Win64_Shipping_Client/TaleWorlds.MountAndBlade.dll": _pe(arch=0x8664),
+        "Modules/Native/SubModule.xml": "<Module/>",
+    }
+    if version_xml is not None:
+        files["bin/Win64_Shipping_Client/Version.xml"] = version_xml
+    key, det = engine_of(tmp_path, files)
+    assert key == "bannerlord" and not det.get("version")
+
+
+def test_bannerlord_prefers_client_version_over_editor(tmp_path):
+    key, det = engine_of(tmp_path, {
+        "bin/Win64_Shipping_Client/TaleWorlds.MountAndBlade.dll": _pe(),
+        "bin/Win64_Shipping_Client/Version.xml": '<Version><Singleplayer Value="v1.5.4"/></Version>',
+        "bin/Win64_Shipping_wEditor/TaleWorlds.MountAndBlade.dll": _pe(),
+        "bin/Win64_Shipping_wEditor/Version.xml": '<Version><Singleplayer Value="v1.4.8"/></Version>',
+        "Modules/Native/SubModule.xml": "<Module/>",
+    })
+    assert key == "bannerlord" and det["version"] == "v1.5.4"
+
+
+@pytest.mark.parametrize("bin_dir", ["Win64_Shipping_Client", "Gaming.Desktop.x64_Shipping_Client"])
+def test_bannerlord_ignores_backup_binaries(tmp_path, bin_dir):
+    key, det = engine_of(tmp_path, {
+        f"bin/{bin_dir}/TaleWorlds.MountAndBlade.dll": _pe(),
+        f"bin/{bin_dir}/Version.xml": '<Version><Singleplayer Value="v1.4.8"/></Version>',
+        "bin/backup/Win64_Shipping_Client/TaleWorlds.MountAndBlade.dll": _pe(),
+        "bin/backup/Win64_Shipping_Client/Version.xml": '<Version><Singleplayer Value="v1.0.0"/></Version>',
+        "bin/backup/TaleWorlds.MountAndBlade.dll": _pe(),
+        "bin/backup/Version.xml": '<Version><Singleplayer Value="v1.0.0"/></Version>',
+        "Modules/Native/SubModule.xml": "<Module/>",
+    })
+    assert key == "bannerlord" and det["version"] == "v1.4.8"
+    assert det["version_file"] == f"bin/{bin_dir.lower()}/version.xml"
+
+
+def test_copied_taleworlds_dll_is_not_a_bannerlord_install(tmp_path):
+    key, _ = engine_of(tmp_path, {
+        "Game.exe": _pe(),
+        "bin/Win64_Shipping_Client/TaleWorlds.MountAndBlade.dll": _pe(),
+    })
+    assert key == "dotnet"
+
+
 def test_zengin_detected(tmp_path):
     key, _ = engine_of(tmp_path, {"system/Gothic2.exe": _pe(False), "Data/Textures.vdf": b"x"})
     assert key == "zengin"
