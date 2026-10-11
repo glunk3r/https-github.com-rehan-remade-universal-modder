@@ -48,23 +48,27 @@ this playbook. Recheck exact APIs, assets and runtime behavior for the user's ow
 ## Optional BannerlordSage MCP
 
 [BannerlordSage](https://github.com/hby7921/BannerlordSage) indexes an owner's local game files and
-registered mod sources. It is an optional research helper; without it, read the field notes and
+local mod source workspace. It is an optional research helper; without it, read the field notes and
 inspect local DLLs/XML directly. Follow its current README for setup with a real local game path.
 
 1. **Check coverage:** `bannerlord_index_status` reports the active profile, indexed version, scopes
    and toolset. Compare these with the live files above. If versions differ, treat indexed source as
    historical and obtain source from the current installation before implementing exact APIs.
-2. **Find a pattern:** `search_bannerlord_knowledge` with `intent: "make_mod"` routes a requirement
-   across knowledge, docs, API and source. `search_mod_knowledge` and `find_mod_implementations` can
-   narrow cases using `gameVersion`. Relevance alone does not prove the case implements the feature.
-3. **Follow evidence:** `read_mod_knowledge` with `includeSourceMap: true` exposes the record's source
-   map and reuse limits. Follow its registered `sourceId` with `read_mod_context`, `read_mod_type` or
-   `read_mod_file`; then check the current official types with `read_csharp_type`, `search_source`
-   and `read_file`, and data with `search_xml`. Recheck version alignment before using these results.
+2. **Find a starting point:** `search_bannerlord_knowledge` routes a natural-language requirement
+   across docs, API and source. Combine these results with the field notes found by `um kb search`.
+   Relevance alone does not prove a case implements the feature or works on the requested version.
+3. **Follow evidence:** configure a local mod source workspace, check `mod_source_status`, and use
+   `index_mod_source` when it needs indexing. Read it through `search_mod_source`, `read_mod_type` and
+   `read_mod_file`. The optional `workspaceRoot` is a local directory path; omitting it uses the
+   configured workspace. Check current official types with `read_csharp_type`, `search_source` and
+   `read_file`, and data with `search_xml`. Recheck version alignment before using these results.
 4. **Choose the toolset:** `start:bannerlord` defaults to `query-first`, including source/knowledge
    queries and `generate_harmony_patch`. `start:bannerlord:full` adds `create_mod_workspace`,
    `generate_xslt_patch` and experimental editor authoring. Generated code is a starting point;
    validate signatures, XML and paths. Full mode does not make an outdated index current.
+
+Check the connected server's tool list and current README before using extensions. A private or newer
+local build may expose additional case/source-map tools that the public release does not yet provide.
 
 ## Verify and record limits
 
