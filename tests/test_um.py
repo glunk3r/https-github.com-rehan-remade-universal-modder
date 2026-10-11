@@ -104,7 +104,11 @@ def test_bannerlord_route_and_live_version(tmp_path, bin_dir, name):
     assert all(rt["playbook"] == "bannerlord.md" for rt in r["routes"])
 
 
-@pytest.mark.parametrize("version_xml", [None, "<Version>", "<Version><Singleplayer/></Version>"])
+@pytest.mark.parametrize("version_xml", [
+    None, "<Version>", "<Version><Singleplayer/></Version>",
+    '<?xml version="1.0" encoding="not-real"?><Version><Singleplayer Value="v1.4.8"/></Version>',
+    '<?xml version="1.0" encoding="UTF-32"?><Version><Singleplayer Value="v1.4.8"/></Version>',
+])
 def test_bannerlord_missing_or_invalid_version(tmp_path, version_xml):
     files = {
         "bin/Win64_Shipping_Client/TaleWorlds.MountAndBlade.dll": _pe(arch=0x8664),
@@ -116,10 +120,11 @@ def test_bannerlord_missing_or_invalid_version(tmp_path, version_xml):
     assert key == "bannerlord" and not det.get("version")
 
 
-def test_bannerlord_prefers_client_version_over_editor(tmp_path):
+@pytest.mark.parametrize("bin_dir", ["Win64_Shipping_Client", "Gaming.Desktop.x64_Shipping_Client"])
+def test_bannerlord_prefers_client_version_over_editor(tmp_path, bin_dir):
     key, det = engine_of(tmp_path, {
-        "bin/Win64_Shipping_Client/TaleWorlds.MountAndBlade.dll": _pe(),
-        "bin/Win64_Shipping_Client/Version.xml": '<Version><Singleplayer Value="v1.5.4"/></Version>',
+        f"bin/{bin_dir}/TaleWorlds.MountAndBlade.dll": _pe(),
+        f"bin/{bin_dir}/Version.xml": '<Version><Singleplayer Value="v1.5.4"/></Version>',
         "bin/Win64_Shipping_wEditor/TaleWorlds.MountAndBlade.dll": _pe(),
         "bin/Win64_Shipping_wEditor/Version.xml": '<Version><Singleplayer Value="v1.4.8"/></Version>',
         "Modules/Native/SubModule.xml": "<Module/>",
@@ -136,6 +141,8 @@ def test_bannerlord_ignores_backup_binaries(tmp_path, bin_dir):
         "bin/backup/Win64_Shipping_Client/Version.xml": '<Version><Singleplayer Value="v1.0.0"/></Version>',
         "bin/backup/TaleWorlds.MountAndBlade.dll": _pe(),
         "bin/backup/Version.xml": '<Version><Singleplayer Value="v1.0.0"/></Version>',
+        "bin/backup_Win64_Shipping_Client/TaleWorlds.MountAndBlade.dll": _pe(),
+        "bin/backup_Win64_Shipping_Client/Version.xml": '<Version><Singleplayer Value="v1.0.0"/></Version>',
         "Modules/Native/SubModule.xml": "<Module/>",
     })
     assert key == "bannerlord" and det["version"] == "v1.4.8"
@@ -148,6 +155,55 @@ def test_copied_taleworlds_dll_is_not_a_bannerlord_install(tmp_path):
         "bin/Win64_Shipping_Client/TaleWorlds.MountAndBlade.dll": _pe(),
     })
     assert key == "dotnet"
+
+
+@pytest.mark.parametrize("bin_dir", ["backup", "backup_Win64_Shipping_Client", "Debug", "random"])
+def test_bannerlord_copies_do_not_override_another_engine(tmp_path, bin_dir):
+    key, _ = engine_of(tmp_path, {
+        "UnityPlayer.dll": _pe(False),
+        "Game_Data/Managed/Assembly-CSharp.dll": _pe(),
+        f"bin/{bin_dir}/TaleWorlds.MountAndBlade.dll": _pe(),
+        "Modules/Native/SubModule.xml": "<Module/>",
+    })
+    assert key == "unity-mono"
+
+
+def test_bannerlord_utf16_version(tmp_path):
+    key, det = engine_of(tmp_path, {
+        "bin/Win64_Shipping_Client/TaleWorlds.MountAndBlade.dll": _pe(),
+        "bin/Win64_Shipping_Client/Version.xml":
+            '<?xml version="1.0" encoding="UTF-16"?><Version><Singleplayer Value="v1.4.8"/></Version>'.encode("utf-16"),
+        "Modules/Native/SubModule.xml": "<Module/>",
+    })
+    assert key == "bannerlord" and det["version"] == "v1.4.8"
+
+
+@pytest.mark.parametrize("name", ["Mount & Blade II: Bannerlord", "Mount & Blade II Bannerlord", "RenamedGame"])
+def test_bannerlord_save_folder_with_its_actual_name(tmp_path, monkeypatch, name):
+    # Steam uses '&', while the real Documents folder uses 'and'; a renamed install needs the same hint.
+    docs = tmp_path / "Documents"
+    saves = docs / "Mount and Blade II Bannerlord" / "Game Saves"
+    saves.mkdir(parents=True)
+    monkeypatch.setattr(scan, "win_folders", lambda: {"documents": str(docs)})
+    root = tmp_path / "install"
+    # A store title can contain ':' on Windows; keep it in metadata rather than the folder name.
+    monkeypatch.setattr(scan, "resolve_game", lambda query: dict(name=name, path=str(root)))
+    make(root, {
+        "bin/Win64_Shipping_Client/TaleWorlds.MountAndBlade.dll": _pe(),
+        "Modules/Native/SubModule.xml": "<Module/>",
+    })
+    r = scan.scan(str(root))
+    assert str(saves.parent) in r["saves"]
+
+
+def test_other_engines_do_not_report_a_generic_modules_folder_as_mods(tmp_path, monkeypatch):
+    monkeypatch.setattr(scan, "all_games", lambda: [])
+    r = _named_game(tmp_path, "OtherGame", {
+        "UnityPlayer.dll": _pe(False),
+        "Game_Data/Managed/Assembly-CSharp.dll": _pe(),
+        "Modules/Tool/helper.dll": _pe(),
+    })
+    assert "modules" not in r["mod_folders"]
 
 
 def test_zengin_detected(tmp_path):

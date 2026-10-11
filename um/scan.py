@@ -364,11 +364,12 @@ def _in_skip_dir(rel: str) -> bool:
     return any(part.lstrip("_") in SKIP_DIRS for part in rel.split("/")[:-1])
 
 
-MOD_DIRS = ["mods", "mod", "modules", "addons", "plugins", "custom", "workshop", "usermods", "~mods", "content/paks/~mods", "data/scripts", "bepinex/plugins"]
+MOD_DIRS = ["mods", "mod", "addons", "plugins", "custom", "workshop", "usermods", "~mods", "content/paks/~mods", "data/scripts", "bepinex/plugins"]
 
 # known games: better routes than the engine default
 BANNERLORD_ROUTE = ("official module system: Modules/<id>/SubModule.xml + ModuleData XML/XSLT and C# MBSubModuleBase; "
                    "optional Bannerlord.Harmony for managed patches; inspect the installed TaleWorlds DLLs")
+BANNERLORD_BIN_DIRS = ("win64_shipping_client", "gaming.desktop.x64_shipping_client", "win64_shipping_weditor")
 KNOWN = {
     "mount & blade ii: bannerlord": (BANNERLORD_ROUTE, "bannerlord.md"),
     "mount & blade ii bannerlord": (BANNERLORD_ROUTE, "bannerlord.md"),
@@ -501,12 +502,11 @@ def detect(ix: Index) -> tuple[list[tuple[str, int, list[str], dict]], dict]:
         hits.append((key, score, ev, det))
 
     # Bannerlord has its own module system; a managed launcher alone suggests the wrong generic .NET route.
-    bannerlord_dlls = [f for f in ix.find("bin/*/taleworlds.mountandblade.dll") if f.count("/") == 2]
+    bannerlord_dlls = ix.find(*(f"bin/{d}/taleworlds.mountandblade.dll" for d in BANNERLORD_BIN_DIRS))
     if bannerlord_dlls and ix.has("modules/native/submodule.xml"):
-        dll = min(bannerlord_dlls, key=lambda f: (not f.split("/")[1].endswith("_shipping_client"),
-                                                "win64_shipping_client" not in f, f))
+        dll = min(bannerlord_dlls, key=lambda f: BANNERLORD_BIN_DIRS.index(f.split("/")[1]))
         version_file = dll.rsplit("/", 1)[0] + "/version.xml"
-        det = {}
+        det = dict(product="Mount and Blade II Bannerlord")
         if version_file in ix.files:
             try:
                 singleplayer = ET.parse(ix.path(version_file)).getroot().find("Singleplayer")
@@ -514,7 +514,7 @@ def detect(ix: Index) -> tuple[list[tuple[str, int, list[str], dict]], dict]:
                     det["version"] = (singleplayer.get("Value") or singleplayer.get("value") or "").strip()
                     if det["version"]:
                         det["version_file"] = version_file
-            except (OSError, ET.ParseError):
+            except (OSError, ET.ParseError, LookupError, ValueError):
                 pass
         add("bannerlord", 100, [dll, "modules/native/submodule.xml"], **det)
 
@@ -767,6 +767,8 @@ def scan(query: str) -> dict:
     anti = [n for n, pats in ANTI_CHEAT if ix.has(*pats) or ix.has_dir(*[p.rstrip("/*") for p in pats if p.endswith("/*")])]
     loaders = [n for n, pats in LOADERS if ix.has(*pats) or ix.has_dir(*[p.rstrip("/*") for p in pats if p.endswith("/*")])]
     moddirs = [d for d in MOD_DIRS if d in ix.dirs]
+    if key == "bannerlord" and "modules" in ix.dirs:
+        moddirs.append("modules")
     name = (game.get("name") or root.name)
     lname = name.lower()
     known = next((v for k, v in sorted(KNOWN.items(), key=lambda kv: -len(kv[0])) if k == lname or (k in lname and len(k) > 5)), None) \
