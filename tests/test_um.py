@@ -515,6 +515,17 @@ def test_publish_check(tmp_path, capsys):
     assert "decompiler header x1 in src/Mod.cs" in normalized and "README.md" not in normalized.split("decompiler header")[-1].split("\n")[0]
 
 
+def test_publish_check_mod_inside_game(tmp_path, capsys):
+    # a Dwarf Fortress mod in <install>/mods/<name> matched itself: every file "game file copied verbatim"
+    game, mod = tmp_path / "game", tmp_path / "game" / "mods" / "mine"
+    make(game, {"data/big.bin": b"x" * 4096, "mods/mine/README.md": "My mod", "mods/mine/graphics/page.png": b"y" * 4096})
+    assert publish.check(str(mod), str(game)) == 0
+    (mod / "copied.bin").write_bytes(b"x" * 4096)
+    assert publish.check(str(mod), str(game)) == 1
+    out = capsys.readouterr().out
+    assert "copied.bin" in out and "page.png" not in out
+
+
 @pytest.mark.parametrize("label,key", [
     # assembled at runtime so this file doesn't trip the toolkit's own publish check
     ("OpenAI key", "sk-" + "proj-" + "Ab3_dE-f" + "Gh1jK2lM3nO4pQ5rS6tU7vW8xY9z0" * 4),
