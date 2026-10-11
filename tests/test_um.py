@@ -226,6 +226,24 @@ def test_kenshi_loaders_and_route(tmp_path):
     assert "Kenshi Mod Manager" not in scan.scan(str(tmp_path / "Other"))["mod_loaders_installed"]
 
 
+@pytest.mark.parametrize("name", ["Dwarf Fortress", "df_53_16"])
+def test_dwarf_fortress_route_and_dfhack(tmp_path, name):
+    # DF is native with no engine signature: the raws route must outrank the proxy-DLL one, also in a renamed folder
+    r = _named_game(tmp_path, name, {"dwarfort": b"\x7fELF", "data/vanilla/vanilla_creatures_graphics/info.txt": "[ID:x]",
+                                     "libdfhooks_dfhack.so": b"\x7fELF"})
+    assert r["routes"][0]["route"] == scan.KNOWN["dwarf fortress"][0] and r["routes"][0]["why"] == "known game"
+    assert "DFHack" in r["mod_loaders_installed"]
+
+
+@pytest.mark.parametrize("name", ["Mindustry", "mdt"])
+def test_mindustry_route(tmp_path, name):
+    # the packaged game (Mindustry.exe + jre/desktop.jar) scans as Java; its own mod API comes first, not jar patching
+    r = _named_game(tmp_path, name, {"Mindustry.exe": _pe(False), "Mindustry.json": "{}", "jre/desktop.jar": b"PK"})
+    assert r["engine"]["key"] == "java"
+    assert r["routes"][0]["route"] == scan.KNOWN["mindustry"][0] and "mod.hjson" in r["routes"][0]["route"]
+    assert all(rt["route"] != scan.ENGINES["java"][2] for rt in r["routes"])
+
+
 def test_vdf():
     d = scan._vdf('"AppState" { "appid" "105600" "name" "Terraria" "installdir" "Terraria" }')
     assert d["AppState"]["installdir"] == "Terraria"
