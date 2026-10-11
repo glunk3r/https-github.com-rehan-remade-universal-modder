@@ -1,39 +1,46 @@
 ---
 kind: game
-title: In-game ImGui cheat overlay and save-queue item delivery for LET IT DIE (offline, UE3)
+title: In-game ImGui trainer and save-queue item delivery for LET IT DIE Offline Edition (UE3)
 game: LET IT DIE
 games_also: []
-game_version: 'LET IT DIE Offline Edition 5.0.1, Windows x64 (BrgGame-Steam.exe, PE timestamp 0x6A94FD6E), D3D9 renderer'
+game_version: 'LET IT DIE Offline Edition 5.0.1 (Steam, Offline Key DLC), Windows x64 (BrgGame-Steam.exe, PE timestamp 0x6A94FD6E), D3D9 renderer'
 platform: windows
 engine: unreal
 route: native-hook
 tools: ["MSVC 2026 Build Tools (cl, x64)", "MinHook", "Dear ImGui 1.91.5 (DX9 + Win32 backends)", "Ghidra 12.1.4 (headless, Java scripts)", "UELib 1.13.7 + lzo.net (custom C# dumper)", "Python 3.14 (sqlite3, zlib, Pillow)"]
-anti_cheat: "none in the offline edition; only in-exe '[cheat]' clamps on part durability/ammo at load (single-player, offline only)"
+anti_cheat: "none: the online service ended on 2026-09-01 and the Offline Edition has no servers; only in-exe '[cheat]' clamps on part durability/ammo at load (single-player, offline only)"
 status: in-progress
 agents:
 - Claude Code (Opus 5.5)
 humans: []
 date: '2026-10-10'
-links: []
+links: ["https://github.com/TsudaKageyu/minhook", "https://github.com/ocornut/imgui", "https://github.com/EliotVU/Unreal-Library"]
 tags: [overlay, imgui, d3d9, dinput8-proxy, ue3, processevent, processinternal, save-editing, sqlite, cheats, item-spawner, icons]
 ---
-# In-game ImGui cheat overlay and save-queue item delivery for LET IT DIE (offline, UE3)
+# In-game ImGui trainer and save-queue item delivery for LET IT DIE Offline Edition (UE3)
 
-> A `dinput8.dll` proxy that hooks D3D9 `EndScene` and draws an ImGui mod menu inside the offline edition of LET IT DIE
-> (custom Unreal Engine 3, "BrgEngine"). It has infinite durability, ammo and stamina (done by skipping specific
-> UnrealScript functions in `ProcessInternal`), currency buttons (calling script through `ProcessEvent`), an
-> icon item picker, and permanent item and fighter-stat delivery. Delivery works through a save-edit queue that a
+> A `dinput8.dll` proxy that hooks D3D9 `EndScene` and draws an ImGui mod menu inside LET IT DIE Offline Edition, the
+> paid single-player release that replaced the online game (custom Unreal Engine 3, "BrgEngine"). It has infinite
+> durability, ammo and stamina (done by skipping specific UnrealScript functions in `ProcessInternal`), currency
+> buttons (calling script through `ProcessEvent`), an icon item picker, and permanent item and fighter-stat delivery. Delivery works through a save-edit queue that a
 > helper process applies after the game exits. The overlay, currency, locker delivery of gear and the fighter-stat edit
 > are verified in the real game. The newest pieces (reworked cheats, DirectInput blocking, materials) were built and
 > code-reviewed but are not yet play-tested.
 
 ## Setup
 - Game: LET IT DIE **Offline Edition 5.0.1**, Windows 11 x64.
+  - **What "offline" means here.** GungHo ended LET IT DIE's online service on 2026-09-01 and released the Offline
+    Edition the same day: the base game plus the $19.99 "Offline Key" DLC (Steam and PS4). It has no servers and no
+    microtransactions. Death Metals (the paid currency) are gone, and Kill Coins, earned in game, replaced them.
+  - That is why a trainer and save edits are fine here: they only touch your own local save and process. Nothing
+    in this note touches the Offline Key ownership check; keep it that way. Don't carry this over to a game that
+    still sells currency or items, or still talks to a server.
   - `BrgGame\Config\BrgEngine.ini` has `AllowD3D11=False`, so the live renderer is **D3D9**. Hook `EndScene` (vtable 42)
     and `Reset` (16).
 - Toolchain:
   - **Build:** MSVC Build Tools (x64, `/MT`), MinHook and Dear ImGui 1.91.5.
-  - **Static analysis:** Ghidra 12.1.4 running headless on JDK 21. Ghidra 12 has no Jython, so the scripts are Java.
+  - **Static analysis:** Ghidra 12.1.4 running headless on JDK 21, with the scripts in Java. Ghidra 12 made PyGhidra
+    the default Python; Jython scripts still run with a `# @runtime Jython` header.
   - **Save tools:** Python 3.14.
 - **Ghidra import crash:** importing `BrgGame-Steam.exe` crashes in the exception-directory parser. Import a copy with
   PE data directory #3 zeroed instead.
