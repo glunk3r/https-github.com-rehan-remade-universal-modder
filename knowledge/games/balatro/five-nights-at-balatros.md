@@ -99,8 +99,8 @@ shop) and replaces what a round *means*: scoring is swapped for office actions w
 - **Long voice clips:** Phone Guy's calls are minutes long; play them as a `love.audio` stream Source so they can be
   muted, paused with `G.SETTINGS.paused` and stopped. Balatro's sound thread can't stop one sound.
 - **Images from the mod folder:**
-  `love.graphics.newImage(love.filesystem.newFileData(SMODS.NFS.read(path), name))`. nativefs is `SMODS.NFS` here;
-  there is no global `NFS`.
+  `love.graphics.newImage(love.filesystem.newFileData(SMODS.NFS.read(path), name))`. Use nativefs as `SMODS.NFS`:
+  Steamodded 26.829's preflight still sets a global `NFS`, but only for backwards compatibility.
 
 **Clickteam (FNaF) facts:**
 - CTFAK's Sorted Image Dumper writes `Sorted Images/[n] <frame>/<object>/Animation N/_k.png`. Gameplay is frame
