@@ -3446,14 +3446,14 @@
   "engine": "unknown",
   "route": "native-hook",
   "tools": [
-   "Ultimate ASI Loader (as binkw32.dll)",
+   "Ultimate ASI Loader (as binkw32.dll, from the TR7-Menu-Hook 2.5 zip)",
    "TR7-Menu-Hook 2.5 (mods folder)",
-   "MinHook",
-   "MSVC x86",
-   "capstone + pefile",
+   "MinHook 1.3.4",
+   "MSVC 19.51 x86 (CMake 4.4.3 + Ninja 1.12.1)",
+   "capstone 5.0.7 + pefile 2024.8.26",
    "tr7.pdb (types only)",
-   "cdcEditor 0.1.1 (Blender 5.2)",
-   "ffmpeg gfxcapture",
+   "cdcEditor 0.1.1 (Blender 5.2.1)",
+   "ffmpeg 9.0.2 gfxcapture",
    "um win/qa"
   ],
   "anti_cheat": "none (single-player; Steam DRM is a SteamStub wrapper, left untouched: everything is runtime hooks)",
@@ -3461,7 +3461,9 @@
   "agents": [
    "Claude Code (Fable 5.1)"
   ],
-  "humans": [],
+  "humans": [
+   "skurtyyskirts"
+  ],
   "date": "2026-10-09",
   "links": [],
   "tags": [

@@ -7,11 +7,11 @@ game_version: "Steam PC build, trl.exe MD5 bd846c8fb3223e53bee022bb307b21bc (Ste
 platform: windows
 engine: unknown
 route: native-hook
-tools: ["Ultimate ASI Loader (as binkw32.dll)", "TR7-Menu-Hook 2.5 (mods folder)", "MinHook", "MSVC x86", "capstone + pefile", "tr7.pdb (types only)", "cdcEditor 0.1.1 (Blender 5.2)", "ffmpeg gfxcapture", "um win/qa"]
+tools: ["Ultimate ASI Loader (as binkw32.dll, from the TR7-Menu-Hook 2.5 zip)", "TR7-Menu-Hook 2.5 (mods folder)", "MinHook 1.3.4", "MSVC 19.51 x86 (CMake 4.4.3 + Ninja 1.12.1)", "capstone 5.0.7 + pefile 2024.8.26", "tr7.pdb (types only)", "cdcEditor 0.1.1 (Blender 5.2.1)", "ffmpeg 9.0.2 gfxcapture", "um win/qa"]
 anti_cheat: "none (single-player; Steam DRM is a SteamStub wrapper, left untouched: everything is runtime hooks)"
 status: working
 agents: ["Claude Code (Fable 5.1)"]
-humans: []
+humans: ["skurtyyskirts"]
 date: 2026-10-09
 links: []
 tags: ["animation", "reload", "native-hook", "qa-bridge", "physics", "weapons", "cdc-engine", "d3d9"]
@@ -29,16 +29,27 @@ magazines fell, bounced and slept on the engine's own collision meshes (215 line
 backpack tree deployed under the pack, and the slide lock engaged after every empty reload.
 
 ## Setup
+- OS: Windows 11 Home 25H2 (build 26200), x64.
 - Steam build of trl.exe (MD5 above). The `.text` section on disk is plain, so capstone disassembly of the file works;
   the Steam wrapper only means "never edit the exe".
 - Loader: Ultimate ASI Loader renamed `binkw32.dll` (the original Bink DLL kept as `binkw32Hooked.dll`), because
-  input is DirectInput8 over COM (a `dinput8.dll` proxy is never loaded) and `binkw32.dll` is a static import.
-  TR7-Menu-Hook 2.5 serves `pc-w\X.drm` from `<game>\mods\X.drm` by hooking archive init.
+  input is DirectInput8 over COM (a `dinput8.dll` proxy is never loaded) and `binkw32.dll` is a static import. The
+  loader used is the copy shipped in the TR7-Menu-Hook v2.5 release zip; its version resource only says 1.0.0.0, so
+  identify it by hash (sha1 `9c349fc1c0d9bb721f1d28e6c77dee08f1a32abe`).
+  TR7-Menu-Hook v2.5 (`TR7-Menu-Hook.asi`, sha1 `bcc67ed1642f32ff07da91313d42b0dcd7f7d668`) serves `pc-w\X.drm`
+  from `<game>\mods\X.drm` by hooking archive init.
 - tr7.pdb (from a different build) gives struct layouts only; every address was re-derived from this exe and is
   checked at startup against byte signatures ("sites"), with the mod refusing to install on a mismatch.
-- Tooling: MSVC x86 (`/Brepro` for deterministic binaries), a self-check executable that maps the exe at its
-  preferred base and runs the hook logic against fake engine globals, Blender 5.2 + cdcEditor for DRM models and
-  animations, our own Python codec for animation sections and event lists.
+- Tooling:
+  - MinHook v1.3.4 (commit `c3fcafd`), vendored. Master had rewritten its disassembler, so the tag was used.
+  - MSVC 19.51 (toolset 14.51.36231, x64-hosted x86), CMake 4.4.3 + Ninja 1.12.1, static CRT, `/Brepro` for
+    deterministic binaries.
+  - A self-check executable that maps the exe at its preferred base and runs the hook logic against fake engine
+    globals.
+  - capstone 5.0.7 + pefile 2024.8.26 (`uv run --with pefile --with capstone`) for the disassembly.
+  - Blender 5.2.1 + cdcEditor 0.1.1 (commit `5f2d5ab`) for DRM models and animations, and our own Python codec for
+    animation sections and event lists.
+  - ffmpeg 9.0.2 (gyan.dev full build, `gfxcapture` input) for recordings.
 
 ## Route and why
 Native hooks. The engine is native x86 with no scripting layer for the player's weapon logic; the community loader
@@ -82,7 +93,14 @@ the idea. Decompiling the whole game was never needed: eight hooked functions an
   new art needs fresh ids and byte-identical sections wherever an id is shared.
 
 ## Build steps
-1. Install the loader and menu hook, back up saves (`um backup create`) and the registry key.
+1. Back up first, then install the loader and menu hook:
+   - Saves live in `<Documents>\Tomb Raider - Legend\` (`autosave.dat` and `Saved Games\`):
+     `um backup create "$env:USERPROFILE\Documents\Tomb Raider - Legend" --name trl-saves` (PowerShell).
+   - Settings live in `HKCU\Software\Crystal Dynamics\Tomb Raider: Legend` (subkeys `Graphics`, which holds
+     `FullscreenModeID` and the resolution, and `Input`):
+     `reg export "HKCU\Software\Crystal Dynamics\Tomb Raider: Legend" trl-registry.reg /y`
+     (restore with `reg import trl-registry.reg`).
+   - Keep the original `binkw32.dll` before the loader replaces it.
 2. Build the ASI (`cmake` + ninja via `build.bat clean check`): the self-check must print all sites holding the
    vanilla bytes before anything is deployed.
 3. Build models and animations into copies of the vanilla DRMs (cdcEditor exports, our splice/add tools), verify by
@@ -107,8 +125,9 @@ the idea. Decompiling the whole game was never needed: eight hooked functions an
 
 ## Gotchas
 1. **"Failed to open BIGFILE.000" right after launch.** The exe was started with another working directory
-   (`um win launch` did that). **Fix:** start it from its own folder (`Start-Process -WorkingDirectory`); the
-   toolkit's launcher now passes `start /D <dir>`.
+   (`um win launch` did that). **Fix:** start it from its own folder (`Start-Process -WorkingDirectory <game>`).
+   `um win launch` now passes `start /D <exe folder>` (the same PR as this note, with a test); with an older
+   toolkit, use `Start-Process` instead.
 2. **The level-start cutscene looks like gameplay.** `playerControl` is true but the player state is PuppetShow;
    fire/jump/teleport do nothing and `PLAYER_DebugSwitchPlayerCharacter` raised an access violation there and the
    game exited. **Fix:** skip the cutscene (Esc, Up, Enter) and require a non-PuppetShow state before switching
