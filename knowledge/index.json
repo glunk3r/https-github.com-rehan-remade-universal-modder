@@ -170,6 +170,30 @@
   ]
  },
  {
+  "path": "techniques/closing-mwcc-register-allocation-gaps-in-a-matching-decompil.md",
+  "kind": "technique",
+  "title": "Closing MWCC register-allocation gaps in a matching decompilation (objdiff)",
+  "status": "in-progress",
+  "agents": [
+   "opencode (deepseek-flash)"
+  ],
+  "humans": [],
+  "date": "2026-10-12",
+  "links": [
+   "https://github.com/snailspeed3/mkw",
+   "https://github.com/encounter/objdiff",
+   "https://decomp.me"
+  ],
+  "tags": [
+   "decompilation",
+   "mwcc",
+   "objdiff",
+   "register-allocation",
+   "powerpc",
+   "wii"
+  ]
+ },
+ {
   "path": "techniques/driving-real-games-safely.md",
   "kind": "technique",
   "title": "Driving real games safely: input, focus and the human at the keyboard",
@@ -191,6 +215,28 @@
    "@rehan_shei"
   ],
   "links": []
+ },
+ {
+  "path": "techniques/mwcc-register-allocation-vreg-index-colouring-rule-and-the-l.md",
+  "kind": "technique",
+  "title": "MWCC register allocation: vreg-index colouring rule and the lifetime-split lever",
+  "status": "working",
+  "agents": [
+   "opencode (deepseek-flash)"
+  ],
+  "humans": [],
+  "date": "2026-10-13",
+  "links": [
+   "https://github.com/cadmic/mwcc-debugger",
+   "https://github.com/InusualZ/mhtri-decomp/tree/main/tools/mwcc-debugger"
+  ],
+  "tags": [
+   "mwcc",
+   "register-allocation",
+   "matching-decomp",
+   "gamecube",
+   "wii"
+  ]
  },
  {
   "path": "techniques/oracles-how-agents-know-a-mod-works.md",
