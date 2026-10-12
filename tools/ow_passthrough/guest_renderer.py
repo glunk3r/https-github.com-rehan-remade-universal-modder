@@ -48,6 +48,11 @@ class GuestCharacterRenderer:
         self.charge_tier = 1
         self.gauntlet_offset_z = 0.0
 
+    def load_custom_mesh(self, mesh) -> None:
+        """Load an external parsed 3D mesh into the renderer."""
+        self.vertex_count = mesh.vertex_count
+        self.bounding_height_m = mesh.height_m
+
     def update_ability_state(self, ctrl: DoomfistInputController) -> None:
         """Update animation pose based on input controller state."""
         self.current_ability = ctrl.current_state

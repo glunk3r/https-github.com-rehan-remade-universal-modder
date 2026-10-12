@@ -87,3 +87,11 @@
   - Unifies: Input Controller (Scheme B) -> Guest Character Renderer (Pose & Buffers) -> Seqlock Shared Memory Bridge -> Depth Compositor Loop.
   - Implements multi-frame continuous stepping and ability state propagation.
 - **Verification**: `tests/test_ow_passthrough_e2e.py` 1/1 passing, full test suite 111/111 passing.
+
+## 11. Overwatch CASC Asset Scanner & Wavefront Mesh Importer
+- **Scanner & Parser**: `tools/ow_passthrough/ow_extractor.py`
+  - Validates local CASC installations offline without touching running games.
+  - Successfully scanned live installation at `G:\SteamLibrary\steamapps\common\Overwatch` (`data/.build.config` verified).
+  - WavefrontMeshParser extracts and parses OBJ geometry (vertices, normals, UVs, height calculations).
+  - Integrates directly into GuestCharacterRenderer via `load_custom_mesh()`.
+- **Verification**: `tests/test_ow_extractor.py` 3/3 passing, full test suite 114/114 passing.
