@@ -84,7 +84,21 @@ case this turned a 3-cycle `{proxy,pe,var_r28}` from `{r30,r28,r26}` into a stat
    clear from the `mwcc-debugger` regalloc dump. Without it you cannot tell "close" from
    "impossible".
 
+## Formal checks (this case)
+Once the model was known it was mechanised, and both checks agree with the rules:
+- **State-graph**: building a graph whose nodes are register-configurations and whose edges are
+  source edits, BFS/Dijkstra found **no path** from the current configuration to the target one —
+  the required move (a simultaneous colour swap) never appears in any recorded edit.
+- **Constraint solver**: encoding the vreg/locality rules in z3, the pure-colouring model is
+  **SAT** (it reproduces the observed build exactly) but the *source-realizable* model is
+  **UNSAT**: `pe=r30` needs `pe`'s vreg above the pool's, a declared local can't (rule 1), and a
+  split copy folds because a constant global address rematerializes (rule 2). A provably
+  unreachable register diff is a *finished* finding, not a missing trick.
+
 ## Seen in
 - Mario Kart Wii (`mkw`, repo `rasanaruto-lgtm/mkw`) — `KartState::updateCollisions`:
   20-agent swarm, 86.993% → 93.437%, residual proven to be a frontend vreg-numbering
-  artefact. Full per-agent log in that repo's `SUBAGENT_FIELD_NOTES_updateCollisions.md`.
+  artefact. Full per-agent log + a queryable SQLite dataset (`subagents.db`, with tables
+  `agents/trials/regalloc/findings/rules/harvest_methods/tools_built/proofs` and tools
+  `analyze_db/regstate_graph/colour_solver/kb_retrieval/run_and_log`) in that repo's
+  `SUBAGENT_FIELD_NOTES_updateCollisions.md` and `subagent_data/`.
