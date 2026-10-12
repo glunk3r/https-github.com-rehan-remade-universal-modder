@@ -64,3 +64,11 @@
   - `mods\ow_doomfist_standalone\config_eldenring.toml` (ModEngine2 standalone config)
   - `mods\ow_doomfist_standalone\ow_input_config.json` (Scheme B keybindings)
 - **Isolation Verification**: `mc_adapter/steve.bbmodel` strictly confirmed byte-identical (1,894,976 bytes). Full test suite 102/102 passing.
+
+## 8. Passthrough Bridge Architecture & Contract (docs/CONTRACT.md)
+- **Contract Signed**: `docs/CONTRACT.md` establishes formal ownership, coordinate mapping, seqlock protocol, and reverse-Z occlusion.
+- **Components Built**:
+  - `tools/ow_passthrough/shared_memory.py`: Seqlock-protected triple-buffer shared memory transport (`Local\OWPassthroughFrame`).
+  - `tools/ow_passthrough/compositor.py`: Reversed-Z depth testing ($Z_{\text{linear}} = K / D_{\text{revZ}}$).
+  - `tools/ow_passthrough/compositor_shader.hlsl`: D3D12/ReShade pixel shader with depth clipping and transparency discarding.
+- **Verification**: `tests/test_ow_passthrough_contract.py` 4/4 passing, full test suite 106/106 passing.
