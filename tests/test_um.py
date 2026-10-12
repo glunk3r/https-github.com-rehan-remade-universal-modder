@@ -178,6 +178,16 @@ def test_bannerlord_utf16_version(tmp_path):
     assert key == "bannerlord" and det["version"] == "v1.4.8"
 
 
+def test_bannerlord_version_on_the_root_element(tmp_path):
+    # the other Version.xml shape builds have shipped: the Value sits on the root element
+    key, det = engine_of(tmp_path, {
+        "bin/Win64_Shipping_Client/TaleWorlds.MountAndBlade.dll": _pe(),
+        "bin/Win64_Shipping_Client/Version.xml": '<Version Value="v1.2.12"/>',
+        "Modules/Native/SubModule.xml": "<Module/>",
+    })
+    assert key == "bannerlord" and det["version"] == "v1.2.12"
+
+
 @pytest.mark.parametrize("name", ["Mount & Blade II: Bannerlord", "Mount & Blade II Bannerlord", "RenamedGame"])
 def test_bannerlord_save_folder_with_its_actual_name(tmp_path, monkeypatch, name):
     # Steam uses '&', while the real Documents folder uses 'and'; a renamed install needs the same hint.

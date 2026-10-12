@@ -511,12 +511,14 @@ def detect(ix: Index) -> tuple[list[tuple[str, int, list[str], dict]], dict]:
         version_file = dll.rsplit("/", 1)[0] + "/version.xml"
         det = dict(product="Mount and Blade II Bannerlord")
         if version_file in ix.files:
+            # the two shapes builds have shipped (BUTR's Bannerlord.ReferenceAssemblies reads the same two): a Value on
+            # the root, or <Singleplayer Value="v1.2.9"/> inside it. Older builds have no Version.xml on disk at all.
             try:
-                singleplayer = ET.parse(ix.path(version_file)).getroot().find("Singleplayer")
-                if singleplayer is not None:
-                    det["version"] = (singleplayer.get("Value") or singleplayer.get("value") or "").strip()
-                    if det["version"]:
-                        det["version_file"] = version_file
+                root = ET.parse(ix.path(version_file)).getroot()
+                sp = root.find("Singleplayer")
+                version = (root.get("Value") or ((sp.get("Value") or sp.get("value")) if sp is not None else None) or "").strip()
+                if version:
+                    det.update(version=version, version_file=version_file)
             except (OSError, ET.ParseError, LookupError, ValueError):
                 pass
         add("bannerlord", 100, [dll, "modules/native/submodule.xml"], **det)
