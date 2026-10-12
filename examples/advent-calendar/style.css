@@ -443,6 +443,7 @@ button, a, input, textarea, select { touch-action: manipulation; }
 .dialog-copy { margin: -8px 0 18px; color: #6c786e; font-size: 13px; line-height: 1.6; }
 .account-message { overflow-wrap: anywhere; margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; color: var(--green); background: #edf3ec; font-size: 13px; line-height: 1.55; }
 .account-message.is-error { color: #842f27; background: #fae9e5; }
+.account-setup-link { display: inline-block; margin-top: 12px; color: var(--green); font-size: 13px; font-weight: 700; }
 .account-actions { margin-top: 16px; }
 .link-input { min-height: 112px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; resize: vertical; }
 .share-size { min-height: 16px; margin: 7px 0 0; color: var(--muted); font-size: 10px; }

@@ -154,6 +154,7 @@ const elements = {
   accountDialog: document.querySelector("#account-dialog"),
   accountForm: document.querySelector("#account-form"),
   accountSetupMessage: document.querySelector("#account-setup-message"),
+  accountSetupLink: document.querySelector("#account-setup-link"),
   accountFields: document.querySelector("#account-fields"),
   accountEmail: document.querySelector("#account-email"),
   accountPassword: document.querySelector("#account-password"),
@@ -410,13 +411,16 @@ function setAccountUser(user) {
   elements.accountButton.title = user ? `Connecté avec ${user.email}` : "Créer un compte pour sauvegarder ton calendrier en ligne";
 }
 
+function hasSupabaseConfig() {
+  const config = window.ADVENT_CALENDAR_SUPABASE;
+  return Boolean(config && typeof config.url === "string" && config.url.trim()
+    && typeof config.anonKey === "string" && config.anonKey.trim());
+}
+
 async function configureSupabaseClient() {
   if (supabaseClient) return supabaseClient;
   const config = window.ADVENT_CALENDAR_SUPABASE;
-  if (!config || typeof config.url !== "string" || typeof config.anonKey !== "string"
-    || !config.url.trim() || !config.anonKey.trim()) {
-    throw new Error("Les comptes ne sont pas encore configurés. Ajoute l’URL et la clé publique de ton projet Supabase dans account-config.js, puis suis les étapes du README.");
-  }
+  if (!hasSupabaseConfig()) throw new Error("Les comptes ne sont pas encore activés sur ce site : le propriétaire doit configurer un projet Supabase et sa clé publique. Consulte les étapes d'activation.");
   let projectUrl;
   try {
     projectUrl = new URL(config.url);
@@ -1338,6 +1342,16 @@ elements.copyLinkButton.addEventListener("click", async () => {
 
 elements.accountButton.addEventListener("click", async () => {
   elements.accountDialog.showModal();
+  if (!hasSupabaseConfig()) {
+    elements.accountFields.hidden = true;
+    elements.accountSignedIn.hidden = true;
+    elements.accountSetupLink.hidden = false;
+    accountSetupError = "La création de comptes n'est pas activée sur ce site. L'inscription et la connexion resteront indisponibles jusqu'à ce que le propriétaire configure le service Supabase.";
+    setAccountMessage(accountSetupError, true);
+    return;
+  }
+  elements.accountSetupLink.hidden = true;
+  elements.accountFields.hidden = Boolean(accountUser);
   if (!supabaseClient) {
     try {
       await configureSupabaseClient();

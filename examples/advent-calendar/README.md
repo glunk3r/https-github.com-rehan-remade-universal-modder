@@ -29,7 +29,7 @@ Les comptes et leur sauvegarde en ligne utilisent Supabase; le projet doit être
 3. Remplace `url` et `anonKey` dans `account-config.js`, puis publie de nouveau le dossier du calendrier. Ces valeurs sont des identifiants publics utilisables dans un navigateur; n'y mets jamais la clé `service_role` ou une clé secrète.
 4. La personne créatrice choisit **Mon compte**, puis **Créer mon compte**. Si la confirmation de courriel est activée dans Supabase, elle confirme son adresse avant de se connecter. À sa première connexion, le brouillon local devient son unique calendrier en ligne; un calendrier déjà enregistré pour ce compte remplace le brouillon local.
 
-Sans URL et clé Supabase valides dans `account-config.js`, l'application indique que les comptes doivent être configurés; la création d'un compte ne peut pas fonctionner. Ne partage pas la clé `service_role`, même si l'hébergement de la page est public.
+Sans URL et clé Supabase valides dans `account-config.js`, les champs d'inscription et de connexion sont masqués et l'application explique que les comptes doivent être activés par le propriétaire du site; la création d'un compte ne peut pas fonctionner. Ne partage pas la clé `service_role`, même si l'hébergement de la page est public.
 
 ## Créer et partager
 
