@@ -94,6 +94,13 @@ namespace reshade::internal
 		static HMODULE handle = nullptr;
 		if (initial_handle != nullptr)
 			handle = initial_handle;
+		if (handle == nullptr)
+		{
+			GetModuleHandleExA(
+				GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+				reinterpret_cast<LPCSTR>(&get_current_module_handle),
+				&handle);
+		}
 		return handle;
 	}
 }

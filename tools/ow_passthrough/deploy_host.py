@@ -42,10 +42,10 @@ class DeploymentResult:
 class HostDeployer:
     def __init__(self, game_dir: Optional[Path] = None):
         self.game_dir = game_dir if game_dir is not None else DEFAULT_GAME_DIR
-        base_dir = Path(__file__).resolve().parent
-        self.source_fx = base_dir / "OWPassthrough.fx"
-        self.source_addon = base_dir / "addon" / "build" / "ow_compositor.addon"
-        self.source_reshade = base_dir / "addon" / "bin" / "ReShade64.dll"
+        self.base_dir = Path(__file__).resolve().parent
+        self.source_fx = self.base_dir / "OWPassthrough.fx"
+        self.source_addon = self.base_dir / "addon" / "build" / "ow_compositor.addon"
+        self.source_reshade = self.base_dir / "addon" / "bin" / "ReShade64.dll"
 
     def verify_mc_intact(self) -> bool:
         """Verify that user's Minecraft project remains 100% intact."""
@@ -83,14 +83,40 @@ class HostDeployer:
         deployed_shader = target_mod_reshade / "OWPassthrough.fx"
         shutil.copy2(self.source_fx, deployed_shader)
 
+        source_fxh = self.base_dir / "ReShade.fxh"
+        if source_fxh.is_file():
+            shutil.copy2(source_fxh, target_mod_reshade / "ReShade.fxh")
+
         target_reshade_std = self.game_dir / "reshade-shaders" / "Shaders"
         target_reshade_std.mkdir(parents=True, exist_ok=True)
         shutil.copy2(self.source_fx, target_reshade_std / "OWPassthrough.fx")
+        if source_fxh.is_file():
+            shutil.copy2(source_fxh, target_reshade_std / "ReShade.fxh")
 
         preset_file = self.game_dir / "mods" / "ow_doomfist_standalone" / "OWPassthrough.ini"
         preset_file.write_text(PRESET_INI_TEMPLATE, encoding="utf-8")
         game_preset = self.game_dir / "OWPassthrough.ini"
         game_preset.write_text(PRESET_INI_TEMPLATE, encoding="utf-8")
+
+        # Configure ReShade.ini to automatically discover and enable OWPassthrough shader
+        reshade_ini = self.game_dir / "ReShade.ini"
+        reshade_ini_content = """[GENERAL]
+EffectSearchPaths=.\\reshade-shaders\\Shaders,.\\mods\\ow_doomfist_standalone\\reshade\\Shaders,.\\
+TextureSearchPaths=.\\reshade-shaders\\Textures,.\\mods\\ow_doomfist_standalone\\reshade\\Textures,.\\
+PresetPath=.\\OWPassthrough.ini
+PerformanceMode=0
+NoReloadOnInit=0
+
+[OVERLAY]
+TutorialProgress=4
+ShowFPS=1
+
+[OWPassthrough.ini]
+Techniques=OWPassthrough@OWPassthrough.fx
+TechniqueSorting=OWPassthrough@OWPassthrough.fx
+"""
+        reshade_ini.write_text(reshade_ini_content, encoding="utf-8")
+
 
         # 2. ReShade Addon (.addon binary)
         deployed_addon = None
