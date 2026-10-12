@@ -39,3 +39,13 @@
   - `mc_er_overlay.txt` & `mc_er_damage.txt`: Sentinel files active.
   - `param_patches.json`: Structured parameter patch manifest for Doomfist combat abilities.
 - **Verification**: Exit code 0, physical files verified on disk, full test suite passing (94 passed).
+
+## 6. Scheme B Input Mapping (OW PC Native Keybindings) & MC Restoration
+- **Restoration**: The original Minecraft files in `mods/mc_adapter` were 100% restored byte-for-byte from backup (`steve.bbmodel`: 1,894,976 bytes, `steve.png`: 1,893 bytes, `mc_er_steve.txt`: 345 bytes).
+- **Scheme B Architecture**: Dedicated input controller (`tools/ow_doomfist/input_controller.py`) decoupled from Minecraft code:
+  - `VK_RBUTTON` (Right Click): Hold to charge Rocket Punch, release to fire dash (tier 1..3).
+  - `VK_SHIFT` (Shift): Seismic Slam forward leap & shockwave.
+  - `VK_E` (E): Rising Uppercut vertical launch.
+  - `VK_LBUTTON` (Left Click): Hand Cannon 4-pellet shotgun blast.
+  - `VK_Q` (Q): Meteor Strike ultimate.
+- **Verification**: `tests/test_ow_doomfist_input.py` 5/5 passing, full test suite 99/99 passing.
