@@ -39,3 +39,8 @@ def test_host_deployer_run(tmp_path):
 
     preset_content = res.deployed_preset.read_text(encoding="utf-8")
     assert "0.050067" in preset_content
+
+    assert res.deployed_addon is not None
+    assert res.deployed_addon.is_file()
+    assert res.deployed_dxgi is not None
+    assert res.deployed_dxgi.is_file()

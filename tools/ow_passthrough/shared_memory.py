@@ -5,6 +5,9 @@ Implements seqlock consistency checks to eliminate torn or desynced frames acros
 """
 from dataclasses import dataclass, field
 from typing import List, Tuple, Optional
+import mmap
+import struct
+import sys
 import time
 
 MAGIC_OWPS = 0x4F575053          # "OWPS"
@@ -38,6 +41,12 @@ class FrameHeader:
     slots: List[FrameSlot] = field(default_factory=list)
 
 
+HEADER_FORMAT = "<IIIIiiqq"
+HEADER_SIZE = 4096
+SLOT_HEADER_SIZE = 64
+SLOT_HEADER_FORMAT = "<qqfffffII"
+
+
 @dataclass
 class ReadResult:
     is_valid: bool
@@ -48,10 +57,20 @@ class ReadResult:
 
 
 class SharedMemoryBridge:
-    def __init__(self, width: int = 1920, height: int = 1080, mapping_name: str = r"Local\OWPassthroughFrame"):
+    def __init__(
+        self,
+        width: int = 1920,
+        height: int = 1080,
+        mapping_name: str = r"Local\OWPassthroughFrame",
+        use_mmap: Optional[bool] = None,
+    ):
         self.width = width
         self.height = height
         self.mapping_name = mapping_name
+        self.layer_bytes = width * height * 4
+        self.stride = SLOT_HEADER_SIZE + self.layer_bytes * 2
+        self.total_mmap_size = HEADER_SIZE + self.stride * 3
+        self.published_seq = 0
 
         self.header = FrameHeader(
             magic=MAGIC_OWPS,
@@ -62,6 +81,42 @@ class SharedMemoryBridge:
             slots=[FrameSlot(slot_id=i) for i in range(3)],
         )
 
+        self.has_mmap = False
+        self._mmap: Optional[mmap.mmap] = None
+
+        enable_mmap = use_mmap if use_mmap is not None else (sys.platform == "win32")
+        if enable_mmap and sys.platform == "win32":
+            try:
+                self._mmap = mmap.mmap(-1, self.total_mmap_size, tagname=self.mapping_name)
+                self.has_mmap = True
+                self._init_mmap_header()
+            except Exception:
+                self.has_mmap = False
+                self._mmap = None
+
+    def _init_mmap_header(self) -> None:
+        if not self._mmap:
+            return
+        struct.pack_into(
+            HEADER_FORMAT,
+            self._mmap,
+            0,
+            MAGIC_OWPS,
+            PROTOCOL_VERSION,
+            self.width,
+            self.height,
+            0,  # active_slot
+            3,  # slot_count
+            self.stride,
+            0,  # published_seq
+        )
+
+    def close(self) -> None:
+        if self._mmap is not None:
+            self._mmap.close()
+            self._mmap = None
+            self.has_mmap = False
+
     def get_header(self) -> FrameHeader:
         return self.header
 
@@ -69,18 +124,48 @@ class SharedMemoryBridge:
         """Write frame into next slot using Seqlock protocol."""
         next_slot_idx = (self.header.active_slot + 1) % 3
         slot = self.header.slots[next_slot_idx]
+        self.published_seq += 1
 
         # 1. Acquire write lock: set seqlock to odd
         start_seq = slot.seqlock
         slot.seqlock = start_seq + 1
 
-        # 2. Write payload
-        slot.timestamp_us = int(time.time() * 1_000_000)
+        # 2. Write payload in Python memory
+        now_us = int(time.time() * 1_000_000)
+        slot.timestamp_us = now_us
         slot.pose = pose
         slot.color_data = color_rgba
         slot.depth_data = depth_r32f
 
-        # 3. Release write lock: set seqlock to even
+        # 3. Write payload to Windows mmap if enabled
+        if self.has_mmap and self._mmap is not None:
+            slot_offset = HEADER_SIZE + next_slot_idx * self.stride
+            # Write slot header with odd seqlock
+            struct.pack_into(
+                SLOT_HEADER_FORMAT,
+                self._mmap,
+                slot_offset,
+                start_seq + 1,
+                now_us,
+                pose.camera_pos[0],
+                pose.camera_pos[1],
+                pose.camera_pos[2],
+                pose.yaw_deg,
+                pose.pitch_deg,
+                SLOT_HEADER_SIZE,
+                SLOT_HEADER_SIZE + self.layer_bytes,
+            )
+            # Write color & depth
+            color_dest = slot_offset + SLOT_HEADER_SIZE
+            self._mmap[color_dest : color_dest + len(color_rgba)] = color_rgba
+            depth_dest = color_dest + self.layer_bytes
+            self._mmap[depth_dest : depth_dest + len(depth_r32f)] = depth_r32f
+            # Release slot lock: even seqlock
+            struct.pack_into("<q", self._mmap, slot_offset, start_seq + 2)
+            # Update root header
+            struct.pack_into("<iq", self._mmap, 16, next_slot_idx, self.published_seq)
+
+        # 4. Release write lock: set seqlock to even
         slot.seqlock = start_seq + 2
         self.header.active_slot = next_slot_idx
         return next_slot_idx

@@ -129,3 +129,23 @@
   - Full CLI entry point with configurable `--hero`, `--fps`, `--width`, `--height`, `--duration`.
   - Successfully verified live daemon publishing frames into `Local\OWPassthroughFrame` for both Doomfist and Genji.
 - **Verification**: `tests/test_ow_host_deploy.py` (2/2), `tests/test_ow_passthrough_e2e.py` (2/2), `tests/test_ow_reshade_effect.py` (3/3), total test suite 122/122 passing.
+
+## 15. Route B1: C++ ReShade Add-on & Direct3D 12 Texture Pipeline
+- **Windows Named Shared Memory Realization**: `tools/ow_passthrough/shared_memory.py`
+  - Upgraded to real OS-level `mmap` backing (`Local\OWPassthroughFrame`).
+  - Binary packed headers: `OWHeader` (4KB offset, magic `0x4F575053`, version `0x10000`, 3-slot triple buffering) and `OWSlot` (64B offset, seqlock, timestamps, cam coordinates, color & depth offsets).
+- **C++ ReShade Add-on**: `tools/ow_passthrough/addon/ow_addon.cpp`
+  - ReShade 6.8 API implementation registering `reshade_begin_effects`, `reshade_reloaded_effects`, `destroy_effect_runtime`.
+  - Connects to `Local\OWPassthroughFrame` on frame presentation.
+  - Dynamically creates and updates D3D12 texture resources (`OWWORLD` RGBA8 and `OWDEPTH` R32F).
+  - Double Seqlock check ensures zero-torn reads and zero desync.
+- **Add-on Compilation & Runtime Tooling**:
+  - `tools/ow_passthrough/addon/build_addon.py`: Clang++/G++ script compiling `ow_compositor.addon` (64-bit PE).
+  - `tools/ow_passthrough/addon/fetch_reshade_headers.py`: Official ReShade 6.8 header installer.
+  - `tools/ow_passthrough/addon/fetch_reshade_dll.py`: Automated installer for `ReShade64.dll`.
+- **Physical Host Deployment to Elden Ring**:
+  - `Game\ow_compositor.addon` deployed.
+  - `Game\dxgi.dll` deployed (ReShade 6.8 with Add-on support).
+  - `Game\mods\ow_doomfist_standalone\reshade\Shaders\OWPassthrough.fx` and `Game\reshade-shaders\Shaders\OWPassthrough.fx` deployed.
+  - Strict MC isolation verified: `steve.bbmodel` (1,894,976 B), `steve.png` (1,893 B), `mc_er_steve.txt` (345 B) strictly intact.
+- **Verification**: `tests/test_ow_addon.py` (3/3), `tests/test_ow_shared_memory_mmap.py` (1/1), `tests/test_ow_host_deploy.py` (2/2), full test suite 126/126 passing.

@@ -14,3 +14,7 @@ dist/
 # the parent repo ignores bin/ (build output); the CLI launcher lives here
 !bin/
 mc-core/
+tools/ow_passthrough/addon/bin/
+tools/ow_passthrough/addon/build/
+*.addon
+*.exe
