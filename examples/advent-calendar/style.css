@@ -441,6 +441,9 @@ button, a, input, textarea, select { touch-action: manipulation; }
 .text-button { padding: 5px 0; border: 0; color: #a84c42; background: none; cursor: pointer; font-size: 12px; font-weight: 700; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 24px; }
 .dialog-copy { margin: -8px 0 18px; color: #6c786e; font-size: 13px; line-height: 1.6; }
+.account-message { overflow-wrap: anywhere; margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; color: var(--green); background: #edf3ec; font-size: 13px; line-height: 1.55; }
+.account-message.is-error { color: #842f27; background: #fae9e5; }
+.account-actions { margin-top: 16px; }
 .link-input { min-height: 112px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; resize: vertical; }
 .share-size { min-height: 16px; margin: 7px 0 0; color: var(--muted); font-size: 10px; }
 .form-error { min-height: 16px; margin: 8px 0 0; color: #a33d34; font-size: 12px; line-height: 1.4; }
@@ -592,6 +595,7 @@ button, a, input, textarea, select { touch-action: manipulation; }
   .brand-mark { width: 28px; height: 28px; font-size: 16px; }
   .top-actions { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .top-actions .button { min-width: 0; min-height: 44px; padding: 7px 10px; font-size: 11px; line-height: 1.25; }
+  #account-button { grid-column: 1 / -1; }
   .mode-badge { grid-column: 1 / -1; width: 100%; padding: 4px 0; text-align: left; font-size: 11px; }
   #exit-reader-button { grid-column: 1 / -1; }
   .intro { min-height: 210px; margin-top: 18px; padding: 25px 21px; }

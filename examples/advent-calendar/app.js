@@ -1,6 +1,7 @@
 "use strict";
 
 const STORAGE_KEY = "um-advent-calendar-v1";
+const SUPABASE_CLIENT_MODULE = "https://esm.sh/@supabase/supabase-js@2.117.3";
 const DOOR_COUNT = 24;
 const DEFAULT_CAPTION = "Prépare 24 surprises et partage un joli moment pour Noël.";
 const IMAGE_DATA_URL = /^data:image\/(?:png|jpeg|webp|gif);base64,[a-z\d+/]+=*$/i;
@@ -74,6 +75,7 @@ const elements = {
   hint: document.querySelector("#hint-text"),
   badge: document.querySelector("#mode-badge"),
   shareButton: document.querySelector("#share-button"),
+  accountButton: document.querySelector("#account-button"),
   themeButton: document.querySelector("#theme-button"),
   exitReaderButton: document.querySelector("#exit-reader-button"),
   status: document.querySelector("#status-message"),
@@ -148,7 +150,19 @@ const elements = {
   shareForm: document.querySelector("#share-form"),
   shareLink: document.querySelector("#share-link"),
   shareSize: document.querySelector("#share-size"),
-  copyLinkButton: document.querySelector("#copy-link-button")
+  copyLinkButton: document.querySelector("#copy-link-button"),
+  accountDialog: document.querySelector("#account-dialog"),
+  accountForm: document.querySelector("#account-form"),
+  accountSetupMessage: document.querySelector("#account-setup-message"),
+  accountFields: document.querySelector("#account-fields"),
+  accountEmail: document.querySelector("#account-email"),
+  accountPassword: document.querySelector("#account-password"),
+  accountSignInButton: document.querySelector("#account-sign-in"),
+  accountSignUpButton: document.querySelector("#account-sign-up"),
+  accountSignedIn: document.querySelector("#account-signed-in"),
+  accountUserLabel: document.querySelector("#account-user-label"),
+  accountSyncButton: document.querySelector("#account-sync-button"),
+  accountSignOutButton: document.querySelector("#account-sign-out")
 };
 
 function emptyCalendar() {
@@ -372,6 +386,156 @@ function getSharePageUrl(currentUrl = window.location.href) {
   return pageUrl;
 }
 
+let supabaseClient = null;
+let accountUser = null;
+let accountReady = false;
+let accountSetupError = "";
+let pendingCloudCalendar = null;
+let cloudSaveTimer = null;
+let cloudSavePromise = null;
+
+function setAccountMessage(message, isError = false) {
+  elements.accountSetupMessage.textContent = message;
+  elements.accountSetupMessage.classList.toggle("is-error", isError);
+}
+
+function setAccountUser(user) {
+  accountUser = user;
+  elements.accountFields.hidden = Boolean(user);
+  elements.accountSignedIn.hidden = !user;
+  elements.accountUserLabel.textContent = user
+    ? `Connecté avec ${user.email}. Tes modifications sont synchronisées dans ton calendrier unique.`
+    : "";
+  elements.accountButton.textContent = user ? "Mon compte ✓" : "Mon compte";
+  elements.accountButton.title = user ? `Connecté avec ${user.email}` : "Créer un compte pour sauvegarder ton calendrier en ligne";
+}
+
+async function configureSupabaseClient() {
+  if (supabaseClient) return supabaseClient;
+  const config = window.ADVENT_CALENDAR_SUPABASE;
+  if (!config || typeof config.url !== "string" || typeof config.anonKey !== "string"
+    || !config.url.trim() || !config.anonKey.trim()) {
+    throw new Error("Les comptes ne sont pas encore configurés. Ajoute l’URL et la clé publique de ton projet Supabase dans account-config.js, puis suis les étapes du README.");
+  }
+  let projectUrl;
+  try {
+    projectUrl = new URL(config.url);
+  } catch {
+    throw new Error("L’URL du projet Supabase dans account-config.js n’est pas valide.");
+  }
+  if (projectUrl.protocol !== "https:" && projectUrl.hostname !== "localhost") {
+    throw new Error("L’URL de Supabase doit utiliser HTTPS.");
+  }
+
+  try {
+    const { createClient } = await import(SUPABASE_CLIENT_MODULE);
+    supabaseClient = createClient(projectUrl.origin, config.anonKey, {
+      auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false }
+    });
+  } catch (error) {
+    throw new Error(`Le service de comptes est inaccessible : ${error.message}`);
+  }
+  return supabaseClient;
+}
+
+async function writeCalendarToCloud(value, ownerId) {
+  const { error } = await supabaseClient
+    .from("advent_calendars")
+    .upsert({
+      owner_id: ownerId,
+      calendar: validateCalendar(value),
+      updated_at: new Date().toISOString()
+    }, { onConflict: "owner_id" });
+  if (error) throw new Error(`La sauvegarde en ligne a échoué : ${error.message}`);
+}
+
+async function loadCreatorCalendar(user) {
+  accountReady = false;
+  const { data, error } = await supabaseClient
+    .from("advent_calendars")
+    .select("calendar")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (error) throw new Error(`Impossible de charger ton calendrier : ${error.message}`);
+
+  const cloudCalendar = data ? validateCalendar(data.calendar) : validateCalendar(calendar);
+  if (!data) await writeCalendarToCloud(cloudCalendar, user.id);
+  calendar = cloudCalendar;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudCalendar));
+  } catch (error) {
+    showStatus(`Le calendrier est chargé depuis ton compte, mais la copie locale n’a pas pu être mise à jour : ${error.message}`, true);
+  }
+  accountReady = true;
+  renderCalendar();
+  elements.themeDecoration.value = calendar.theme.decoration;
+  setAccountUser(user);
+  setAccountMessage(data
+    ? "Ton calendrier unique a été chargé depuis ton compte."
+    : "Ton calendrier actuel a été enregistré comme le calendrier unique de ton compte.");
+}
+
+function scheduleCloudSave(value) {
+  if (!accountReady || !accountUser || isReader) return;
+  pendingCloudCalendar = value;
+  window.clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = window.setTimeout(() => { void flushCloudCalendar(); }, 700);
+}
+
+async function flushCloudCalendar() {
+  window.clearTimeout(cloudSaveTimer);
+  if (cloudSavePromise) {
+    const saveFailed = await cloudSavePromise;
+    if (!saveFailed && accountReady && accountUser && pendingCloudCalendar) await flushCloudCalendar();
+    return;
+  }
+  if (!accountReady || !accountUser || !pendingCloudCalendar) return;
+  const saveOperation = (async () => {
+    let saveFailed = false;
+    while (accountReady && accountUser && pendingCloudCalendar) {
+      const snapshot = pendingCloudCalendar;
+      pendingCloudCalendar = null;
+      try {
+        await writeCalendarToCloud(snapshot, accountUser.id);
+        setAccountMessage("Ton calendrier est synchronisé avec ton compte.");
+      } catch (error) {
+        pendingCloudCalendar = pendingCloudCalendar || snapshot;
+        saveFailed = true;
+        setAccountMessage(`${error.message} Réessaie la synchronisation avant de te déconnecter.`, true);
+        showStatus(`${error.message} La dernière version reste enregistrée sur cet appareil.`, true);
+        break;
+      }
+    }
+    return saveFailed;
+  })();
+  cloudSavePromise = saveOperation;
+  let saveFailed;
+  try {
+    saveFailed = await saveOperation;
+  } finally {
+    if (cloudSavePromise === saveOperation) cloudSavePromise = null;
+  }
+  if (!saveFailed && accountReady && accountUser && pendingCloudCalendar) await flushCloudCalendar();
+}
+
+async function initializeCreatorAccount() {
+  if (isReader) return;
+  const config = window.ADVENT_CALENDAR_SUPABASE;
+  if (!config || !config.url || !config.anonKey) return;
+  try {
+    await configureSupabaseClient();
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) throw error;
+    if (data.session) {
+      await loadCreatorCalendar(data.session.user);
+      accountSetupError = "";
+    }
+  } catch (error) {
+    accountSetupError = error.message;
+    setAccountMessage(accountSetupError, true);
+  }
+}
+
 function loadDraft() {
   const saved = localStorage.getItem(STORAGE_KEY);
   return saved === null ? emptyCalendar() : validateCalendar(JSON.parse(saved));
@@ -476,6 +640,7 @@ function saveCalendar(next) {
   }
   calendar = normalized;
   renderCalendar();
+  scheduleCloudSave(normalized);
 }
 
 function renderCalendar() {
@@ -525,6 +690,7 @@ function renderCalendar() {
   fitCalendarTitle();
   elements.badge.hidden = !isReader;
   elements.shareButton.hidden = isReader;
+  elements.accountButton.hidden = isReader;
   elements.themeButton.hidden = isReader;
   elements.exitReaderButton.hidden = !isReader;
   elements.shuffleDoorsButton.hidden = isReader;
@@ -1170,6 +1336,113 @@ elements.copyLinkButton.addEventListener("click", async () => {
   }
 });
 
+elements.accountButton.addEventListener("click", async () => {
+  elements.accountDialog.showModal();
+  if (!supabaseClient) {
+    try {
+      await configureSupabaseClient();
+      accountSetupError = "";
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) throw error;
+      if (data.session) {
+        await loadCreatorCalendar(data.session.user);
+        accountSetupError = "";
+      }
+      else setAccountMessage("Connecte-toi ou crée un compte. Un seul calendrier sera conservé par compte.");
+    } catch (error) {
+      accountSetupError = error.message;
+      setAccountMessage(accountSetupError, true);
+    }
+  } else if (!accountUser && !accountSetupError) {
+    setAccountMessage("Connecte-toi ou crée un compte. Un seul calendrier sera conservé par compte.");
+  } else if (accountSetupError) {
+    setAccountMessage(accountSetupError, true);
+  }
+});
+
+elements.accountSignUpButton.addEventListener("click", async () => {
+  if (!elements.accountForm.reportValidity()) return;
+  elements.accountSignUpButton.disabled = true;
+  try {
+    await configureSupabaseClient();
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: elements.accountEmail.value.trim().toLowerCase(),
+      password: elements.accountPassword.value
+    });
+    if (error) throw error;
+    if (data.session) {
+      await loadCreatorCalendar(data.session.user);
+      accountSetupError = "";
+      elements.accountPassword.value = "";
+    } else {
+      setAccountMessage("Compte créé. Confirme ton adresse avec le courriel reçu, puis connecte-toi.");
+      elements.accountPassword.value = "";
+    }
+  } catch (error) {
+    setAccountMessage(error.message, true);
+  } finally {
+    elements.accountSignUpButton.disabled = false;
+  }
+});
+
+elements.accountSignInButton.addEventListener("click", async () => {
+  if (!elements.accountForm.reportValidity()) return;
+  elements.accountSignInButton.disabled = true;
+  try {
+    await configureSupabaseClient();
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email: elements.accountEmail.value.trim().toLowerCase(),
+      password: elements.accountPassword.value
+    });
+    if (error) throw error;
+    await loadCreatorCalendar(data.user);
+    accountSetupError = "";
+    elements.accountPassword.value = "";
+  } catch (error) {
+    setAccountMessage(error.message, true);
+  } finally {
+    elements.accountSignInButton.disabled = false;
+  }
+});
+
+elements.accountSyncButton.addEventListener("click", async () => {
+  if (!accountUser) return;
+  elements.accountSyncButton.disabled = true;
+  try {
+    if (pendingCloudCalendar) {
+      await flushCloudCalendar();
+      if (pendingCloudCalendar) throw new Error("La sauvegarde en ligne a échoué. Vérifie ta connexion avant de réessayer.");
+    } else {
+      await loadCreatorCalendar(accountUser);
+    }
+  } catch (error) {
+    setAccountMessage(error.message, true);
+  } finally {
+    elements.accountSyncButton.disabled = false;
+  }
+});
+
+elements.accountSignOutButton.addEventListener("click", async () => {
+  elements.accountSignOutButton.disabled = true;
+  try {
+    await flushCloudCalendar();
+    if (pendingCloudCalendar) throw new Error("Ton calendrier n’a pas pu être synchronisé. Réessaie avant de te déconnecter.");
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) throw error;
+    accountReady = false;
+    accountUser = null;
+    pendingCloudCalendar = null;
+    setAccountUser(null);
+    calendar = loadDraft();
+    renderCalendar();
+    setAccountMessage("Tu es déconnecté. Le brouillon local est de nouveau affiché.");
+  } catch (error) {
+    setAccountMessage(error.message, true);
+  } finally {
+    elements.accountSignOutButton.disabled = false;
+  }
+});
+
 elements.exitReaderButton.addEventListener("click", () => {
   isReader = false;
   window.history.replaceState(null, "", window.location.href.split("#")[0]);
@@ -1225,6 +1498,7 @@ async function initializeCalendar() {
   }
   elements.themeDecoration.value = calendar.theme.decoration;
   renderCalendar();
+  await initializeCreatorAccount();
 }
 
 void initializeCalendar();

@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#f5f1e8">
     <title>Mon calendrier de l'Avent</title>
     <link rel="stylesheet" href="style.css">
+    <script src="account-config.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -19,6 +20,7 @@
           <span id="mode-badge" class="mode-badge" hidden>Mode lecture seule</span>
           <button id="theme-button" class="button button-light" type="button">Décorer mon calendrier</button>
           <button id="share-button" class="button button-dark" type="button">Créer un lien</button>
+          <button id="account-button" class="button button-light" type="button">Mon compte</button>
           <button id="exit-reader-button" class="button button-light" type="button" hidden>Quitter le mode lecture</button>
         </div>
       </header>
@@ -271,6 +273,33 @@
         <div class="dialog-actions">
           <button class="button button-light" type="button" data-close="share-dialog">Fermer</button>
           <button id="copy-link-button" class="button button-dark" type="button">Copier le lien</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="account-dialog" class="dialog">
+      <form id="account-form" class="dialog-card">
+        <button class="dialog-close" type="button" data-close="account-dialog" aria-label="Fermer">×</button>
+        <p class="eyebrow">TON ESPACE CRÉATEUR</p>
+        <h2>Un seul calendrier, sauvegardé en ligne</h2>
+        <p class="dialog-copy">Crée un compte ou connecte-toi pour retrouver et modifier ton unique calendrier sur tes appareils. Si ton compte possède déjà un calendrier, il remplacera le brouillon enregistré sur cet appareil.</p>
+        <p id="account-setup-message" class="account-message" role="status"></p>
+        <div id="account-fields">
+          <label class="field-label" for="account-email">Adresse e-mail</label>
+          <input id="account-email" class="text-input" type="email" autocomplete="email" required maxlength="254">
+          <label class="field-label" for="account-password">Mot de passe</label>
+          <input id="account-password" class="text-input" type="password" autocomplete="current-password" required minlength="8">
+          <div class="dialog-actions account-actions">
+            <button id="account-sign-in" class="button button-dark" type="button">Se connecter</button>
+            <button id="account-sign-up" class="button button-light" type="button">Créer mon compte</button>
+          </div>
+        </div>
+        <div id="account-signed-in" hidden>
+          <p id="account-user-label" class="account-message"></p>
+          <div class="dialog-actions account-actions">
+            <button id="account-sync-button" class="button button-dark" type="button">Synchroniser maintenant</button>
+            <button id="account-sign-out" class="button button-light" type="button">Se déconnecter</button>
+          </div>
         </div>
       </form>
     </dialog>
