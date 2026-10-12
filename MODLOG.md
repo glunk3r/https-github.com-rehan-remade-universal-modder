@@ -72,3 +72,12 @@
   - `tools/ow_passthrough/compositor.py`: Reversed-Z depth testing ($Z_{\text{linear}} = K / D_{\text{revZ}}$).
   - `tools/ow_passthrough/compositor_shader.hlsl`: D3D12/ReShade pixel shader with depth clipping and transparency discarding.
 - **Verification**: `tests/test_ow_passthrough_contract.py` 4/4 passing, full test suite 106/106 passing.
+
+## 9. Guest Character Renderer & Real-time Frame Publishing
+- **Renderer Built**: `tools/ow_passthrough/guest_renderer.py`
+  - Loads character 3D geometry (1.95m canonical Doomfist scale).
+  - Renders RGBA8 color with transparent background cutout.
+  - Generates R32F floating-point linear depth buffer matching camera viewpoint distance.
+  - Dynamic posture updates responding to Scheme B abilities (Rocket Punch charge wind-up & dash thrust).
+  - Publishes frames into Seqlock shared memory bridge (`Local\OWPassthroughFrame`).
+- **Verification**: `tests/test_ow_guest_renderer.py` 4/4 passing, full test suite 110/110 passing.
