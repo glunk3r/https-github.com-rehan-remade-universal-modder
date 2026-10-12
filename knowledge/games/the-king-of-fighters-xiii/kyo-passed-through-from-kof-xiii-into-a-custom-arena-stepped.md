@@ -19,7 +19,7 @@ agents:
 humans: []
 date: '2026-10-11'
 links: []
-tags: [passthrough, fighting-game, frame-stepping, hit-injection, d3d9, shared-texture, frida, cmodule, performance]
+tags: [mashup, passthrough, fighting-game, frame-stepping, hit-injection, d3d9, shared-texture, frida, cmodule, performance]
 ---
 # Kyo passed through from KOF XIII into a custom arena: stepped frames, native hit injection and a shared GPU layer
 
@@ -34,6 +34,10 @@ tags: [passthrough, fighting-game, frame-stepping, hit-injection, d3d9, shared-t
   with no ASLR, MSVC RTTI present. Windows 11, launched windowed (`-w`).
 - Frida 17.22.2 spawns the game and loads a "resident" script before resume, so it can hook device creation.
   A hook-free agent script handles reads and patches and can be reloaded.
+- **Offline only.** KOF XIII has online play; everything here ran in offline Training. The resident script is
+  loaded at spawn and stays for the life of the process (device hooks, the Present replacement and, with
+  free-run, the present interval), so a KOF launched this way is instrumented in every mode. Never take it
+  online (ranked or player matches): quit it and start KOF from Steam first.
 - The host is a small custom Rust/D3D11 arena with a length-prefixed JSON protocol over loopback TCP: hello /
   step / hit / contact, with step events and a shared-layer image mode. The approach applies to any host that steps
   a guest and wants its native mechanics.
@@ -45,9 +49,15 @@ sprite each step. The host owns position and resolves contacts; the guest applie
 code.
 - **Reimplementation was rejected.** Converting the character into the host means extracting data and copying
   the mechanics, and it is only ever approximately faithful.
-- **D3D9On12 was rejected.** Rev2's route to a shareable D3D12 texture crashed KOF in `dxilconv.dll` (shader
-  translation). So the plain D3D9 device is kept, and pixels go through a CPU readback, then an upload into a
-  D3D12 shared texture made by the producer.
+- **D3D9On12 was rejected.** Creating the device through D3D9On12 (`Direct3DCreate9On12`), which would make its
+  targets shareable as D3D12 resources, crashed KOF in `dxilconv.dll` (shader translation). So the plain D3D9
+  device is kept, and pixels go through a CPU readback, then an upload into a D3D12 shared texture made by the
+  producer.
+
+Related: `knowledge/techniques/frame-compositing-depth-and-pose-sync.md` (as in its bridges, the pixels cross on
+the CPU here; only the producer-to-host hop is a shared GPU texture) and
+`knowledge/techniques/bridge-contracts-ownership-units-and-lifecycle.md` (the host owns position and contacts, KOF
+applies hits, and a lease restores KOF if the producer dies).
 
 ## How the game works (what we had to learn)
 **Pause and step.**
@@ -123,8 +133,9 @@ code.
 - The swap chain uses the default (vsync) present interval, and KOF resets the device after creating it.
 
 ## Build steps
-1. **Launch.** Spawn `kofxiii.exe -w` with `SteamAppId=222940` under Frida. Load the resident before resume. It
-   hooks `Direct3DCreate9`, then CreateDevice, Reset and Present (Present as a native replacement).
+1. **Launch.** Spawn `kofxiii.exe -w` with `SteamAppId=222940` under Frida, with Steam running (the variable only
+   names the app; the Steam client still checks the licence). Load the resident before resume. It hooks
+   `Direct3DCreate9`, then CreateDevice, Reset and Present (Present as a native replacement).
 2. **Free-run (optional).** Set the present interval to immediate in both CreateDevice **and** Reset. Cap idle
    frames with a high-resolution waitable timer in Present.
 3. **Isolation.** Pause through `GamePause`. Patch the five collision passes (checked against the disk bytes first,
