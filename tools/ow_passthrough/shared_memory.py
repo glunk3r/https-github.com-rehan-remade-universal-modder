@@ -162,8 +162,9 @@ class SharedMemoryBridge:
             self._mmap[depth_dest : depth_dest + len(depth_r32f)] = depth_r32f
             # Release slot lock: even seqlock
             struct.pack_into("<q", self._mmap, slot_offset, start_seq + 2)
-            # Update root header
-            struct.pack_into("<iq", self._mmap, 16, next_slot_idx, self.published_seq)
+            # Update root header: active_slot is at offset 16 (int32), published_seq is at offset 32 (int64)
+            struct.pack_into("<i", self._mmap, 16, next_slot_idx)
+            struct.pack_into("<q", self._mmap, 32, self.published_seq)
 
         # 4. Release write lock: set seqlock to even
         slot.seqlock = start_seq + 2
