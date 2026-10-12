@@ -15,7 +15,7 @@ humans: []
 date: '2026-10-12'
 links:
   - https://github.com/hby7921/BannerCraft/tree/9895c3161d24f0a05ff689a5077b9a12bbf6c9c8
-tags: ['bannerlord', 'minecraft', 'fabric', 'csharp', 'java', 'cross-game', 'local-bridge', 'session-isolation', 'damage-deduplication', 'inventory', 'regression-tests']
+tags: ['mashup', 'passthrough', 'bannerlord', 'minecraft', 'fabric', 'csharp', 'java', 'cross-game', 'local-bridge', 'session-isolation', 'damage-deduplication', 'inventory', 'regression-tests']
 ---
 # BannerCraft: Minecraft gameplay through a local two-mod bridge
 
@@ -37,7 +37,7 @@ regression programs; full dual-game acceptance remains incomplete.
   battle. Campaign and multiplayer integration are not delivered.
 
 Sources: [README](https://github.com/hby7921/BannerCraft/blob/9895c3161d24f0a05ff689a5077b9a12bbf6c9c8/README.md)
-and [build guide](https://github.com/hby7921/BannerCraft/blob/9895c3161d24f0a05ff689a5077b9a12bbf6c9c8/docs/BUILDING.md).
+(in Chinese) and [build guide](https://github.com/hby7921/BannerCraft/blob/9895c3161d24f0a05ff689a5077b9a12bbf6c9c8/docs/BUILDING.md).
 
 ## Route and why
 
@@ -46,6 +46,12 @@ models/state through Bannerlord objects and uses captured native Minecraft inven
 it does not composite the entire Minecraft world framebuffer. Keeping Minecraft authoritative avoids
 independently approximating durability, cooldowns, item-use priority and creature behavior in C#.
 Session ownership, coordinate mapping and at-most-once application of retried actions become essential.
+
+Related: `knowledge/techniques/choosing-a-mashup-route.md` (this is live passthrough, state exchange plus
+captured inventory frames), `knowledge/techniques/bridge-contracts-ownership-units-and-lifecycle.md`
+(ownership, session lifecycle and protocol versioning), `knowledge/techniques/collision-and-combat-bridging.md`
+(damage deduplication and attribution) and `knowledge/techniques/evidence-levels-for-mashup-claims.md`, which
+the Verification table below follows.
 
 ## How the game works (source observations)
 
@@ -84,7 +90,7 @@ Follow the pinned [build guide](https://github.com/hby7921/BannerCraft/blob/9895
    check. Run applicable checks, then `build-mycraft.ps1` against local TaleWorlds DLLs.
 3. Install both mods as documented. Internal module ID, assembly paths and `/mycraft` commands remain
    **Mycraft**; BannerCraft is the public display name.
-4. For an authorized gameplay test, enter the isolated Minecraft world and a small custom field battle,
+4. For a gameplay test, enter the isolated Minecraft world and a small custom field battle,
    then use `/mycraft connect`. Verify disconnect/status and teardown before trying the army/Wither presets.
 
 These programs can run from a fresh source checkout without extracted assets or a running game:
@@ -101,7 +107,7 @@ dotnet run --project tests/Inventory/MycraftInventoryTests.csproj -c Release
 | Fresh Demo regression, 2026-10-12 | **39 checks passed**: event-ledger, targeting/interest-budget and shield-prediction logic; no live mission |
 | Fresh Inventory regression, 2026-10-12 | **20 frame/session assertions passed**: validation and opening-frame handling; no GPU/native Screen acceptance |
 | Source/configuration review | Entrypoints, queue/session design and declared targets inspected at the pinned commit |
-| Maintainer's release-preparation report | Visuals **84** and EntityVisuals **3707** checks after local resource generation; **not rerun for this note** |
+| BannerCraft's own release-preparation report | Visuals **84** and EntityVisuals **3707** checks after local resource generation; **not rerun for this note** |
 | Full combined game | **Not rerun or newly certified**; no fresh main-module build, Fabric build, Minecraft GameTests, rendered battle or save/load acceptance |
 
 The [published preparation report](https://github.com/hby7921/BannerCraft/blob/9895c3161d24f0a05ff689a5077b9a12bbf6c9c8/docs/OPEN_SOURCE.md)
