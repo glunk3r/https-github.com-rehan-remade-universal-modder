@@ -226,16 +226,32 @@ namespace
 extern "C" __declspec(dllexport) const char *NAME = "Overwatch Passthrough Compositor";
 extern "C" __declspec(dllexport) const char *DESCRIPTION = "Reads Overwatch guest color and depth buffers from shared memory and binds to OWWorldTex and OWDepthTex.";
 
+static bool register_all_events(void *addon_module, void *reshade_module = nullptr)
+{
+    if (!reshade::register_addon(addon_module, reshade_module))
+        return false;
+    reshade::register_event<reshade::addon_event::reshade_begin_effects>(on_begin_effects);
+    reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(on_reloaded_effects);
+    reshade::register_event<reshade::addon_event::destroy_effect_runtime>(on_destroy_effect_runtime);
+    return true;
+}
+
+extern "C" __declspec(dllexport) bool AddonInit(HMODULE addon_module, HMODULE reshade_module)
+{
+    return register_all_events(addon_module, reshade_module);
+}
+
+extern "C" __declspec(dllexport) void AddonUninit(HMODULE addon_module, HMODULE reshade_module)
+{
+    reshade::unregister_addon(addon_module, reshade_module);
+}
+
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID)
 {
     switch (fdwReason)
     {
     case DLL_PROCESS_ATTACH:
-        if (!reshade::register_addon(hinstDLL))
-            return FALSE;
-        reshade::register_event<reshade::addon_event::reshade_begin_effects>(on_begin_effects);
-        reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(on_reloaded_effects);
-        reshade::register_event<reshade::addon_event::destroy_effect_runtime>(on_destroy_effect_runtime);
+        register_all_events(hinstDLL);
         break;
     case DLL_PROCESS_DETACH:
         reshade::unregister_addon(hinstDLL);

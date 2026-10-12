@@ -25,25 +25,30 @@ def build_addon(output_dir: Path) -> Path:
     clang = shutil.which("clang++")
     gpp = shutil.which("g++")
 
-    cmd = None
-    if clang:
-        print(f"[*] Compiling with clang++: {clang}")
+    if gpp:
+        print(f"[*] Compiling with g++: {gpp}")
         cmd = [
-            clang,
+            gpp,
             "-O2",
             "-shared",
+            "-static",
+            "-static-libgcc",
+            "-static-libstdc++",
             "-std=c++20",
             f"-I{include_dir}",
             str(src_file),
             "-o",
             str(target_binary),
         ]
-    elif gpp:
-        print(f"[*] Compiling with g++: {gpp}")
+    elif clang:
+        print(f"[*] Compiling with clang++: {clang}")
         cmd = [
-            gpp,
+            clang,
             "-O2",
             "-shared",
+            "-static",
+            "-static-libgcc",
+            "-static-libstdc++",
             "-std=c++20",
             f"-I{include_dir}",
             str(src_file),
