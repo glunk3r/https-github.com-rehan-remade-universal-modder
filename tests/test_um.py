@@ -274,6 +274,48 @@ def test_steam_root_from_registry(tmp_path, monkeypatch):
     monkeypatch.setattr(scan, "steam_registry_root", lambda: root)
     assert root.resolve() in scan.steam_roots()
 
+
+def test_steam_games_ignores_unreadable_library(tmp_path, monkeypatch):
+    # If a library drive is unformatted, disconnected, or raises OSError on stat/resolve
+    root = tmp_path / "Steam"
+    (root / "steamapps").mkdir(parents=True)
+    broken_lib = tmp_path / "BrokenDrive"
+
+    (root / "steamapps" / "libraryfolders.vdf").write_text(
+        f'"libraryfolders" {{ "0" {{ "path" "{root.as_posix()}" }} "1" {{ "path" "{broken_lib.as_posix()}" }} }}',
+        encoding="utf-8",
+    )
+    (root / "steamapps" / "appmanifest_42.acf").write_text(
+        '"AppState" { "appid" "42" "name" "GoodGame" "installdir" "GoodGame" }',
+        encoding="utf-8",
+    )
+    (root / "steamapps" / "common" / "GoodGame").mkdir(parents=True)
+
+    monkeypatch.setattr(scan, "steam_roots", lambda: [root])
+
+    orig_is_dir = Path.is_dir
+    def fake_is_dir(self):
+        if "BrokenDrive" in str(self):
+            raise OSError(1005, "The volume does not contain a recognized file system.")
+        return orig_is_dir(self)
+
+    monkeypatch.setattr(Path, "is_dir", fake_is_dir)
+
+    games = scan.steam_games()
+    assert len(games) == 1
+    assert games[0]["name"] == "GoodGame"
+
+
+def test_xbox_games_ignores_unreadable_drive(monkeypatch):
+    orig_is_dir = Path.is_dir
+    def fake_is_dir(self):
+        if "XboxGames" in str(self):
+            raise OSError(1005, "The volume does not contain a recognized file system.")
+        return orig_is_dir(self)
+
+    monkeypatch.setattr(Path, "is_dir", fake_is_dir)
+    assert scan.xbox_games() == []
+
 def test_known_game_longest_key_wins(tmp_path):
     # "grand theft auto v" is a substring of "grand theft auto v enhanced";
     # the more specific entry must win, not whichever lands first in the dict

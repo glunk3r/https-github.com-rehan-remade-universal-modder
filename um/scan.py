@@ -128,15 +128,18 @@ def steam_games() -> list[dict]:
     seen = set()
     for lib in libs:
         apps = lib / "steamapps"
-        if not apps.is_dir() or apps.resolve() in seen:
+        try:
+            if not apps.is_dir() or apps.resolve() in seen:
+                continue
+            seen.add(apps.resolve())
+            for acf in apps.glob("appmanifest_*.acf"):
+                st = _vdf(acf.read_text(encoding="utf-8", errors="replace")).get("AppState", {})
+                path = apps / "common" / st.get("installdir", "")
+                if st.get("installdir") and path.is_dir():
+                    games.append(dict(store="steam", appid=st.get("appid"), name=st.get("name"), path=str(path),
+                                      workshop=str(apps / "workshop" / "content" / st.get("appid", "")) if (apps / "workshop" / "content" / st.get("appid", "")).is_dir() else None))
+        except OSError:
             continue
-        seen.add(apps.resolve())
-        for acf in apps.glob("appmanifest_*.acf"):
-            st = _vdf(acf.read_text(encoding="utf-8", errors="replace")).get("AppState", {})
-            path = apps / "common" / st.get("installdir", "")
-            if st.get("installdir") and path.is_dir():
-                games.append(dict(store="steam", appid=st.get("appid"), name=st.get("name"), path=str(path),
-                                  workshop=str(apps / "workshop" / "content" / st.get("appid", "")) if (apps / "workshop" / "content" / st.get("appid", "")).is_dir() else None))
     return games
 
 
@@ -144,14 +147,18 @@ def epic_games() -> list[dict]:
     base = Path(r"C:\ProgramData") if is_windows() else Path("/mnt/c/ProgramData") if is_wsl() else None
     out = []
     if base:
-        for item in (base / "Epic/EpicGamesLauncher/Data/Manifests").glob("*.item"):
+        try:
+            items = list((base / "Epic/EpicGamesLauncher/Data/Manifests").glob("*.item"))
+        except OSError:
+            items = []
+        for item in items:
             try:
                 d = json.loads(item.read_text(errors="replace"))
+                p = to_posix(d.get("InstallLocation", ""))
+                if p and Path(p).is_dir():
+                    out.append(dict(store="epic", appid=d.get("AppName"), name=d.get("DisplayName"), path=p))
             except (json.JSONDecodeError, OSError):
                 continue
-            p = to_posix(d.get("InstallLocation", ""))
-            if p and Path(p).is_dir():
-                out.append(dict(store="epic", appid=d.get("AppName"), name=d.get("DisplayName"), path=p))
     return out
 
 
@@ -159,10 +166,13 @@ def xbox_games() -> list[dict]:
     out = []
     for drive in ("c", "d", "e", "f"):
         root = Path(f"{drive.upper()}:/XboxGames") if is_windows() else Path(f"/mnt/{drive}/XboxGames") if is_wsl() else None
-        if root and root.is_dir():
-            for g in root.iterdir():
-                if g.is_dir():
-                    out.append(dict(store="xbox", appid=None, name=g.name, path=str(g / "Content" if (g / "Content").is_dir() else g)))
+        try:
+            if root and root.is_dir():
+                for g in root.iterdir():
+                    if g.is_dir():
+                        out.append(dict(store="xbox", appid=None, name=g.name, path=str(g / "Content" if (g / "Content").is_dir() else g)))
+        except OSError:
+            continue
     return out
 
 
