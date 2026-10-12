@@ -95,3 +95,11 @@
   - WavefrontMeshParser extracts and parses OBJ geometry (vertices, normals, UVs, height calculations).
   - Integrates directly into GuestCharacterRenderer via `load_custom_mesh()`.
 - **Verification**: `tests/test_ow_extractor.py` 3/3 passing, full test suite 114/114 passing.
+
+## 12. Host ReShade Shader (OWPassthrough.fx) & 60 FPS Server
+- **ReShade Composite Shader**: `tools/ow_passthrough/OWPassthrough.fx`
+  - ReShade-compatible HLSL effect sampling `sBackBuffer`, `OWWorldTex` (RGBA), and `OWDepthTex` (linear depth).
+  - Performs reversed-Z depth linearization with Elden Ring constant ($K=0.050067$) and environmental light matching.
+- **Background Daemon**: `tools/ow_passthrough/ow_server.py`
+  - Manages 60 FPS worker thread driving the orchestrator and publishing frames to `Local\OWPassthroughFrame`.
+- **Verification**: `tests/test_ow_reshade_effect.py` 2/2 passing, full test suite 116/116 passing.
