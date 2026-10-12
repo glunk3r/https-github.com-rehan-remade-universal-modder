@@ -14,9 +14,11 @@ python -m http.server 8000
 
 Ouvre ensuite <http://localhost:8000>. Cela sert uniquement à prévisualiser le calendrier sur ton appareil; les adresses `localhost` ne sont pas accessibles à tes proches. Il n'y a ni dépendance à installer ni compte à créer.
 
-### Publier pour partager les liens
+### Page publique
 
-Après avoir intégré ces fichiers à `main`, active **Settings → Pages → Build and deployment → Source → GitHub Actions** dans le dépôt, puis lance l'action **Advent calendar Pages** dans l'onglet **Actions** (ou pousse une modification du calendrier sur `main`). Cela publie la page à <https://rehan-remade.github.io/universal-modder/>. Crée le lien partagé depuis cette adresse publique; un lien créé depuis l'aperçu local ne peut pas fonctionner sur l'appareil d'un destinataire.
+La version actuellement publiée est accessible à <https://jeanchales13-beep.github.io/universal-modder/>. Ouvre cette adresse pour créer un lien que tes proches pourront consulter. Le lien est construit depuis cette URL publique et contient une copie du calendrier; chaque destinataire voit les surprises en lecture seule.
+
+Cette page est une publication sur le fork de développement. Pour publier la version du dépôt source, intègre les fichiers à `main`, active **Settings → Pages → Build and deployment → Source → GitHub Actions** dans le dépôt source, puis lance l'action **Advent calendar Pages** dans l'onglet **Actions**. Elle sera alors publiée à <https://rehan-remade.github.io/universal-modder/>. Les liens créés depuis `localhost` ou `file://` sont refusés, car ils ne seraient pas accessibles aux destinataires.
 
 ## Créer et partager
 
