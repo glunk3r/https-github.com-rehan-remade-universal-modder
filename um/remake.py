@@ -1756,6 +1756,40 @@ def _coop_handler(directory: str, ws_port: int | None = None):
     return Handler
 
 
+def _openssl() -> str | None:
+    """openssl on PATH, else the one Git for Windows ships (often missing from a uv/venv PATH)."""
+    exe = shutil.which("openssl")
+    if exe or os.name != "nt":
+        return exe
+    roots = [Path(p) for p in (os.environ.get("ProgramFiles", ""), os.environ.get("ProgramFiles(x86)", "")) if p]
+    git = shutil.which("git")
+    if git:
+        roots.insert(0, Path(git).resolve().parents[1].parent)  # <Git>/cmd/git.exe -> <Git>'s parent
+    for r in roots:
+        for rel in ("Git/usr/bin/openssl.exe", "Git/mingw64/bin/openssl.exe"):
+            if (r / rel).is_file():
+                return str(r / rel)
+    return None
+
+
+def _make_server_class():
+    from http.server import ThreadingHTTPServer
+
+    class Server(ThreadingHTTPServer):
+        # Windows SO_REUSEADDR lets a second server bind a busy port (a stale serve keeps answering): bind exclusively
+        allow_reuse_address = os.name != "nt"
+
+        def server_bind(self):
+            if os.name == "nt" and hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+                self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            super().server_bind()
+
+    return Server
+
+
+_CoopServer = _make_server_class()
+
+
 def _tls_context(root: Path, lan: str):
     """Self-signed certificate for 127.0.0.1, localhost and the LAN address, made once with openssl and kept in the
     project's state dir (regenerated when the LAN address changes)."""
@@ -1765,9 +1799,9 @@ def _tls_context(root: Path, lan: str):
     cert, key, tag = d / "cert.pem", d / "key.pem", d / "san.txt"
     san = f"DNS:localhost,IP:127.0.0.1,IP:{lan}"
     if not (cert.is_file() and key.is_file() and tag.is_file() and tag.read_text() == san):
-        exe = shutil.which("openssl")
+        exe = _openssl()
         if not exe:
-            raise RuntimeError("--https needs openssl on PATH (Git for Windows ships one)")
+            raise RuntimeError("--https needs openssl (on PATH, or Git for Windows' usr/bin/openssl.exe)")
         rc = subprocess.run([exe, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "825", "-subj", "/CN=um remake serve",
                              "-addext", f"subjectAltName={san}", "-keyout", str(key), "-out", str(cert)],
                             capture_output=True, text=True)
@@ -1780,7 +1814,6 @@ def _tls_context(root: Path, lan: str):
 
 
 def cmd_serve(a):
-    from http.server import ThreadingHTTPServer
     root = project_root(a.dir)
     web = root / "exports" / "web"
     index = web / "index.html"
@@ -1799,6 +1832,13 @@ def cmd_serve(a):
         print(f"exported {index.as_posix()}")
     elif not index.is_file():
         die(f"{index} missing: run without --no-export")
+    lan = _lan_ip()
+    try:  # bind (and make the certificate) before starting the game server, so a failure leaves nothing running
+        srv = _CoopServer(("0.0.0.0", a.port), _coop_handler(str(web), a.server_port if a.https else None))
+        if a.https:
+            srv.socket = _tls_context(root, lan).wrap_socket(srv.socket, server_side=True, do_handshake_on_connect=False)  # handshake in the handler thread
+    except (OSError, RuntimeError) as e:
+        die(f"cannot serve on port {a.port}: {e}")
     child = None
     if a.with_server:
         log = state_dir(root) / "server.log"
@@ -1807,15 +1847,6 @@ def cmd_serve(a):
                                      stdout=f, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                                      **({} if os.name == "nt" else {"start_new_session": True}))
         print(f"game server pid {child.pid} on port {a.server_port} (log {log.as_posix()})")
-    lan = _lan_ip()
-    try:
-        srv = ThreadingHTTPServer(("0.0.0.0", a.port), _coop_handler(str(web), a.server_port if a.https else None))
-        if a.https:
-            srv.socket = _tls_context(root, lan).wrap_socket(srv.socket, server_side=True, do_handshake_on_connect=False)  # handshake in the handler thread
-    except (OSError, RuntimeError) as e:
-        if child:
-            _kill_tree(child.pid)
-        die(f"cannot serve on port {a.port}: {e}")
     if a.https:
         # the page is a secure context, so the game must use wss on the page's own origin (/ws, relayed to the server)
         q = f"?room=main&server={lan}:{a.port}"
