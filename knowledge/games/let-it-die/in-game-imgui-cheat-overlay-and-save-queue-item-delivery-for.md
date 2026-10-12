@@ -22,8 +22,10 @@ tags: [overlay, imgui, d3d9, dinput8-proxy, ue3, processevent, processinternal, 
 > A `dinput8.dll` proxy that hooks D3D9 `EndScene` and draws an ImGui mod menu inside LET IT DIE Offline Edition, the
 > paid single-player release that replaced the online game (custom Unreal Engine 3, "BrgEngine"). It has infinite
 > durability, ammo and stamina (done by skipping specific UnrealScript functions in `ProcessInternal`), currency
-> buttons (calling script through `ProcessEvent`), an icon item picker, and permanent item and fighter-stat delivery. Delivery works through a save-edit queue that a
-> helper process applies after the game exits. All of it is verified in the real game (play-tested 2026-10-11).
+> buttons (calling script through `ProcessEvent`), an icon item picker, and permanent item and fighter-stat
+> delivery. Delivery works through a save-edit queue that a helper process applies after the game exits. All of it
+> is verified in the real game (play-tested 2026-10-11), except that one delivered part, Demon Gun 1, never shows
+> up in the locker (Gotcha 17).
 
 ## Setup
 - Game: LET IT DIE **Offline Edition 5.0.1**, Windows 11 x64.
