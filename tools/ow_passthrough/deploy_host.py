@@ -19,12 +19,15 @@ STEVE_BBMODEL_SIZE = 1894976
 STEVE_PNG_SIZE = 1893
 MC_TXT_SIZE = 345
 
-PRESET_INI_TEMPLATE = """; ReShade Configuration Preset for Overwatch Passthrough
+PRESET_INI_TEMPLATE = """Techniques=OWPassthrough@OWPassthrough.fx
+TechniqueSorting=OWPassthrough@OWPassthrough.fx
+
 [OWPassthrough.fx]
 OwActive=1
 HostReversedZ=1
 DepthConstant=0.050067
 DepthBias=0.050000
+EnableOcclusion=0
 LightMatch=0.700000
 """
 

@@ -38,6 +38,8 @@ def test_host_deployer_run(tmp_path):
     assert "DepthConstant" in content
 
     preset_content = res.deployed_preset.read_text(encoding="utf-8")
+    assert "Techniques=OWPassthrough@OWPassthrough.fx" in preset_content
+    assert "TechniqueSorting=OWPassthrough@OWPassthrough.fx" in preset_content
     assert "0.050067" in preset_content
 
     assert res.deployed_addon is not None

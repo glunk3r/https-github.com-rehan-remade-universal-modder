@@ -21,7 +21,24 @@ def build_addon(output_dir: Path) -> Path:
     if not (include_dir / "reshade.hpp").is_file():
         raise FileNotFoundError(f"ReShade headers not found in {include_dir}")
 
-    # Check compilers
+    # Check compilers: MSVC is mandatory for ReShade add-on binary compatibility
+    vcvars = Path(r"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat")
+    if not vcvars.is_file():
+        # Search other VS editions
+        for p in Path(r"C:\Program Files\Microsoft Visual Studio").glob("**/vcvars64.bat"):
+            vcvars = p
+            break
+
+    if vcvars.is_file():
+        print(f"[*] Compiling with MSVC cl.exe via {vcvars.name}...")
+        msvc_cmd = f'call "{vcvars}" && cl.exe /O2 /LD /std:c++20 /I"{include_dir}" "{src_file}" /Fe:"{target_binary}" /link /DLL'
+        proc = subprocess.run(f'cmd.exe /c "{msvc_cmd}"', capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if proc.returncode != 0:
+            print(f"[-] MSVC compilation failed:\n{proc.stdout}\n{proc.stderr}", file=sys.stderr)
+            raise RuntimeError(f"MSVC returned exit code {proc.returncode}")
+        print(f"[+] Successfully compiled with MSVC: {target_binary.name} ({target_binary.stat().st_size} bytes)")
+        return target_binary
+
     clang = shutil.which("clang++")
     gpp = shutil.which("g++")
 

@@ -226,13 +226,25 @@ namespace
         g_lastPublish = published;
     }
 
+    void ensure_technique_enabled(effect_runtime *runtime)
+    {
+        effect_technique tech = runtime->find_technique("OWPassthrough.fx", "OWPassthrough");
+        if (tech.handle != 0 && !runtime->get_technique_state(tech))
+        {
+            runtime->set_technique_state(tech, true);
+            reshade::log::message(reshade::log::level::info, "OWPassthrough: Automatically enabled OWPassthrough technique.");
+        }
+    }
+
     void on_begin_effects(effect_runtime *runtime, command_list *cmd_list, resource_view, resource_view)
     {
+        ensure_technique_enabled(runtime);
         upload(runtime, cmd_list);
     }
 
     void on_reloaded_effects(effect_runtime *runtime)
     {
+        ensure_technique_enabled(runtime);
         if (g_width != 0)
             bind(runtime);
     }
