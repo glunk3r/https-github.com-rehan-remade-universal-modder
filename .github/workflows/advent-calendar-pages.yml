@@ -1,0 +1,33 @@
+name: Advent calendar Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - examples/advent-calendar/**
+      - .github/workflows/advent-calendar-pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: advent-calendar-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: examples/advent-calendar
+      - id: deployment
+        uses: actions/deploy-pages@v4

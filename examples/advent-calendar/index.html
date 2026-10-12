@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f1e8">
+    <title>Mon calendrier de l'Avent</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="page">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Mon calendrier de l'Avent, accueil">
+          <span class="brand-mark" aria-hidden="true">✳</span>
+          <span>LES PETITES FÊTES</span>
+        </a>
+        <div class="top-actions">
+          <span id="mode-badge" class="mode-badge" hidden>Mode lecture seule</span>
+          <button id="theme-button" class="button button-light" type="button">Décorer mon calendrier</button>
+          <button id="share-button" class="button button-dark" type="button">Créer un lien</button>
+          <button id="exit-reader-button" class="button button-light" type="button" hidden>Quitter le mode lecture</button>
+        </div>
+      </header>
+
+      <section class="intro" aria-labelledby="calendar-title">
+        <div class="intro-copy">
+          <p class="eyebrow"><span aria-hidden="true">✦</span> UN PETIT BONHEUR CHAQUE JOUR</p>
+          <label class="sr-only" for="calendar-title">Titre de votre calendrier</label>
+          <textarea id="calendar-title" class="calendar-title" rows="1" maxlength="80" autocomplete="off">Mon calendrier de l'Avent</textarea>
+          <p id="intro-caption" class="intro-caption">Prépare 24 surprises et partage un joli moment pour Noël.</p>
+          <p class="tap-hint"><span class="hint-dot" aria-hidden="true"></span><span id="hint-text">Choisis une case pour y glisser une surprise.</span></p>
+        </div>
+        <div id="intro-photo-frame" class="intro-photo-frame" aria-hidden="true" hidden>
+          <img id="intro-photo" class="intro-photo" alt="">
+        </div>
+        <div id="intro-art" class="intro-art" aria-hidden="true">
+          <span class="moon">✦</span>
+          <span class="tree tree-back">♠</span>
+          <span class="tree tree-front">♠</span>
+          <span class="tree-star">✦</span>
+          <span class="snow snow-one">✧</span>
+          <span class="snow snow-two">·</span>
+          <span class="snow snow-three">✧</span>
+        </div>
+      </section>
+
+      <section class="calendar-section" aria-label="Les 24 cases du calendrier de l'Avent">
+        <div class="calendar-tools">
+          <p class="calendar-tools-hint">Mélange les positions sans changer les numéros ni leurs surprises.</p>
+          <div class="calendar-tools-actions">
+            <button id="shuffle-doors-button" class="button button-light" type="button">Mélanger les cases</button>
+            <button id="reset-doors-order-button" class="text-button" type="button" hidden>Remettre dans l'ordre</button>
+          </div>
+        </div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+      </section>
+
+      <footer class="page-footer">
+        <span>FAIT AVEC UN PEU DE MAGIE <span aria-hidden="true">♥</span></span>
+        <span>24 petits rendez-vous avant Noël</span>
+      </footer>
+    </main>
+
+    <p id="status-message" class="status-message" role="status" aria-live="polite"></p>
+
+    <dialog id="theme-dialog" class="dialog">
+      <form id="theme-form" class="dialog-card">
+        <button class="dialog-close" type="button" data-close="theme-dialog" aria-label="Fermer">×</button>
+        <p class="eyebrow">TON CALENDRIER, TES COULEURS</p>
+        <h2>Décore toutes les cases</h2>
+        <p class="dialog-copy">Choisis la forme, les couleurs et un motif pour toutes les cases, ou garde les décorations propres à chaque case.</p>
+        <div class="theme-fields">
+          <label class="theme-color-field" for="theme-background-color">
+            <span>Fond de la page</span>
+            <input id="theme-background-color" type="color" value="#f5f1e8">
+          </label>
+          <label class="theme-color-field" for="theme-door-color">
+            <span>Fond des cases</span>
+            <input id="theme-door-color" type="color" value="#fffefa">
+          </label>
+          <label class="theme-color-field" for="theme-text-color">
+            <span>Couleur des numéros</span>
+            <input id="theme-text-color" type="color" value="#214c3d">
+          </label>
+          <label class="theme-color-field" for="theme-decoration-color">
+            <span>Couleur de la décoration</span>
+            <input id="theme-decoration-color" type="color" value="#bc9144">
+          </label>
+        </div>
+        <label class="field-label" for="theme-font">Écriture du calendrier</label>
+        <select id="theme-font" class="text-input">
+          <option value="classic">Élégante</option>
+          <option value="modern">Moderne</option>
+          <option value="playful">Ronde et joyeuse</option>
+          <option value="handwritten">Manuscrite</option>
+        </select>
+        <label class="field-label" for="theme-caption">Phrase sous le titre</label>
+        <input id="theme-caption" class="text-input" type="text" maxlength="160" placeholder="Écris ta phrase ici...">
+        <label class="field-label" for="theme-cover-image">Photo du bandeau</label>
+        <p class="dialog-copy">Choisis une photo sur ton ordinateur pour remplacer les sapins du bandeau.</p>
+        <input id="theme-cover-image" class="file-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+        <div id="cover-image-preview" class="cover-image-preview" hidden>
+          <img id="cover-preview-image" alt="Aperçu de la photo du bandeau">
+          <button id="remove-cover-image-button" class="text-button" type="button">Retirer la photo</button>
+        </div>
+        <div id="photo-position-controls" class="photo-position-controls" hidden>
+          <label class="field-label" for="theme-photo-side">Côté de la photo</label>
+          <select id="theme-photo-side" class="text-input">
+            <option value="right">À droite du texte</option>
+            <option value="left">À gauche du texte</option>
+          </select>
+          <label class="range-field" for="theme-photo-width">
+            <span>Largeur de la photo <output id="theme-photo-width-value">42 %</output></span>
+            <input id="theme-photo-width" type="range" min="20" max="65" step="1" value="42">
+          </label>
+          <label class="range-field" for="theme-photo-zoom">
+            <span>Zoom <output id="theme-photo-zoom-value">100 %</output></span>
+            <input id="theme-photo-zoom" type="range" min="100" max="250" step="1" value="100">
+          </label>
+          <label class="range-field" for="theme-photo-x">
+            <span>Position horizontale <output id="theme-photo-x-value">50 %</output></span>
+            <input id="theme-photo-x" type="range" min="0" max="100" step="1" value="50">
+          </label>
+          <label class="range-field" for="theme-photo-y">
+            <span>Position verticale <output id="theme-photo-y-value">50 %</output></span>
+            <input id="theme-photo-y" type="range" min="0" max="100" step="1" value="50">
+          </label>
+        </div>
+        <label class="field-label" for="theme-shape">Forme de toutes les cases</label>
+        <select id="theme-shape" class="text-input"></select>
+        <label class="field-label" for="theme-decoration">Décoration de tout le calendrier</label>
+        <select id="theme-decoration" class="text-input"></select>
+        <label class="field-label" for="theme-opening-animation">Animation à l'ouverture des cases</label>
+        <select id="theme-opening-animation" class="text-input"></select>
+        <div class="decoration-preview theme-opening-preview-wrap">
+          <div id="theme-opening-preview" class="opening-scene preview-opening-scene" data-decoration="snow" aria-hidden="true">
+            <div class="opening-room"></div>
+            <div id="theme-opening-door" class="opening-door">
+              <span class="door-number">1</span>
+              <span id="theme-opening-symbol" class="door-decoration">❄</span>
+              <span class="door-knob"></span>
+            </div>
+            <span id="theme-opening-burst" class="magic-burst" aria-hidden="true"></span>
+          </div>
+          <div class="preview-copy">
+            <strong>Aperçu de l'ouverture</strong>
+            <span>Teste l'effet choisi avant de l'appliquer aux 24 cases.</span>
+            <button id="theme-opening-preview-button" class="text-button" type="button">Voir l'animation ✨</button>
+          </div>
+        </div>
+        <div class="theme-preview-wrap">
+          <p class="field-label">Aperçu en direct</p>
+          <div id="theme-preview" class="theme-preview" aria-label="Aperçu du style des cases"></div>
+        </div>
+        <div class="dialog-actions">
+          <button class="button button-light" type="button" data-close="theme-dialog">Annuler</button>
+          <button id="save-theme-button" class="button button-dark" type="submit">Appliquer à mon calendrier</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="edit-dialog" class="dialog">
+      <form id="edit-form" class="dialog-card">
+        <button class="dialog-close" type="button" data-close="edit-dialog" aria-label="Fermer">×</button>
+        <p class="eyebrow">TA PETITE SURPRISE</p>
+        <h2 id="edit-heading">Case du 1 décembre</h2>
+        <label class="field-label" for="surprise-title">Un petit titre</label>
+        <input id="surprise-title" class="text-input" type="text" maxlength="80" placeholder="Ex. Une balade sous les étoiles">
+        <label class="field-label" for="surprise-message">Ton message</label>
+        <textarea id="surprise-message" class="text-input message-input" rows="4" maxlength="1500" placeholder="Écris quelques mots doux, une idée de sortie ou un souvenir..."></textarea>
+        <label class="field-label" for="surprise-decoration">La décoration de cette case</label>
+        <select id="surprise-decoration" class="text-input decoration-select">
+          <option value="snow">Flocons de neige</option>
+          <option value="stars">Étoiles scintillantes</option>
+          <option value="hearts">Petits cœurs</option>
+          <option value="holly">Feuilles de houx</option>
+          <option value="gifts">Cadeaux dorés</option>
+          <option value="candy">Sucre d'orge</option>
+          <option value="bells">Cloches de Noël</option>
+          <option value="trees">Petits sapins</option>
+          <option value="reindeer">Rennes malicieux</option>
+          <option value="baubles">Boules de Noël</option>
+          <option value="gingerbread">Pain d'épices</option>
+          <option value="stockings">Chaussettes de Noël</option>
+          <option value="candles">Lumières de fête</option>
+          <option value="sparkles">Paillettes colorées</option>
+          <option value="spades">Piques</option>
+        </select>
+        <label class="field-label" for="surprise-shape">La forme de cette case</label>
+        <select id="surprise-shape" class="text-input"></select>
+        <label class="field-label" for="surprise-opening-animation">L'animation d'ouverture de cette case</label>
+        <select id="surprise-opening-animation" class="text-input"></select>
+        <p class="dialog-copy door-colors-copy">Personnalise les couleurs de cette case, ou coche « suivre » pour reprendre celles du calendrier.</p>
+        <div class="door-color-fields">
+          <div class="door-color-field">
+            <label for="surprise-door-color">Fond de la case</label>
+            <input id="surprise-door-color" type="color" value="#fffefa">
+            <label class="inherit-color"><input id="inherit-door-color" type="checkbox" checked> Suivre le calendrier</label>
+          </div>
+          <div class="door-color-field">
+            <label for="surprise-text-color">Numéro</label>
+            <input id="surprise-text-color" type="color" value="#214c3d">
+            <label class="inherit-color"><input id="inherit-text-color" type="checkbox" checked> Suivre le calendrier</label>
+          </div>
+          <div class="door-color-field">
+            <label for="surprise-decoration-color">Décoration</label>
+            <input id="surprise-decoration-color" type="color" value="#bc9144">
+            <label class="inherit-color"><input id="inherit-decoration-color" type="checkbox" checked> Suivre le calendrier</label>
+          </div>
+        </div>
+        <div class="decoration-preview">
+          <div id="decoration-preview-door" class="opening-scene preview-opening-scene" data-decoration="snow" aria-hidden="true">
+            <div class="opening-room"></div>
+            <div class="opening-door">
+              <span id="preview-door-number" class="door-number">1</span>
+              <span id="preview-door-symbol" class="door-decoration">❄</span>
+              <span class="door-knob"></span>
+            </div>
+            <span id="preview-burst" class="magic-burst" aria-hidden="true"></span>
+          </div>
+          <div class="preview-copy">
+            <strong>Aperçu de ta décoration</strong>
+            <span>La porte suit l'animation choisie et des décorations jaillissent.</span>
+            <button id="preview-animation-button" class="text-button" type="button">Ouvrir la porte ✨</button>
+          </div>
+        </div>
+        <label class="field-label" for="surprise-image">Une image, si tu veux</label>
+        <input id="surprise-image" class="file-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+        <div id="image-preview" class="image-preview" hidden>
+          <img id="preview-image" alt="Aperçu de l'image ajoutée">
+          <button id="remove-image-button" class="text-button" type="button">Retirer l'image</button>
+        </div>
+        <div class="dialog-actions">
+          <button class="button button-light" type="button" data-close="edit-dialog">Annuler</button>
+          <button class="button button-dark" type="submit">Enregistrer la surprise</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="reveal-dialog" class="dialog">
+      <article class="dialog-card reveal-card">
+        <button class="dialog-close" type="button" data-close="reveal-dialog" aria-label="Fermer">×</button>
+        <p class="eyebrow">UN PETIT BONHEUR POUR LE <span id="reveal-day">1</span> DÉCEMBRE</p>
+        <div id="reveal-opening-scene" class="opening-scene reveal-opening-scene" data-decoration="snow" aria-hidden="true">
+          <div class="opening-room"></div>
+          <div id="reveal-opening-door" class="opening-door">
+            <span id="reveal-door-number" class="door-number">1</span>
+            <span id="reveal-door-symbol" class="door-decoration">❄</span>
+            <span class="door-knob"></span>
+          </div>
+          <span id="reveal-burst" class="magic-burst reveal-burst" aria-hidden="true"></span>
+        </div>
+        <img id="reveal-image" class="reveal-image" alt="" hidden>
+        <h2 id="reveal-title"></h2>
+        <p id="reveal-message" class="reveal-message"></p>
+        <p id="reveal-empty" class="reveal-empty" hidden>Cette case garde encore sa surprise secrète. ✨</p>
+        <button id="edit-from-reveal" class="button button-dark" type="button">Modifier cette surprise</button>
+      </article>
+    </dialog>
+
+    <dialog id="share-dialog" class="dialog">
+      <form id="share-form" class="dialog-card">
+        <button class="dialog-close" type="button" data-close="share-dialog" aria-label="Fermer">×</button>
+        <p class="eyebrow">UN LIEN SECRET À PARTAGER</p>
+        <h2>Ton calendrier est prêt à voyager</h2>
+        <p class="dialog-copy">Envoie ce lien à la personne de ton choix. Elle pourra ouvrir les cases, mais pas modifier ton calendrier. Pour que tes proches puissent l'ouvrir, cette page doit être publiée en ligne.</p>
+        <label class="sr-only" for="share-link">Lien du calendrier</label>
+        <textarea id="share-link" class="text-input link-input" rows="4" readonly></textarea>
+        <p id="share-size" class="share-size"></p>
+        <div class="dialog-actions">
+          <button class="button button-light" type="button" data-close="share-dialog">Fermer</button>
+          <button id="copy-link-button" class="button button-dark" type="button">Copier le lien</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
