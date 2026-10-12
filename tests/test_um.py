@@ -562,6 +562,18 @@ def test_secret_patterns_ignore_ordinary_text():
     assert not [label for label, rx in publish.SECRET_PATTERNS if rx.search(text)]
 
 
+def test_video_theme_font_override(tmp_path):
+    # Space Grotesk is Latin-only: an EDL theme's title_font replaces it, e.g. for Cyrillic titles
+    video.FONT_OVERRIDES[video.TITLE_FONT] = str(video.MONO_FONT)
+    try:
+        assert video._font(video.TITLE_FONT, 20).path == str(video.MONO_FONT)
+        video.hook_text("Привет, мир", 640, 360, {}, tmp_path / "hook.png")
+        assert (tmp_path / "hook.png").exists()
+    finally:
+        video.FONT_OVERRIDES.clear()
+    assert video._font(video.TITLE_FONT, 20).path == str(video.TITLE_FONT)
+
+
 # --------------------------------------------------------------------------- video
 
 @pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="needs ffmpeg")
