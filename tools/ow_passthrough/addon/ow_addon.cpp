@@ -140,7 +140,7 @@ namespace
         runtime->update_texture_bindings("OWDEPTH", g_depth.srv, g_depth.srv);
     }
 
-    void upload(effect_runtime *runtime)
+    void upload(effect_runtime *runtime, command_list *cmd_list = nullptr)
     {
         if (!open_mapping())
             return;
@@ -193,11 +193,31 @@ namespace
         data.row_pitch = w * 4;
         data.slice_pitch = w * h * 4;
 
-        data.data = const_cast<uint8_t *>(color_ptr);
-        dev->update_texture_region(data, g_world.tex, 0);
+        if (cmd_list != nullptr)
+        {
+            // Transition resources from shader_resource to copy_dest
+            const resource res_arr[2] = { g_world.tex, g_depth.tex };
+            const resource_usage old_states[2] = { resource_usage::shader_resource, resource_usage::shader_resource };
+            const resource_usage copy_states[2] = { resource_usage::copy_dest, resource_usage::copy_dest };
+            cmd_list->barrier(2, res_arr, old_states, copy_states);
 
-        data.data = const_cast<uint8_t *>(depth_ptr);
-        dev->update_texture_region(data, g_depth.tex, 0);
+            data.data = const_cast<uint8_t *>(color_ptr);
+            cmd_list->update_texture_region(data, g_world.tex, 0);
+
+            data.data = const_cast<uint8_t *>(depth_ptr);
+            cmd_list->update_texture_region(data, g_depth.tex, 0);
+
+            // Transition resources back from copy_dest to shader_resource
+            cmd_list->barrier(2, res_arr, copy_states, old_states);
+        }
+        else
+        {
+            data.data = const_cast<uint8_t *>(color_ptr);
+            dev->update_texture_region(data, g_world.tex, 0);
+
+            data.data = const_cast<uint8_t *>(depth_ptr);
+            dev->update_texture_region(data, g_depth.tex, 0);
+        }
 
         // Seqlock check 2: verify slot wasn't overwritten during copy
         if (slot->seqlock != seq)
@@ -206,9 +226,9 @@ namespace
         g_lastPublish = published;
     }
 
-    void on_begin_effects(effect_runtime *runtime, command_list *, resource_view, resource_view)
+    void on_begin_effects(effect_runtime *runtime, command_list *cmd_list, resource_view, resource_view)
     {
-        upload(runtime);
+        upload(runtime, cmd_list);
     }
 
     void on_reloaded_effects(effect_runtime *runtime)
