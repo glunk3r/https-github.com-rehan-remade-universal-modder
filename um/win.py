@@ -145,7 +145,7 @@ def processes(name: str | None = None) -> list[dict]:
                      "Select-Object Id,ProcessName,MainWindowTitle,@{n='Hwnd';e={[int64]$_.MainWindowHandle}} | ConvertTo-Json -Compress")
     if not out.strip():
         return []
-    d = json.loads(out)
+    d = json.loads(out, strict=False)   # window titles can hold raw control characters
     return d if isinstance(d, list) else [d]
 
 
