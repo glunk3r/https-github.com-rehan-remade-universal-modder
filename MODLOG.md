@@ -81,3 +81,9 @@
   - Dynamic posture updates responding to Scheme B abilities (Rocket Punch charge wind-up & dash thrust).
   - Publishes frames into Seqlock shared memory bridge (`Local\OWPassthroughFrame`).
 - **Verification**: `tests/test_ow_guest_renderer.py` 4/4 passing, full test suite 110/110 passing.
+
+## 10. End-to-End Orchestrator Pipeline
+- **Orchestrator Built**: `tools/ow_passthrough/orchestrator.py`
+  - Unifies: Input Controller (Scheme B) -> Guest Character Renderer (Pose & Buffers) -> Seqlock Shared Memory Bridge -> Depth Compositor Loop.
+  - Implements multi-frame continuous stepping and ability state propagation.
+- **Verification**: `tests/test_ow_passthrough_e2e.py` 1/1 passing, full test suite 111/111 passing.
