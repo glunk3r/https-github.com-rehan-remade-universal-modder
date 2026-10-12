@@ -61,7 +61,9 @@ namespace reshade::internal
 	/// </summary>
 	inline HMODULE get_reshade_module_handle(HMODULE initial_handle = nullptr)
 	{
-		static HMODULE handle = initial_handle;
+		static HMODULE handle = nullptr;
+		if (initial_handle != nullptr)
+			handle = initial_handle;
 		if (handle == nullptr)
 		{
 			HMODULE modules[1024]; DWORD num = 0;
@@ -89,7 +91,9 @@ namespace reshade::internal
 	/// </summary>
 	inline HMODULE get_current_module_handle(HMODULE initial_handle = nullptr)
 	{
-		static HMODULE handle = initial_handle;
+		static HMODULE handle = nullptr;
+		if (initial_handle != nullptr)
+			handle = initial_handle;
 		return handle;
 	}
 }

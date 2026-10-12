@@ -34,6 +34,11 @@ uniform float DepthBias <
     ui_tooltip = "Allowance before character is considered occluded by scenery.";
 > = 0.05;
 
+uniform bool EnableOcclusion <
+    ui_label = "Enable Depth Occlusion";
+    ui_tooltip = "When enabled, tests character against Elden Ring 3D depth buffer.";
+> = false;
+
 uniform float LightMatch <
     ui_type = "drag";
     ui_min = 0.0; ui_max = 1.0; ui_step = 0.01;
@@ -53,18 +58,20 @@ float4 PS_OWComposite(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV
         return host_color; // Transparent background
     }
 
-    float ow_depth_m = tex2D(sOWDepth, texcoord).r;
-    float host_raw_depth = ReShade::GetLinearizedDepth(texcoord);
+    if (EnableOcclusion) {
+        float ow_depth_m = tex2D(sOWDepth, texcoord).r;
+        float host_raw_depth = ReShade::GetLinearizedDepth(texcoord);
 
-    // In Elden Ring reversed-Z: host_z (metres) ~ DepthConstant / raw_depth
-    float host_depth_m = 10000.0;
-    if (host_raw_depth > 0.0001) {
-        host_depth_m = DepthConstant / host_raw_depth;
-    }
+        // In Elden Ring reversed-Z: host_z (metres) ~ DepthConstant / raw_depth
+        float host_depth_m = 10000.0;
+        if (host_raw_depth > 0.0001) {
+            host_depth_m = DepthConstant / host_raw_depth;
+        }
 
-    // Occlusion check
-    if (ow_depth_m > host_depth_m + DepthBias) {
-        return host_color; // Occluded by Elden Ring environment (trees, stones, walls)
+        // Occlusion check
+        if (ow_depth_m > host_depth_m + DepthBias) {
+            return host_color; // Occluded by Elden Ring environment
+        }
     }
 
     // Environmental lighting approximation: mix ambient luminance

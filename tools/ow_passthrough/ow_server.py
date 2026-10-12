@@ -9,6 +9,7 @@ from typing import Optional
 
 from tools.ow_passthrough.shared_memory import SharedMemoryBridge
 from tools.ow_passthrough.orchestrator import PassthroughOrchestrator
+from tools.ow_doomfist.input_controller import VirtualKey
 
 
 class OWPassthroughServer:
@@ -25,6 +26,7 @@ class OWPassthroughServer:
         self.fps = fps
         self.interval_s = 1.0 / float(fps)
         self.bridge = bridge
+        self.hero_name = hero
 
         self.orchestrator = PassthroughOrchestrator(width=width, height=height)
         if hero != "Doomfist":
@@ -36,9 +38,38 @@ class OWPassthroughServer:
         self.frames_produced = 0
         self._running = False
         self._thread: Optional[threading.Thread] = None
+        self._key_states = {
+            VirtualKey.RBUTTON: False,
+            VirtualKey.LBUTTON: False,
+            VirtualKey.SHIFT: False,
+            VirtualKey.KEY_E: False,
+            VirtualKey.KEY_Q: False,
+        }
 
     def is_alive(self) -> bool:
         return self._running and self._thread is not None and self._thread.is_alive()
+
+    def poll_host_inputs(self) -> None:
+        """Poll host global key/mouse states via Windows GetAsyncKeyState."""
+        import sys
+        if sys.platform != "win32":
+            return
+        import ctypes
+        try:
+            get_key = ctypes.windll.user32.GetAsyncKeyState
+        except Exception:
+            return
+
+        keys = (VirtualKey.RBUTTON, VirtualKey.LBUTTON, VirtualKey.SHIFT, VirtualKey.KEY_E, VirtualKey.KEY_Q)
+        for vk in keys:
+            is_down = bool(get_key(vk.value) & 0x8000)
+            was_down = self._key_states.get(vk, False)
+            if is_down and not was_down:
+                self.orchestrator.on_key_down(vk)
+                self._key_states[vk] = True
+            elif not is_down and was_down:
+                self.orchestrator.on_key_up(vk)
+                self._key_states[vk] = False
 
     def start(self) -> None:
         if self._running:
@@ -62,6 +93,7 @@ class OWPassthroughServer:
             dt = now - last_time
             last_time = now
 
+            self.poll_host_inputs()
             self.orchestrator.step_frame(dt=dt)
             self.frames_produced += 1
 
@@ -90,9 +122,14 @@ def main():
         if args.duration > 0.0:
             time.sleep(args.duration)
         else:
+            last_state = ""
             while True:
-                time.sleep(1.0)
-                print(f"[*] Frames produced: {server.frames_produced}", end="\r")
+                time.sleep(0.1)
+                curr_state = server.orchestrator.input_controller.current_state.name
+                if curr_state != last_state:
+                    print(f"\n[+] Key Input Event -> {server.hero_name} State: {curr_state}")
+                    last_state = curr_state
+                print(f"[*] Frames: {server.frames_produced} | State: {curr_state}    ", end="\r")
     except KeyboardInterrupt:
         print("\n[*] Stopping server...")
     finally:

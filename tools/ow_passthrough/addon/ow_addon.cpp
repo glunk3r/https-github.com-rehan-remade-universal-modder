@@ -238,6 +238,8 @@ static bool register_all_events(void *addon_module, void *reshade_module = nullp
 
 extern "C" __declspec(dllexport) bool AddonInit(HMODULE addon_module, HMODULE reshade_module)
 {
+    reshade::internal::get_current_module_handle(addon_module);
+    reshade::internal::get_reshade_module_handle(reshade_module);
     return register_all_events(addon_module, reshade_module);
 }
 
@@ -248,14 +250,9 @@ extern "C" __declspec(dllexport) void AddonUninit(HMODULE addon_module, HMODULE 
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID)
 {
-    switch (fdwReason)
+    if (fdwReason == DLL_PROCESS_ATTACH)
     {
-    case DLL_PROCESS_ATTACH:
-        register_all_events(hinstDLL);
-        break;
-    case DLL_PROCESS_DETACH:
-        reshade::unregister_addon(hinstDLL);
-        break;
+        reshade::internal::get_current_module_handle(hinstDLL);
     }
     return TRUE;
 }
