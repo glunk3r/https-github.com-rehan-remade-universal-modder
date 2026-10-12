@@ -103,3 +103,29 @@
 - **Background Daemon**: `tools/ow_passthrough/ow_server.py`
   - Manages 60 FPS worker thread driving the orchestrator and publishing frames to `Local\OWPassthroughFrame`.
 - **Verification**: `tests/test_ow_reshade_effect.py` 2/2 passing, full test suite 116/116 passing.
+
+## 13. Genji (源氏) Cybernetic Ninja & Multi-Hero Renderer
+- **Input Controller Built**: `tools/ow_genji/input_controller.py`
+  - Left Click (`VK_LBUTTON`): Shuriken Linear 3-burst.
+  - Right Click (`VK_RBUTTON`): Shuriken Fan of 3 stars in 28° spread.
+  - Shift (`VK_SHIFT`): Swift Strike (影 - 15 m/s supersonic dash slice).
+  - E (`VK_E`): Deflect (闪 - 2.0s frontal parry/invulnerability stance).
+  - Q (`VK_Q`): Dragonblade (龙刃 - 6.0s green Katana sweep state).
+- **Multi-Hero Renderer Upgrade**: `tools/ow_passthrough/guest_renderer.py`
+  - Supports `set_character("Genji")` (1.78m canon height).
+  - Cybernetic ninja visual palette: titanium silver armor, carbon mesh, green visor lines.
+  - Dynamic Dragonblade green energy aura during Q state.
+- **Verification**: `tests/test_ow_genji.py` 2/2 passing, full test suite 118/118 passing.
+
+## 14. Host Deployment & Multi-Hero Passthrough Unification
+- **Host Deployer Built**: `tools/ow_passthrough/deploy_host.py`
+  - Safely deployed `OWPassthrough.fx` and `OWPassthrough.ini` to `C:\Program Files (x86)\Steam\steamapps\common\ELDEN RING\Game\mods\ow_doomfist_standalone\reshade\Shaders` and `Game\reshade-shaders\Shaders`.
+  - Pre-flight and post-flight oracles enforce strict byte-identical integrity on `mc_adapter/steve.bbmodel` (1,894,976 B), `mc_adapter/steve.png` (1,893 B), and `mc_er_steve.txt` (345 B).
+- **Multi-Hero Orchestrator Pipeline**: `tools/ow_passthrough/orchestrator.py`
+  - Integrated dynamic hero switching: `set_hero("Doomfist")` and `set_hero("Genji")`.
+  - Dispatches input events to hero-specific state machines (`DoomfistInputController` and `GenjiInputController`).
+  - Seamlessly updates character visual traits (Doomfist golden gauntlet vs Genji cybernetic titanium/green Dragonblade).
+- **Standalone Background Server CLI**: `tools/ow_passthrough/ow_server.py`
+  - Full CLI entry point with configurable `--hero`, `--fps`, `--width`, `--height`, `--duration`.
+  - Successfully verified live daemon publishing frames into `Local\OWPassthroughFrame` for both Doomfist and Genji.
+- **Verification**: `tests/test_ow_host_deploy.py` (2/2), `tests/test_ow_passthrough_e2e.py` (2/2), `tests/test_ow_reshade_effect.py` (3/3), total test suite 122/122 passing.

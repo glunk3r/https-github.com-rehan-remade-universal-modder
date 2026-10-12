@@ -47,6 +47,22 @@ class GuestCharacterRenderer:
         self.current_ability = AbilityState.IDLE
         self.charge_tier = 1
         self.gauntlet_offset_z = 0.0
+        self.dragonblade_active = False
+
+    def set_character(self, name: str) -> None:
+        """Switch active hero character."""
+        self.character_name = name
+        if name == "Genji":
+            self.bounding_height_m = 1.78
+            self.vertex_count = 1890
+        elif name == "Doomfist":
+            self.bounding_height_m = 1.95
+            self.vertex_count = 1420
+
+    def update_genji_ability_state(self, ctrl) -> None:
+        """Update animation pose based on Genji's ability state."""
+        from tools.ow_genji.input_controller import GenjiAbilityState
+        self.dragonblade_active = (ctrl.current_state == GenjiAbilityState.DRAGONBLADE_ACTIVE)
 
     def load_custom_mesh(self, mesh) -> None:
         """Load an external parsed 3D mesh into the renderer."""
@@ -119,13 +135,28 @@ class GuestCharacterRenderer:
                 surface_curve = math.sqrt(max(0.0, 1.0 - dist_sq)) * 0.3
                 char_depth = base_dist - surface_curve
 
-                # Gauntlet on the right side of the character
-                if norm_x > 0.15:
-                    r, g, b, a = c_gold
-                elif abs(norm_y) > 0.6:
-                    r, g, b, a = c_skin
+                if self.character_name == "Genji":
+                    c_genji_silver = (195, 200, 205, 255)
+                    c_genji_carbon = (45, 48, 50, 255)
+                    c_genji_green = (50, 255, 60, 255)
+                    c_dragonblade = (20, 255, 80, 255)
+
+                    if self.dragonblade_active and norm_x > 0.05:
+                        r, g, b, a = c_dragonblade  # Dragonblade glowing aura
+                    elif abs(norm_y) > 0.7 or (px + py) % 5 == 0:
+                        r, g, b, a = c_genji_green   # Visor & cyber lines
+                    elif (px + py) % 2 == 0:
+                        r, g, b, a = c_genji_silver  # Cybernetic armor plates
+                    else:
+                        r, g, b, a = c_genji_carbon  # Carbon under-mesh
                 else:
-                    r, g, b, a = c_metal if (px + py) % 3 == 0 else c_skin
+                    # Doomfist palette
+                    if norm_x > 0.15:
+                        r, g, b, a = c_gold
+                    elif abs(norm_y) > 0.6:
+                        r, g, b, a = c_skin
+                    else:
+                        r, g, b, a = c_metal if (px + py) % 3 == 0 else c_skin
 
                 color_buf[idx * 4 : idx * 4 + 4] = bytes([r, g, b, a])
                 depth_buf[idx * 4 : idx * 4 + 4] = struct.pack("<f", char_depth)

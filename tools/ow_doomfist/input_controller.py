@@ -18,6 +18,8 @@ class VirtualKey(int, Enum):
     SHIFT = 0x10
     KEY_E = 0x45
     KEY_Q = 0x51
+    E = 0x45
+    Q = 0x51
 
 
 class AbilityState(Enum):

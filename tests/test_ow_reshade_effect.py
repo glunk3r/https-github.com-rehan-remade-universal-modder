@@ -47,3 +47,17 @@ def test_ow_passthrough_server_lifecycle():
     # Clean shutdown
     server.stop()
     assert server.is_alive() is False
+
+
+def test_ow_passthrough_server_genji_hero():
+    bridge = SharedMemoryBridge(width=32, height=32)
+    server = OWPassthroughServer(width=32, height=32, fps=30, bridge=bridge, hero="Genji")
+    assert server.orchestrator.current_hero == "Genji"
+    server.start()
+    time.sleep(0.08)
+    assert server.frames_produced > 0
+    read_res = bridge.read_latest_frame(max_age_ms=100.0)
+    assert read_res.is_valid is True
+    server.stop()
+    assert server.is_alive() is False
+

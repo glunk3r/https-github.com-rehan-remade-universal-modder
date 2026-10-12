@@ -15,6 +15,10 @@ from tools.ow_doomfist.input_controller import (
     VirtualKey,
     AbilityState,
 )
+from tools.ow_genji.input_controller import (
+    GenjiInputController,
+    GenjiAbilityState,
+)
 from tools.ow_passthrough.shared_memory import (
     SharedMemoryBridge,
 )
@@ -43,11 +47,25 @@ class PassthroughOrchestrator:
         self.height = height
         self.is_running = False
         self.frame_count = 0
+        self.current_hero = "Doomfist"
 
         self.input_controller = DoomfistInputController()
         self.shared_memory = SharedMemoryBridge(width=width, height=height)
         self.guest_renderer = GuestCharacterRenderer(width=width, height=height, bridge=self.shared_memory)
         self.compositor = DepthCompositor()
+
+    def set_hero(self, hero_name: str) -> None:
+        """Switch active hero between Doomfist and Genji."""
+        if hero_name.lower() in ("genji", "源氏"):
+            self.current_hero = "Genji"
+            self.input_controller = GenjiInputController()
+            self.guest_renderer.set_character("Genji")
+        elif hero_name.lower() in ("doomfist", "铁拳"):
+            self.current_hero = "Doomfist"
+            self.input_controller = DoomfistInputController()
+            self.guest_renderer.set_character("Doomfist")
+        else:
+            raise ValueError(f"Unsupported hero: {hero_name}")
 
     def start(self) -> None:
         self.is_running = True
@@ -72,7 +90,10 @@ class PassthroughOrchestrator:
 
         # 1. Update Input & Animation State Machine
         self.input_controller.update(dt)
-        self.guest_renderer.update_ability_state(self.input_controller)
+        if self.current_hero == "Genji":
+            self.guest_renderer.update_genji_ability_state(self.input_controller)
+        else:
+            self.guest_renderer.update_ability_state(self.input_controller)
 
         # 2. Render guest frame and publish to Seqlock shared memory
         cam = RenderCamera(eye=host_cam_eye, target=(0.0, 1.0, 0.0), fov_deg=60.0)
@@ -80,12 +101,13 @@ class PassthroughOrchestrator:
 
         # 3. Read back from shared memory (Compositor side)
         read_res = self.shared_memory.read_latest_frame(max_age_ms=200.0)
+        charge_tier = getattr(self.input_controller, "charge_tier", 0)
         if not read_res.is_valid:
             return FrameStatistic(
                 frame_id=self.frame_count,
                 is_valid=False,
                 composite_drawn_pixels=0,
-                charge_tier=self.input_controller.charge_tier,
+                charge_tier=charge_tier,
                 active_ability=self.input_controller.current_state.name,
             )
 
@@ -108,20 +130,33 @@ class PassthroughOrchestrator:
                     drawn_pixels += 1
 
         ability_name = "None"
-        state = self.input_controller.current_state
-        if state in (AbilityState.ROCKET_PUNCH_CHARGING, AbilityState.ROCKET_PUNCH_DASHING):
-            ability_name = "RocketPunch"
-        elif state == AbilityState.SEISMIC_SLAM_LEAP:
-            ability_name = "SeismicSlam"
-        elif state == AbilityState.RISING_UPPERCUT:
-            ability_name = "RisingUppercut"
-        elif state in (AbilityState.METEOR_STRIKE_TARGETING, AbilityState.METEOR_STRIKE_SLAM):
-            ability_name = "MeteorStrike"
+        if self.current_hero == "Genji":
+            state = self.input_controller.current_state
+            if state == GenjiAbilityState.DRAGONBLADE_ACTIVE:
+                ability_name = "Dragonblade"
+            elif state == GenjiAbilityState.SWIFT_STRIKE_DASHING:
+                ability_name = "SwiftStrike"
+            elif state == GenjiAbilityState.DEFLECT_ACTIVE:
+                ability_name = "Deflect"
+            elif state == GenjiAbilityState.SHURIKEN_LINEAR:
+                ability_name = "ShurikenLinear"
+            elif state == GenjiAbilityState.SHURIKEN_FAN:
+                ability_name = "ShurikenFan"
+        else:
+            state = self.input_controller.current_state
+            if state in (AbilityState.ROCKET_PUNCH_CHARGING, AbilityState.ROCKET_PUNCH_DASHING):
+                ability_name = "RocketPunch"
+            elif state == AbilityState.SEISMIC_SLAM_LEAP:
+                ability_name = "SeismicSlam"
+            elif state == AbilityState.RISING_UPPERCUT:
+                ability_name = "RisingUppercut"
+            elif state in (AbilityState.METEOR_STRIKE_TARGETING, AbilityState.METEOR_STRIKE_SLAM):
+                ability_name = "MeteorStrike"
 
         return FrameStatistic(
             frame_id=self.frame_count,
             is_valid=True,
             composite_drawn_pixels=drawn_pixels,
-            charge_tier=self.input_controller.charge_tier,
+            charge_tier=charge_tier,
             active_ability=ability_name,
         )

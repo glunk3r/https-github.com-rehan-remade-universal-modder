@@ -12,7 +12,14 @@ from tools.ow_passthrough.orchestrator import PassthroughOrchestrator
 
 
 class OWPassthroughServer:
-    def __init__(self, width: int = 128, height: int = 128, fps: int = 60, bridge: Optional[SharedMemoryBridge] = None):
+    def __init__(
+        self,
+        width: int = 128,
+        height: int = 128,
+        fps: int = 60,
+        bridge: Optional[SharedMemoryBridge] = None,
+        hero: str = "Doomfist",
+    ):
         self.width = width
         self.height = height
         self.fps = fps
@@ -20,6 +27,8 @@ class OWPassthroughServer:
         self.bridge = bridge
 
         self.orchestrator = PassthroughOrchestrator(width=width, height=height)
+        if hero != "Doomfist":
+            self.orchestrator.set_hero(hero)
         if self.bridge is not None:
             self.orchestrator.shared_memory = self.bridge
             self.orchestrator.guest_renderer.bridge = self.bridge
@@ -61,3 +70,35 @@ class OWPassthroughServer:
             sleep_time = self.interval_s - elapsed
             if sleep_time > 0:
                 time.sleep(sleep_time)
+
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="OW Passthrough Shared Memory Server")
+    parser.add_argument("--hero", type=str, default="Doomfist", help="Hero to render (Doomfist or Genji)")
+    parser.add_argument("--fps", type=int, default=60, help="Target framerate (default: 60)")
+    parser.add_argument("--width", type=int, default=128, help="Frame width (default: 128)")
+    parser.add_argument("--height", type=int, default=128, help="Frame height (default: 128)")
+    parser.add_argument("--duration", type=float, default=0.0, help="Run duration in seconds (0 = forever)")
+    args = parser.parse_args()
+
+    print(f"[*] Starting OW Passthrough Server: hero={args.hero}, {args.width}x{args.height} @ {args.fps} FPS")
+    server = OWPassthroughServer(width=args.width, height=args.height, fps=args.fps, hero=args.hero)
+    server.start()
+    print("[*] Server active. Publishing to Local\\OWPassthroughFrame...")
+    try:
+        if args.duration > 0.0:
+            time.sleep(args.duration)
+        else:
+            while True:
+                time.sleep(1.0)
+                print(f"[*] Frames produced: {server.frames_produced}", end="\r")
+    except KeyboardInterrupt:
+        print("\n[*] Stopping server...")
+    finally:
+        server.stop()
+        print("[*] Server stopped cleanly.")
+
+
+if __name__ == "__main__":
+    main()
