@@ -150,3 +150,48 @@ def test_modengine2_packaging_and_deep_validation(tmp_path):
     assert "RisingUppercut" in data["skills"]
     assert "SeismicSlam" in data["skills"]
     assert data["skills"]["RocketPunch"]["knockback_type"] == "KNOCKDOWN_WALL_SLAM"
+
+
+def test_doomfist_injection_pipeline(tmp_path):
+    from tools.ow_doomfist.inject import DoomfistInjector
+
+    game_dir = tmp_path / "ELDEN_RING" / "Game"
+    adapter_dir = game_dir / "mods" / "mc_adapter"
+    adapter_dir.mkdir(parents=True)
+
+    # Initial mock files
+    orig_skin = adapter_dir / "steve.png"
+    orig_skin.write_bytes(b"OLD_STEVE_SKIN_BYTES")
+    orig_model = adapter_dir / "steve.bbmodel"
+    orig_model.write_text('{"name": "steve", "elements": []}', encoding="utf-8")
+    cfg_file = game_dir / "mc_er_steve.txt"
+    cfg_file.write_text("hide_native=0\nocclusion=0\n", encoding="utf-8")
+
+    injector = DoomfistInjector(game_dir=game_dir)
+    report = injector.inject()
+
+    assert report.success is True
+    assert report.backup_dir.is_dir()
+    assert (report.backup_dir / "steve.png").read_bytes() == b"OLD_STEVE_SKIN_BYTES"
+
+    # Deployed skin must be valid 64x64 PNG
+    from PIL import Image
+    import io
+    deployed_skin = adapter_dir / "steve.png"
+    assert deployed_skin.is_file()
+    img = Image.open(io.BytesIO(deployed_skin.read_bytes()))
+    assert img.size == (64, 64)
+
+    # Deployed model must have Doomfist elements (including gauntlet)
+    deployed_model = adapter_dir / "steve.bbmodel"
+    model_data = json.loads(deployed_model.read_text(encoding="utf-8"))
+    element_names = [e["name"] for e in model_data.get("elements", [])]
+    assert "doomfist_gauntlet" in element_names or "right_arm" in element_names
+
+    # Config must ensure native model hidden and occlusion active
+    cfg_content = cfg_file.read_text(encoding="utf-8")
+    assert "hide_native=1" in cfg_content
+    assert "occlusion=1" in cfg_content
+
+    # Param patches must be present
+    assert (game_dir / "param_patches.json").is_file()

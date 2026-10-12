@@ -25,4 +25,17 @@
 - `tools/ow_doomfist/textures.py`: PBRTexturePacker (DirectX normal conversion & channel packing).
 - `tools/ow_doomfist/skills.py`: DoomfistSkillManager & physical parameters.
 - `tools/ow_doomfist/packager.py`: DoomfistModPackager (ModEngine2 packaging, parts generation, TOML config).
-- `tests/test_ow_doomfist.py`: TDD test suite validating coordinate transformation, texture packing, skill physics, and packaging.
+- `tools/ow_doomfist/inject.py`: DoomfistInjector (deploys character model, skin, config, sentinel flags, param patches).
+- `tools/ow_doomfist/run_inject.py`: CLI entrypoint for physical deployment.
+- `tests/test_ow_doomfist.py`: TDD test suite validating coordinate transformation, texture packing, skill physics, packaging, and injection.
+
+## 5. Physical Deployment & Verification
+- **Target**: `C:\Program Files (x86)\Steam\steamapps\common\ELDEN RING\Game`
+- **Backup Created**: `mods\mc_adapter\backup_before_doomfist\` (backed up `steve.png`, `steve.bbmodel`, `mc_er_steve.txt`).
+- **Files Deployed**:
+  - `mods\mc_adapter\steve.png`: 64x64 Doomfist PBR character skin (Akande Ogundimu cybernetics, crimson combat sash, golden gauntlet on right arm).
+  - `mods\mc_adapter\steve.bbmodel` & `doomfist.bbmodel`: 3D model with expanded Doomfist gauntlet geometry.
+  - `mc_er_steve.txt`: Configuration updated with `hide_native=1`, `occlusion=1`, `abs_bias=0.05` for native character hiding and D3D12 depth occlusion.
+  - `mc_er_overlay.txt` & `mc_er_damage.txt`: Sentinel files active.
+  - `param_patches.json`: Structured parameter patch manifest for Doomfist combat abilities.
+- **Verification**: Exit code 0, physical files verified on disk, full test suite passing (94 passed).
