@@ -47,7 +47,7 @@ uniform float LightMatch <
 > = 0.70;
 
 float4 PS_OWComposite(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_Target {
-    float4 host_color = tex2D(ReShade::sBackBuffer, texcoord);
+    float4 host_color = tex2D(ReShade::BackBuffer, texcoord);
 
     if (!OwActive) {
         return host_color;
