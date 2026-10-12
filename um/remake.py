@@ -1689,7 +1689,36 @@ def _lan_ip() -> str:
         return "127.0.0.1"
 
 
-def _coop_handler(directory: str):
+def _splice(a: socket.socket, b: socket.socket) -> None:
+    """Copy bytes both ways until either side closes. One thread: an SSL socket must not be read and written
+    concurrently; buffered TLS bytes (pending()) are drained before select is asked again."""
+    import select
+    peer = {a: b, b: a}
+    try:
+        while True:
+            ready = [s for s in (a, b) if getattr(s, "pending", lambda: 0)()]
+            if not ready:
+                ready, _, _ = select.select([a, b], [], [], 300)
+                if not ready:
+                    return
+            for s in ready:
+                data = s.recv(65536)
+                if not data:
+                    return
+                peer[s].sendall(data)
+    except OSError:
+        return
+    finally:
+        for s in (a, b):
+            try:
+                s.close()
+            except OSError:
+                pass
+
+
+def _coop_handler(directory: str, ws_port: int | None = None):
+    """Static files with the headers Godot's web export needs. With ws_port, a WebSocket upgrade on /ws is relayed
+    byte for byte to 127.0.0.1:ws_port, so an https page reaches the game server as wss on its own origin."""
     from http.server import SimpleHTTPRequestHandler
 
     class Handler(SimpleHTTPRequestHandler):
@@ -1699,6 +1728,25 @@ def _coop_handler(directory: str):
         def __init__(self, *args, **kw):
             super().__init__(*args, directory=directory, **kw)
 
+        def do_GET(self):
+            if ws_port and self.path.split("?")[0] == "/ws" and self.headers.get("Upgrade", "").lower() == "websocket":
+                self._relay()
+            else:
+                super().do_GET()
+
+        def _relay(self):
+            try:
+                up = socket.create_connection(("127.0.0.1", ws_port), timeout=5)
+            except OSError:
+                self.send_error(502, f"game server not reachable on port {ws_port}")
+                return
+            up.settimeout(None)
+            head = [f"GET / {self.request_version}"] + [f"{k}: {v}" for k, v in self.headers.items()]
+            up.sendall(("\r\n".join(head) + "\r\n\r\n").encode("latin-1"))
+            self.wfile.flush()
+            _splice(self.connection, up)
+            self.close_connection = True
+
         def end_headers(self):
             self.send_header("Cross-Origin-Opener-Policy", "same-origin")
             self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
@@ -1706,6 +1754,29 @@ def _coop_handler(directory: str):
             super().end_headers()
 
     return Handler
+
+
+def _tls_context(root: Path, lan: str):
+    """Self-signed certificate for 127.0.0.1, localhost and the LAN address, made once with openssl and kept in the
+    project's state dir (regenerated when the LAN address changes)."""
+    import ssl
+    d = state_dir(root) / "tls"
+    d.mkdir(parents=True, exist_ok=True)
+    cert, key, tag = d / "cert.pem", d / "key.pem", d / "san.txt"
+    san = f"DNS:localhost,IP:127.0.0.1,IP:{lan}"
+    if not (cert.is_file() and key.is_file() and tag.is_file() and tag.read_text() == san):
+        exe = shutil.which("openssl")
+        if not exe:
+            raise RuntimeError("--https needs openssl on PATH (Git for Windows ships one)")
+        rc = subprocess.run([exe, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "825", "-subj", "/CN=um remake serve",
+                             "-addext", f"subjectAltName={san}", "-keyout", str(key), "-out", str(cert)],
+                            capture_output=True, text=True)
+        if rc.returncode != 0:
+            raise RuntimeError(f"openssl failed: {rc.stderr.strip()[-400:]}")
+        tag.write_text(san)
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ctx.load_cert_chain(str(cert), str(key))
+    return ctx
 
 
 def cmd_serve(a):
@@ -1736,15 +1807,25 @@ def cmd_serve(a):
                                      stdout=f, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                                      **({} if os.name == "nt" else {"start_new_session": True}))
         print(f"game server pid {child.pid} on port {a.server_port} (log {log.as_posix()})")
+    lan = _lan_ip()
     try:
-        srv = ThreadingHTTPServer(("0.0.0.0", a.port), _coop_handler(str(web)))
-    except OSError as e:
+        srv = ThreadingHTTPServer(("0.0.0.0", a.port), _coop_handler(str(web), a.server_port if a.https else None))
+        if a.https:
+            srv.socket = _tls_context(root, lan).wrap_socket(srv.socket, server_side=True, do_handshake_on_connect=False)  # handshake in the handler thread
+    except (OSError, RuntimeError) as e:
         if child:
             _kill_tree(child.pid)
-        die(f"cannot listen on port {a.port}: {e}")
-    lan = _lan_ip()
-    q = f"?room=main&server={lan}:{a.server_port}"
-    print(f"local: http://127.0.0.1:{a.port}/index.html{q}\nLAN:   http://{lan}:{a.port}/index.html{q}\nCtrl-C to stop", flush=True)
+        die(f"cannot serve on port {a.port}: {e}")
+    if a.https:
+        # the page is a secure context, so the game must use wss on the page's own origin (/ws, relayed to the server)
+        q = f"?room=main&server={lan}:{a.port}"
+        print(f"local: https://127.0.0.1:{a.port}/index.html?room=main&server=127.0.0.1:{a.port}\n"
+              f"LAN:   https://{lan}:{a.port}/index.html{q}\n"
+              "(self-signed certificate: each browser accepts the warning once: Advanced -> Proceed)\nCtrl-C to stop", flush=True)
+    else:
+        q = f"?room=main&server={lan}:{a.server_port}"
+        print(f"local: http://127.0.0.1:{a.port}/index.html{q}\nLAN:   http://{lan}:{a.port}/index.html{q}\n"
+              "(plain http on a LAN address is not a secure context: other machines need --https)\nCtrl-C to stop", flush=True)
 
     def _stop(*_):
         raise KeyboardInterrupt
@@ -1844,3 +1925,5 @@ def register(sub):
     q.add_argument("--server-port", type=int, default=9080, help="game server port put in the printed URLs")
     q.add_argument("--no-export", action="store_true", help="serve the existing exports/web")
     q.add_argument("--with-server", action="store_true", help="also run the game headless with --server --port=<server-port>")
+    q.add_argument("--https", action="store_true",
+                   help="serve over TLS (self-signed) and relay WebSocket /ws to the game server: needed for players on other machines")

@@ -171,6 +171,7 @@ check was loosened to pass, no dirty material crossed over. The reviewer reports
 ## 8. Play it together (browser)
 ```bash
 um remake serve remakes/<game> --with-server   # web export + local server + room link for a friend on the LAN
+um remake serve remakes/<game> --with-server --https   # friends on OTHER machines: Godot web needs a secure context (https), wss relayed on /ws
 ```
 Web builds can't use ENet: networked remakes use `GdNet.server(port)` / `GdNet.client(host, port)`
 (WebSocket, works on desktop and web) and read `GdNet.url_param("room")` / `GdNet.url_param("server")`
