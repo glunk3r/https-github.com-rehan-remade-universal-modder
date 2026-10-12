@@ -49,3 +49,18 @@
   - `VK_LBUTTON` (Left Click): Hand Cannon 4-pellet shotgun blast.
   - `VK_Q` (Q): Meteor Strike ultimate.
 - **Verification**: `tests/test_ow_doomfist_input.py` 5/5 passing, full test suite 99/99 passing.
+
+## 7. Standalone Overwatch Doomfist Mod (Complete Isolation)
+- **Architecture**:
+  - `tools/ow_doomfist_standalone/flver_converter.py`: FromSoftware FLVER 2.0 (Fast Lightweight Vertex Format) and DCX (Deflate Compressed Stream) binary packer.
+  - `tools/ow_doomfist_standalone/mod_packager.py`: Isolated packager generating `mods/ow_doomfist_standalone/parts/` and ModEngine2 config.
+  - `tools/ow_doomfist_standalone/run_deploy.py`: Deployment runner verifying pre-flight and post-flight intactness of `mc_adapter`.
+- **Physical Output in Game**:
+  - `mods\ow_doomfist_standalone\parts\wp_a_2040.dcx` (Caestus / Golden Gauntlet)
+  - `mods\ow_doomfist_standalone\parts\bd_m_2040.dcx` (Torso cybernetic armor)
+  - `mods\ow_doomfist_standalone\parts\hd_m_2040.dcx` (Head cyber brow)
+  - `mods\ow_doomfist_standalone\parts\lg_m_2040.dcx` (Tactical combat pants & boots)
+  - `mods\ow_doomfist_standalone\parts\am_m_2040.dcx` (Arms & cables)
+  - `mods\ow_doomfist_standalone\config_eldenring.toml` (ModEngine2 standalone config)
+  - `mods\ow_doomfist_standalone\ow_input_config.json` (Scheme B keybindings)
+- **Isolation Verification**: `mc_adapter/steve.bbmodel` strictly confirmed byte-identical (1,894,976 bytes). Full test suite 102/102 passing.
