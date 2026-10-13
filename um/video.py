@@ -431,9 +431,12 @@ def compile_edl(edl_path, out, preview=False, keep=False):
                 if seg["card"].get(k) and not str(seg["card"][k]).startswith("#"):
                     seg["card"][k] = rel(seg["card"][k])
     W, H = edl.get("size", [1920, 1080])
+    if W % 2 or H % 2:
+        die(f"size {W}x{H}: width and height must be even (yuv420p H.264 refuses odd sizes)")
     fps = edl.get("fps", 30)
     if preview:
-        W, H, fps = W // 2, H // 2, min(fps, 30)
+        # half size, kept even: 1080x1350 would halve to 540x675, which libx264 refuses
+        W, H, fps = W // 4 * 2, H // 4 * 2, min(fps, 30)
     bpm = edl.get("bpm")
     default_tr = edl.get("transition", {"type": "fade", "duration": 0.3})
     segs = edl["segments"]
