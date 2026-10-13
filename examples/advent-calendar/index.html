@@ -22,7 +22,6 @@
           <button id="share-button" class="button button-dark" type="button">Créer un lien</button>
           <button id="calendar-library-button" class="button button-light" type="button">Mes calendriers</button>
           <button id="account-button" class="button button-light" type="button">Mon compte</button>
-          <button id="exit-reader-button" class="button button-light" type="button" hidden>Quitter le mode lecture</button>
         </div>
       </header>
 
@@ -312,12 +311,18 @@
         <button class="dialog-close" type="button" data-close="calendar-library-dialog" aria-label="Fermer">×</button>
         <p class="eyebrow">TON ESPACE CRÉATEUR</p>
         <h2>Mes calendriers</h2>
-        <p class="dialog-copy">Choisis un calendrier pour continuer, ou crée-en un nouveau. Tu peux en supprimer autant que tu veux.</p>
+        <p class="dialog-copy">Choisis un calendrier pour continuer, ou crée-en un nouveau. Tu peux en supprimer autant que tu veux. Sans synchronisation en ligne, transfère une copie de ta bibliothèque pour continuer sur un autre appareil.</p>
         <p class="active-calendar-label">Calendrier ouvert : <strong id="active-calendar-label"></strong></p>
         <div id="calendar-library-list" class="calendar-library-list"></div>
         <div class="dialog-actions">
           <button id="new-calendar-button" class="button button-dark" type="button">Créer un nouveau calendrier</button>
         </div>
+        <div class="calendar-transfer-actions">
+          <button id="export-calendar-library-button" class="button button-light" type="button">Exporter mes calendriers</button>
+          <label class="button button-light import-calendar-button" for="import-calendar-library-file">Importer une copie</label>
+          <input id="import-calendar-library-file" class="sr-only" type="file" accept="application/json,.json">
+        </div>
+        <p class="calendar-transfer-note">L'import ajoute les calendriers du fichier et remplace ceux qui ont le même identifiant. Le transfert est manuel, pas une synchronisation automatique.</p>
       </section>
     </dialog>
   </body>

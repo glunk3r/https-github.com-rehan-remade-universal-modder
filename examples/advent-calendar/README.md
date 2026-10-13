@@ -24,6 +24,8 @@ Cette page est une publication sur le fork de développement. Pour publier la ve
 
 Sans backend d'authentification, **Mon compte** permet de créer un profil local sur cet appareil : adresse et vérificateur du mot de passe sont enregistrés dans le navigateur, et la bibliothèque est séparée par profil. Après connexion, le profil reste ouvert après rechargement ou redémarrage du navigateur jusqu'à la déconnexion. Cette session locale n'est pas une authentification en ligne et ne rend pas le compte utilisable sur un autre appareil; un utilisateur de la même session navigateur peut accéder au profil. Le mot de passe ne peut pas être réinitialisé et ces profils ne doivent pas être considérés comme un coffre-fort pour des données confidentielles.
 
+En attendant la configuration de la synchronisation en ligne, **Mes calendriers → Exporter mes calendriers** télécharge une copie JSON de toute la bibliothèque, y compris ses images. Sur l'autre appareil, ouvre le même site puis **Mes calendriers → Importer une copie** et choisis ce fichier. L'import fusionne les calendriers par identifiant : un calendrier présent sur les deux appareils est remplacé par la version importée. Il s'agit d'un transfert manuel; refaire un export/import pour transmettre les changements suivants.
+
 Pour les comptes en ligne avec synchronisation multi-appareils, le propriétaire du site doit configurer un projet Supabase :
 
 1. Crée un projet Supabase, puis exécute le contenu de `supabase-schema.sql` dans son **SQL Editor**. La table et ses règles de sécurité garantissent que seuls les propriétaires peuvent lire, modifier ou supprimer leurs calendriers. Le script importe également les calendriers existants de l'ancienne table `advent_calendars`.

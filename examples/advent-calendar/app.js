@@ -70,6 +70,7 @@ const DECORATIONS = {
 };
 
 const elements = {
+  brandLink: document.querySelector(".brand"),
   title: document.querySelector("#calendar-title"),
   grid: document.querySelector("#calendar-grid"),
   shuffleDoorsButton: document.querySelector("#shuffle-doors-button"),
@@ -83,7 +84,6 @@ const elements = {
   shareButton: document.querySelector("#share-button"),
   accountButton: document.querySelector("#account-button"),
   themeButton: document.querySelector("#theme-button"),
-  exitReaderButton: document.querySelector("#exit-reader-button"),
   status: document.querySelector("#status-message"),
   themeDialog: document.querySelector("#theme-dialog"),
   themeForm: document.querySelector("#theme-form"),
@@ -174,7 +174,9 @@ const elements = {
   calendarLibraryDialog: document.querySelector("#calendar-library-dialog"),
   calendarLibraryList: document.querySelector("#calendar-library-list"),
   newCalendarButton: document.querySelector("#new-calendar-button"),
-  activeCalendarLabel: document.querySelector("#active-calendar-label")
+  activeCalendarLabel: document.querySelector("#active-calendar-label"),
+  exportCalendarLibraryButton: document.querySelector("#export-calendar-library-button"),
+  importCalendarLibraryFile: document.querySelector("#import-calendar-library-file")
 };
 
 function emptyCalendar() {
@@ -675,6 +677,80 @@ function saveCalendarLibrary() {
   }
 }
 
+function exportCalendarLibrary() {
+  const backup = {
+    format: "um-advent-calendar-library",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    activeCalendarId,
+    calendars: calendarLibrary.map((entry) => ({
+      id: entry.id,
+      calendar: validateCalendar(entry.calendar)
+    }))
+  };
+  const blobUrl = URL.createObjectURL(new Blob([JSON.stringify(backup)], { type: "application/json" }));
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = `mes-calendriers-avent-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  showStatus("Copie de tes calendriers téléchargée. Garde ce fichier privé et importe-le sur l'autre appareil.");
+}
+
+async function importCalendarLibrary(file) {
+  if (!file) return;
+  if (file.size > 25 * 1024 * 1024) throw new Error("Cette copie dépasse la limite de 25 Mo.");
+  let backup;
+  try {
+    backup = JSON.parse(await file.text());
+  } catch {
+    throw new Error("Le fichier choisi n'est pas une copie de calendriers JSON valide.");
+  }
+  if (!backup || backup.format !== "um-advent-calendar-library" || backup.version !== 1
+    || !Array.isArray(backup.calendars) || !backup.calendars.length || backup.calendars.length > 100) {
+    throw new Error("Le fichier ne contient pas une bibliothèque de calendriers reconnue.");
+  }
+  const imported = backup.calendars.map((entry) => {
+    if (!entry || typeof entry.id !== "string" || !/^[\da-f-]{1,80}$/i.test(entry.id)) {
+      throw new Error("Un calendrier du fichier n'a pas d'identifiant valide.");
+    }
+    return makeCalendarEntry(entry.calendar, entry.id);
+  });
+  if (new Set(imported.map((entry) => entry.id)).size !== imported.length) {
+    throw new Error("Le fichier contient plusieurs calendriers avec le même identifiant.");
+  }
+
+  const merged = new Map(calendarLibrary.map((entry) => [entry.id, entry]));
+  imported.forEach((entry) => merged.set(entry.id, entry));
+  if (merged.size > 100) throw new Error("La bibliothèque ne peut pas dépasser 100 calendriers.");
+  const nextLibrary = [...merged.values()];
+  const nextActiveId = imported.some((entry) => entry.id === backup.activeCalendarId)
+    ? backup.activeCalendarId
+    : activeCalendarId;
+  const previousLibrary = calendarLibrary;
+  const previousActiveId = activeCalendarId;
+  const previousCalendar = calendar;
+  calendarLibrary = nextLibrary;
+  activeCalendarId = nextLibrary.some((entry) => entry.id === nextActiveId) ? nextActiveId : nextLibrary[0].id;
+  calendar = nextLibrary.find((entry) => entry.id === activeCalendarId).calendar;
+  try {
+    saveCalendarLibrary();
+  } catch (error) {
+    calendarLibrary = previousLibrary;
+    activeCalendarId = previousActiveId;
+    calendar = previousCalendar;
+    throw error;
+  }
+  renderCalendar();
+  renderCalendarLibrary();
+  elements.themeDecoration.value = calendar.theme.decoration;
+  if (accountReady && accountUser && !accountUser.local) {
+    imported.forEach((entry) => scheduleCloudSave(entry.calendar, entry.id));
+  }
+  elements.calendarLibraryDialog.close();
+  showStatus(`${imported.length} calendrier${imported.length > 1 ? "s" : ""} importé${imported.length > 1 ? "s" : ""}. Les calendriers ayant le même identifiant ont été mis à jour.`);
+}
+
 function loadCalendarLibrary() {
   if (localAccountEmail) {
     const account = loadLocalAccounts().find((entry) => entry.email === localAccountEmail);
@@ -845,13 +921,8 @@ function showStatus(message, isError) {
   statusTimer = window.setTimeout(() => { elements.status.textContent = ""; }, 5000);
 }
 
-function lastUnlockedDoor(date = new Date()) {
-  if (date.getMonth() !== 11) return 0;
-  return Math.min(date.getDate(), DOOR_COUNT);
-}
-
 function isDoorUnlocked(index, date = new Date()) {
-  return index < lastUnlockedDoor(date);
+  return date.getMonth() === 11 && index === date.getDate() - 1;
 }
 
 function updateDoorAvailability(button, index) {
@@ -1063,12 +1134,18 @@ function renderCalendar() {
   elements.title.readOnly = isReader;
   elements.title.setAttribute("aria-label", isReader ? "Titre du calendrier partagé" : "Titre de votre calendrier");
   fitCalendarTitle();
+  if (isReader) {
+    elements.brandLink.removeAttribute("href");
+    elements.brandLink.setAttribute("aria-label", "Mon calendrier de l'Avent");
+  } else {
+    elements.brandLink.setAttribute("href", "./");
+    elements.brandLink.setAttribute("aria-label", "Mon calendrier de l'Avent, accueil");
+  }
   elements.badge.hidden = !isReader;
   elements.shareButton.hidden = isReader;
   elements.accountButton.hidden = isReader;
   elements.calendarLibraryButton.hidden = isReader;
   elements.themeButton.hidden = isReader;
-  elements.exitReaderButton.hidden = !isReader;
   elements.shuffleDoorsButton.hidden = isReader;
   elements.resetDoorsOrderButton.hidden = isReader || isDefaultDoorOrder(calendar.doorOrder);
   elements.caption.textContent = isReader
@@ -1722,6 +1799,17 @@ elements.calendarLibraryButton.addEventListener("click", () => {
 });
 
 elements.newCalendarButton.addEventListener("click", createCalendar);
+elements.exportCalendarLibraryButton.addEventListener("click", exportCalendarLibrary);
+elements.importCalendarLibraryFile.addEventListener("change", async () => {
+  const [file] = elements.importCalendarLibraryFile.files || [];
+  try {
+    await importCalendarLibrary(file);
+  } catch (error) {
+    showStatus(`Import impossible : ${error.message}`, true);
+  } finally {
+    elements.importCalendarLibraryFile.value = "";
+  }
+});
 
 elements.accountButton.addEventListener("click", async () => {
   elements.accountDialog.showModal();
@@ -1859,19 +1947,6 @@ elements.accountSignOutButton.addEventListener("click", async () => {
     setAccountMessage(error.message, true);
   } finally {
     elements.accountSignOutButton.disabled = false;
-  }
-});
-
-elements.exitReaderButton.addEventListener("click", () => {
-  isReader = false;
-  window.history.replaceState(null, "", window.location.href.split("#")[0]);
-  try {
-    calendar = calendarLibrary.find((entry) => entry.id === activeCalendarId)?.calendar || loadDraft();
-    renderCalendar();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  } catch (error) {
-    isReader = true;
-    showStatus(`Impossible de recharger ton calendrier : ${error.message}`, true);
   }
 });
 
