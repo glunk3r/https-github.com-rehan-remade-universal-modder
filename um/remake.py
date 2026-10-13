@@ -1,7 +1,7 @@
 """Godot remakes: prove every slice runs, compare assets with the dirty room, keep the clean room clean.
 
 A remake project root is remakes/<game>/ (project.godot next to SPEC.md, acceptance.json, assets.json).
-Godot: --godot EXE, else $GODOT, else S:/Godot/Godot_v4.7-stable_win64_console.exe, else godot on PATH.
+Godot: --godot EXE, else $GODOT, else C:/GameDecompFast/godot/... or S:/Godot/... (first that exists), else godot on PATH.
 
     um remake init remakes/demo --name Demo        # add/update addons/gd_remake, autoloads, Web preset, skeletons
     um remake check remakes/demo                   # every scenario + the boot check, headless -> .gd_remake/results.json
@@ -47,7 +47,8 @@ from urllib.parse import quote
 
 from um.common import die, emit, need, to_posix
 
-DEFAULT_GODOT = "S:/Godot/Godot_v4.7-stable_win64_console.exe"
+# first existing wins: an SSD copy (S: is a busy HDD; cold engine code pages faulted from it stalled first-use frames)
+DEFAULT_GODOTS = ("C:/GameDecompFast/godot/Godot_v4.7-stable_win64_console.exe", "S:/Godot/Godot_v4.7-stable_win64_console.exe")
 ADDON_SRC = Path(__file__).resolve().parent / "godot" / "addons" / "gd_remake"
 RUNNER = "res://addons/gd_remake/runner.gd"
 AUTOLOADS = {"GdBridge": "*res://addons/gd_remake/bridge.gd", "Variants": "*res://addons/gd_remake/variants.gd"}
@@ -170,8 +171,9 @@ def godot_exe(arg: str | None = None) -> str:
         if found:
             return found
         die(f"Godot not found: {cand} (from {'--godot' if arg else '$GODOT'})")
-    if Path(to_posix(DEFAULT_GODOT)).is_file():
-        return to_posix(DEFAULT_GODOT)
+    for d in DEFAULT_GODOTS:
+        if Path(to_posix(d)).is_file():
+            return to_posix(d)
     for name in ("godot", "godot4"):
         found = shutil.which(name)
         if found:
