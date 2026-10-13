@@ -3,7 +3,9 @@
 const STORAGE_KEY = "um-advent-calendar-v1";
 const LIBRARY_KEY = "um-advent-calendars-v1";
 const ACTIVE_CALENDAR_KEY = "um-advent-active-calendar-v1";
+const LOCAL_ACCOUNTS_KEY = "um-advent-local-accounts-v1";
 const CLOUD_CALENDARS_TABLE = "advent_creator_calendars";
+const LOCAL_PASSWORD_ITERATIONS = 210_000;
 const SUPABASE_CLIENT_MODULE = "https://esm.sh/@supabase/supabase-js@2.117.3";
 const DOOR_COUNT = 24;
 const DEFAULT_CAPTION = "Prépare 24 surprises et partage un joli moment pour Noël.";
@@ -437,6 +439,7 @@ function getSharePageUrl(currentUrl = window.location.href) {
 
 let supabaseClient = null;
 let accountUser = null;
+let localAccountEmail = null;
 let accountReady = false;
 let accountSetupError = "";
 let pendingCloudCalendars = new Map();
@@ -453,8 +456,11 @@ function setAccountUser(user) {
   elements.accountFields.hidden = Boolean(user);
   elements.accountSignedIn.hidden = !user;
   elements.accountUserLabel.textContent = user
-    ? `Connecté avec ${user.email}. Tes ${calendarLibrary.length} calendriers sont synchronisés avec ton compte.`
+    ? user.local
+      ? `Compte local ouvert pour ${user.email}. Tes ${calendarLibrary.length} calendriers sont enregistrés uniquement dans ce navigateur; ils ne sont pas synchronisés en ligne.`
+      : `Connecté avec ${user.email}. Tes ${calendarLibrary.length} calendriers sont synchronisés avec ton compte.`
     : "";
+  elements.accountSyncButton.hidden = Boolean(user?.local);
   elements.accountButton.textContent = user ? "Mon compte ✓" : "Mon compte";
   elements.accountButton.title = user ? `Connecté avec ${user.email}` : "Créer un compte pour sauvegarder ton calendrier en ligne";
 }
@@ -513,10 +519,106 @@ async function deleteCalendarFromCloud(calendarId) {
 }
 
 function persistCalendarLibrary() {
-  localStorage.setItem(LIBRARY_KEY, JSON.stringify(calendarLibrary));
-  localStorage.setItem(ACTIVE_CALENDAR_KEY, activeCalendarId);
+  if (localAccountEmail) {
+    const accounts = loadLocalAccounts();
+    const account = accounts.find((entry) => entry.email === localAccountEmail);
+    if (!account) throw new Error("Ce compte local n'existe plus dans ce navigateur.");
+    account.calendarLibrary = calendarLibrary;
+    account.activeCalendarId = activeCalendarId;
+    localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+  } else {
+    localStorage.setItem(LIBRARY_KEY, JSON.stringify(calendarLibrary));
+    localStorage.setItem(ACTIVE_CALENDAR_KEY, activeCalendarId);
+  }
   const activeEntry = calendarLibrary.find((entry) => entry.id === activeCalendarId);
-  if (activeEntry) localStorage.setItem(STORAGE_KEY, JSON.stringify(activeEntry.calendar));
+  if (activeEntry && !localAccountEmail) localStorage.setItem(STORAGE_KEY, JSON.stringify(activeEntry.calendar));
+}
+
+function loadLocalAccounts() {
+  const stored = localStorage.getItem(LOCAL_ACCOUNTS_KEY);
+  if (stored === null) return [];
+  const accounts = JSON.parse(stored);
+  if (!Array.isArray(accounts)) throw new Error("Les comptes locaux enregistrés sont illisibles.");
+  return accounts;
+}
+
+function bytesToHex(bytes) {
+  return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function hashLocalPassword(password, salt) {
+  if (!window.crypto?.subtle || !window.crypto?.getRandomValues) {
+    throw new Error("La création de compte local exige un navigateur récent et une connexion sécurisée HTTPS.");
+  }
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({
+    name: "PBKDF2",
+    salt: Uint8Array.from(salt.match(/.{2}/g), (pair) => Number.parseInt(pair, 16)),
+    iterations: LOCAL_PASSWORD_ITERATIONS,
+    hash: "SHA-256"
+  }, key, 256);
+  return bytesToHex(bits);
+}
+
+async function createLocalAccount(email, password) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const accounts = loadLocalAccounts();
+  if (accounts.some((entry) => entry.email === normalizedEmail)) {
+    throw new Error("Un compte local utilise déjà cette adresse sur cet appareil. Connecte-toi plutôt.");
+  }
+  const salt = bytesToHex(crypto.getRandomValues(new Uint8Array(16)));
+  const passwordHash = await hashLocalPassword(password, salt);
+  const account = {
+    email: normalizedEmail,
+    salt,
+    passwordHash,
+    calendarLibrary: calendarLibrary.length
+      ? calendarLibrary.map((entry) => ({ ...entry, calendar: validateCalendar(entry.calendar) }))
+      : [makeCalendarEntry(calendar)],
+    activeCalendarId
+  };
+  try {
+    localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify([...accounts, account]));
+  } catch (error) {
+    throw new Error(`Impossible d'enregistrer le compte dans ce navigateur : ${error.message}`);
+  }
+  localAccountEmail = normalizedEmail;
+  setAccountUser({ id: normalizedEmail, email: normalizedEmail, local: true });
+  renderCalendarLibrary();
+  setAccountMessage(`Compte local créé pour ${normalizedEmail}. Tes calendriers ne sont disponibles que sur cet appareil; conserve ton mot de passe, il ne peut pas être réinitialisé.`);
+}
+
+async function signInLocalAccount(email, password) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const account = loadLocalAccounts().find((entry) => entry.email === normalizedEmail);
+  if (!account) throw new Error("Aucun compte local ne correspond à cette adresse sur cet appareil.");
+  const candidateHash = await hashLocalPassword(password, account.salt);
+  if (candidateHash !== account.passwordHash) throw new Error("Adresse e-mail ou mot de passe incorrect.");
+  if (!Array.isArray(account.calendarLibrary) || !account.calendarLibrary.length) {
+    throw new Error("La bibliothèque de ce compte local est vide ou illisible.");
+  }
+  calendarLibrary = account.calendarLibrary.map((entry) => makeCalendarEntry(entry.calendar, entry.id));
+  activeCalendarId = calendarLibrary.some((entry) => entry.id === account.activeCalendarId)
+    ? account.activeCalendarId
+    : calendarLibrary[0].id;
+  calendar = calendarLibrary.find((entry) => entry.id === activeCalendarId).calendar;
+  localAccountEmail = normalizedEmail;
+  setAccountUser({ id: normalizedEmail, email: normalizedEmail, local: true });
+  renderCalendar();
+  elements.themeDecoration.value = calendar.theme.decoration;
+  renderCalendarLibrary();
+  setAccountMessage(`Compte local ouvert. ${calendarLibrary.length} calendrier${calendarLibrary.length > 1 ? "s" : ""} chargé${calendarLibrary.length > 1 ? "s" : ""} sur cet appareil.`);
+}
+
+function signOutLocalAccount() {
+  localAccountEmail = null;
+  accountReady = false;
+  accountUser = null;
+  calendarLibrary = [];
+  loadCalendarLibrary();
+  renderCalendar();
+  setAccountUser(null);
+  setAccountMessage("Compte local fermé. La bibliothèque générale de cet appareil est affichée.");
 }
 
 function createCalendarId() {
@@ -1579,11 +1681,15 @@ elements.newCalendarButton.addEventListener("click", createCalendar);
 elements.accountButton.addEventListener("click", async () => {
   elements.accountDialog.showModal();
   if (!hasSupabaseConfig()) {
-    elements.accountFields.hidden = true;
-    elements.accountSignedIn.hidden = true;
-    elements.accountSetupLink.hidden = false;
-    accountSetupError = "La création de comptes n'est pas activée sur ce site. L'inscription et la connexion resteront indisponibles jusqu'à ce que le propriétaire configure le service Supabase.";
-    setAccountMessage(accountSetupError, true);
+    elements.accountFields.hidden = Boolean(accountUser);
+    elements.accountSignedIn.hidden = !accountUser;
+    elements.accountSetupLink.hidden = true;
+    accountSetupError = "";
+    if (!accountUser) {
+      setAccountMessage("Tu peux créer un compte local ou te connecter à un compte déjà créé sur cet appareil. Pour retrouver tes calendriers sur plusieurs appareils, le propriétaire doit configurer Supabase.");
+    } else if (accountUser.local) {
+      setAccountMessage(`Compte local ouvert pour ${accountUser.email}. Ce compte et ses calendriers ne sont pas synchronisés en ligne.`);
+    }
     return;
   }
   elements.accountSetupLink.hidden = true;
@@ -1614,6 +1720,11 @@ elements.accountSignUpButton.addEventListener("click", async () => {
   if (!elements.accountForm.reportValidity()) return;
   elements.accountSignUpButton.disabled = true;
   try {
+    if (!hasSupabaseConfig()) {
+      await createLocalAccount(elements.accountEmail.value, elements.accountPassword.value);
+      elements.accountPassword.value = "";
+      return;
+    }
     await configureSupabaseClient();
     const { data, error } = await supabaseClient.auth.signUp({
       email: elements.accountEmail.value.trim().toLowerCase(),
@@ -1639,6 +1750,11 @@ elements.accountSignInButton.addEventListener("click", async () => {
   if (!elements.accountForm.reportValidity()) return;
   elements.accountSignInButton.disabled = true;
   try {
+    if (!hasSupabaseConfig()) {
+      await signInLocalAccount(elements.accountEmail.value, elements.accountPassword.value);
+      elements.accountPassword.value = "";
+      return;
+    }
     await configureSupabaseClient();
     const { data, error } = await supabaseClient.auth.signInWithPassword({
       email: elements.accountEmail.value.trim().toLowerCase(),
@@ -1657,6 +1773,10 @@ elements.accountSignInButton.addEventListener("click", async () => {
 
 elements.accountSyncButton.addEventListener("click", async () => {
   if (!accountUser) return;
+  if (accountUser.local) {
+    setAccountMessage("Ce compte est local à cet appareil; il n'y a pas de synchronisation en ligne à lancer.");
+    return;
+  }
   elements.accountSyncButton.disabled = true;
   try {
     if (pendingCloudCalendars.size) {
@@ -1675,6 +1795,10 @@ elements.accountSyncButton.addEventListener("click", async () => {
 elements.accountSignOutButton.addEventListener("click", async () => {
   elements.accountSignOutButton.disabled = true;
   try {
+    if (accountUser?.local) {
+      signOutLocalAccount();
+      return;
+    }
     await flushCloudCalendar();
     if (pendingCloudCalendars.size) throw new Error("Tes calendriers n’ont pas pu être synchronisés. Réessaie avant de te déconnecter.");
     const { error } = await supabaseClient.auth.signOut();
