@@ -4,6 +4,7 @@ const STORAGE_KEY = "um-advent-calendar-v1";
 const LIBRARY_KEY = "um-advent-calendars-v1";
 const ACTIVE_CALENDAR_KEY = "um-advent-active-calendar-v1";
 const LOCAL_ACCOUNTS_KEY = "um-advent-local-accounts-v1";
+const LOCAL_SESSION_KEY = "um-advent-local-session-v1";
 const CLOUD_CALENDARS_TABLE = "advent_creator_calendars";
 const LOCAL_PASSWORD_ITERATIONS = 210_000;
 const SUPABASE_CLIENT_MODULE = "https://esm.sh/@supabase/supabase-js@2.117.3";
@@ -579,6 +580,7 @@ async function createLocalAccount(email, password) {
   };
   try {
     localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify([...accounts, account]));
+    localStorage.setItem(LOCAL_SESSION_KEY, normalizedEmail);
   } catch (error) {
     throw new Error(`Impossible d'enregistrer le compte dans ce navigateur : ${error.message}`);
   }
@@ -602,6 +604,11 @@ async function signInLocalAccount(email, password) {
     ? account.activeCalendarId
     : calendarLibrary[0].id;
   calendar = calendarLibrary.find((entry) => entry.id === activeCalendarId).calendar;
+  try {
+    localStorage.setItem(LOCAL_SESSION_KEY, normalizedEmail);
+  } catch (error) {
+    throw new Error(`Le mot de passe est correct, mais la connexion persistante n'a pas pu être enregistrée : ${error.message}`);
+  }
   localAccountEmail = normalizedEmail;
   setAccountUser({ id: normalizedEmail, email: normalizedEmail, local: true });
   renderCalendar();
@@ -611,6 +618,7 @@ async function signInLocalAccount(email, password) {
 }
 
 function signOutLocalAccount() {
+  localStorage.removeItem(LOCAL_SESSION_KEY);
   localAccountEmail = null;
   accountReady = false;
   accountUser = null;
@@ -619,6 +627,30 @@ function signOutLocalAccount() {
   renderCalendar();
   setAccountUser(null);
   setAccountMessage("Compte local fermé. La bibliothèque générale de cet appareil est affichée.");
+}
+
+function restoreLocalSession() {
+  if (hasSupabaseConfig()) return;
+  const storedEmail = localStorage.getItem(LOCAL_SESSION_KEY);
+  if (!storedEmail) return;
+  const email = storedEmail.trim().toLowerCase();
+  const account = loadLocalAccounts().find((entry) => entry.email === email);
+  if (!account) {
+    localStorage.removeItem(LOCAL_SESSION_KEY);
+    return;
+  }
+  if (!Array.isArray(account.calendarLibrary) || !account.calendarLibrary.length) {
+    localStorage.removeItem(LOCAL_SESSION_KEY);
+    throw new Error("La session locale a été fermée car la bibliothèque du compte est illisible.");
+  }
+  calendarLibrary = account.calendarLibrary.map((entry) => makeCalendarEntry(entry.calendar, entry.id));
+  activeCalendarId = calendarLibrary.some((entry) => entry.id === account.activeCalendarId)
+    ? account.activeCalendarId
+    : calendarLibrary[0].id;
+  calendar = calendarLibrary.find((entry) => entry.id === activeCalendarId).calendar;
+  localAccountEmail = email;
+  setAccountUser({ id: email, email, local: true });
+  setAccountMessage(`Session locale restaurée pour ${email}. Tes calendriers sont conservés dans ce navigateur.`);
 }
 
 function createCalendarId() {
@@ -644,6 +676,19 @@ function saveCalendarLibrary() {
 }
 
 function loadCalendarLibrary() {
+  if (localAccountEmail) {
+    const account = loadLocalAccounts().find((entry) => entry.email === localAccountEmail);
+    if (!account || !Array.isArray(account.calendarLibrary) || !account.calendarLibrary.length) {
+      throw new Error("La bibliothèque de ce compte local est vide ou illisible.");
+    }
+    calendarLibrary = account.calendarLibrary.map((entry) => makeCalendarEntry(entry.calendar, entry.id));
+    activeCalendarId = calendarLibrary.some((entry) => entry.id === account.activeCalendarId)
+      ? account.activeCalendarId
+      : calendarLibrary[0].id;
+    calendar = calendarLibrary.find((entry) => entry.id === activeCalendarId).calendar;
+    saveCalendarLibrary();
+    return;
+  }
   const savedLibrary = localStorage.getItem(LIBRARY_KEY);
   if (savedLibrary !== null) {
     const parsed = JSON.parse(savedLibrary);
@@ -1853,8 +1898,11 @@ for (const dialog of document.querySelectorAll("dialog")) {
 
 async function initializeCalendar() {
   try {
+    restoreLocalSession();
     loadCalendarLibrary();
   } catch (error) {
+    localAccountEmail = null;
+    accountUser = null;
     calendarLibrary = [makeCalendarEntry(emptyCalendar())];
     activeCalendarId = calendarLibrary[0].id;
     calendar = calendarLibrary[0].calendar;
