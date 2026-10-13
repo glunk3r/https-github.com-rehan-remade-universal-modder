@@ -37,6 +37,19 @@ python3 -m zipfile -c /tmp/modlab-homing-lab.zip mod.json content scripts sprite
 5. Exit with F9, disable the mod in Mods and restart to remove the lab menu entry. Restore a pre-install
    backup for any existing world that used the new blocks.
 
+## Read the saved run
+
+Open `modlab-last-run.json` in the optional independent
+[log viewer](https://modlabguides.online/tools/universal-modder-run-log-viewer). After the page loads,
+selected file contents are read locally; no account or API key is needed. The
+[MIT standalone source](https://github.com/liubrain39/universal-modder-run-log-viewer) can also be served
+locally.
+
+Lane 0 is the straight baseline; lane 1 is homing. The viewer checks counts and simulation timing before
+showing percentages. Zero shots have no hit percentage, and unfinished logs stay marked incomplete.
+On the web viewer, use **View / copy CSV** for the selected run's rows. The checks do not authenticate a log's
+origin or turn the scripted arena into a normal-play benchmark.
+
 ## Recorded verification
 
 The [existing field note](../../knowledge/games/mindustry/mindustry-160-7-a-reproducible-json-and-javascript-homing-la.md)
