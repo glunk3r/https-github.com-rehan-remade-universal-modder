@@ -95,6 +95,21 @@ Once the model was known it was mechanised, and both checks agree with the rules
   split copy folds because a constant global address rematerializes (rule 2). A provably
   unreachable register diff is a *finished* finding, not a missing trick.
 
+## Independent corroboration
+- **`zcanann/SFA-Decomp` `docs/allocation_model.md`** — an allocator model derived from a
+  *different* corpus: cross-tier saved-band order above width 4 is **anti-predictive** (below
+  chance), and the model explicitly **declines the reloc-bearing address-materialization class**
+  ("a measured refusal"). That class is exactly a `const f32* p = &global;` local, so this
+  independently predicts our wall.
+- **`doldecomp/melee` `references/allocator-rules.md`** — colouring is driven by post-optimization
+  IR vreg IDs, not lexical declaration order ("only indirect evidence"), matching rule 1.
+- **`zeldaret/tww` `docs/regalloc.md`** — declaration shuffle, base-pointer alias, cast style
+  (`static_cast` vs C-cast), `const`, and temp decomposition are the documented levers; all are
+  allocator-inert or regressive for a rematerializable constant address.
+- **Toolchain note:** the target object's `.comment` "Version" (14) differs from the compiler's
+  default (15) — that byte is written by the decomp's `mw_comment_version` config into the
+  *split* objects and is **metadata, not a compiler fingerprint**; don't chase it.
+
 ## Seen in
 - Mario Kart Wii (`mkw`, repo `rasanaruto-lgtm/mkw`) — `KartState::updateCollisions`:
   20-agent swarm, 86.993% → 93.437%, residual proven to be a frontend vreg-numbering
