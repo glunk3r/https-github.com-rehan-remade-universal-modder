@@ -445,6 +445,14 @@ button, a, input, textarea, select { touch-action: manipulation; }
 .account-message.is-error { color: #842f27; background: #fae9e5; }
 .account-setup-link { display: inline-block; margin-top: 12px; color: var(--green); font-size: 13px; font-weight: 700; }
 .account-actions { margin-top: 16px; }
+.calendar-library-card { width: min(100%, 560px); }
+.active-calendar-label { margin: -7px 0 13px; color: var(--muted); font-size: 12px; }
+.active-calendar-label strong { color: var(--ink); }
+.calendar-library-list { display: grid; max-height: min(48vh, 440px); gap: 8px; overflow-y: auto; overscroll-behavior: contain; }
+.calendar-library-item { display: flex; align-items: stretch; gap: 8px; padding: 7px; border: 1px solid var(--line); border-radius: 12px; }
+.calendar-library-item.is-current { border-color: #b7c7b9; background: #f2f6f0; }
+.calendar-library-select { min-width: 0; flex: 1; padding: 10px; border: 0; border-radius: 8px; color: var(--ink); background: transparent; cursor: pointer; text-align: left; overflow-wrap: anywhere; }
+.calendar-library-delete { flex: 0 0 auto; padding: 8px 10px; border: 0; border-radius: 8px; color: #9a443a; background: #fae9e5; cursor: pointer; font-size: 11px; font-weight: 700; }
 .link-input { min-height: 112px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; resize: vertical; }
 .share-size { min-height: 16px; margin: 7px 0 0; color: var(--muted); font-size: 10px; }
 .form-error { min-height: 16px; margin: 8px 0 0; color: #a33d34; font-size: 12px; line-height: 1.4; }
@@ -452,6 +460,7 @@ button, a, input, textarea, select { touch-action: manipulation; }
 .reveal-card .eyebrow { margin-right: 26px; margin-left: 26px; }
 .reveal-card h2 { margin: 10px 0 12px; font-size: 32px; }
 .reveal-image { display: block; width: 100%; max-height: 270px; margin: 3px auto 20px; border-radius: 12px; object-fit: cover; }
+.reveal-image.is-emerging { transform-origin: 50% 0%; animation: surprise-image-emerge 1.15s cubic-bezier(.16, .82, .25, 1) .62s both; }
 .reveal-message, .reveal-empty { margin: 0 auto 24px; color: #637168; font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
 .reveal-empty { color: #82877d; font-style: italic; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
@@ -574,6 +583,13 @@ button, a, input, textarea, select { touch-action: manipulation; }
 @keyframes dialog-in {
   from { opacity: 0; transform: translateY(12px) scale(.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes surprise-image-emerge {
+  0% { opacity: 0; transform: translateY(-115px) scale(.16) rotate(-9deg); filter: blur(5px); }
+  58% { opacity: 1; transform: translateY(9px) scale(1.04) rotate(2deg); filter: blur(0); }
+  78% { transform: translateY(-5px) scale(.99) rotate(-1deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); filter: blur(0); }
 }
 
 @media (max-width: 760px) {

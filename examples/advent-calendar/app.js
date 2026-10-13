@@ -1,6 +1,9 @@
 "use strict";
 
 const STORAGE_KEY = "um-advent-calendar-v1";
+const LIBRARY_KEY = "um-advent-calendars-v1";
+const ACTIVE_CALENDAR_KEY = "um-advent-active-calendar-v1";
+const CLOUD_CALENDARS_TABLE = "advent_creator_calendars";
 const SUPABASE_CLIENT_MODULE = "https://esm.sh/@supabase/supabase-js@2.117.3";
 const DOOR_COUNT = 24;
 const DEFAULT_CAPTION = "Prépare 24 surprises et partage un joli moment pour Noël.";
@@ -163,7 +166,12 @@ const elements = {
   accountSignedIn: document.querySelector("#account-signed-in"),
   accountUserLabel: document.querySelector("#account-user-label"),
   accountSyncButton: document.querySelector("#account-sync-button"),
-  accountSignOutButton: document.querySelector("#account-sign-out")
+  accountSignOutButton: document.querySelector("#account-sign-out"),
+  calendarLibraryButton: document.querySelector("#calendar-library-button"),
+  calendarLibraryDialog: document.querySelector("#calendar-library-dialog"),
+  calendarLibraryList: document.querySelector("#calendar-library-list"),
+  newCalendarButton: document.querySelector("#new-calendar-button"),
+  activeCalendarLabel: document.querySelector("#active-calendar-label")
 };
 
 function emptyCalendar() {
@@ -343,21 +351,60 @@ function base64UrlToBytes(encoded) {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
+function compactCalendar(value) {
+  const normalized = validateCalendar(value);
+  const theme = normalized.theme;
+  return {
+    v: 2,
+    t: normalized.title,
+    s: normalized.subtitle,
+    h: [
+      theme.backgroundColor, theme.coverImage, theme.photoSide, theme.photoWidth, theme.photoZoom,
+      theme.photoX, theme.photoY, theme.font, theme.openingAnimation, theme.doorColor,
+      theme.textColor, theme.decorationColor, theme.shape, theme.decoration
+    ],
+    o: normalized.doorOrder,
+    d: normalized.doors.map((door) => [
+      door.title, door.message, door.image, door.decoration, door.shape,
+      door.openingAnimation, door.doorColor, door.textColor, door.decorationColor
+    ])
+  };
+}
+
+function expandCompactCalendar(value) {
+  if (!value || value.v !== 2 || !Array.isArray(value.h) || !Array.isArray(value.d)) {
+    throw new Error("Ce lien ne contient pas un calendrier valide.");
+  }
+  const [backgroundColor, coverImage, photoSide, photoWidth, photoZoom, photoX, photoY, font,
+    openingAnimation, doorColor, textColor, decorationColor, shape, decoration] = value.h;
+  return validateCalendar({
+    title: value.t,
+    subtitle: value.s,
+    doorOrder: value.o,
+    theme: { backgroundColor, coverImage, photoSide, photoWidth, photoZoom, photoX, photoY, font, openingAnimation, doorColor, textColor, decorationColor, shape, decoration },
+    doors: value.d.map((door) => {
+      if (!Array.isArray(door) || door.length !== 9) throw new Error("Une case de ce calendrier est illisible.");
+      const [title, message, image, doorDecoration, doorShape, doorAnimation, doorColorOverride, textColorOverride, decorationColorOverride] = door;
+      return { title, message, image, decoration: doorDecoration, shape: doorShape, openingAnimation: doorAnimation, doorColor: doorColorOverride, textColor: textColorOverride, decorationColor: decorationColorOverride };
+    })
+  });
+}
+
 async function encodeCalendar(calendar) {
-  const bytes = new TextEncoder().encode(JSON.stringify(validateCalendar(calendar)));
+  const bytes = new TextEncoder().encode(JSON.stringify(compactCalendar(calendar)));
   if (typeof CompressionStream === "function") {
     const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream("gzip"));
-    return `AV1G.${bytesToBase64Url(new Uint8Array(await new Response(stream).arrayBuffer()))}`;
+    return `AV2G.${bytesToBase64Url(new Uint8Array(await new Response(stream).arrayBuffer()))}`;
   }
-  return `AV1.${bytesToBase64Url(bytes)}`;
+  return `AV2.${bytesToBase64Url(bytes)}`;
 }
 
 async function decodeCalendar(code) {
   const trimmed = code.trim();
-  const match = /^(AV1G|AV1)\.([A-Za-z0-9_-]+)$/.exec(trimmed);
+  const match = /^(AV2G|AV2|AV1G|AV1)\.([A-Za-z0-9_-]+)$/.exec(trimmed);
   if (!match) throw new Error("Le lien du calendrier semble incomplet.");
   let bytes = base64UrlToBytes(match[2]);
-  if (match[1] === "AV1G") {
+  if (match[1].endsWith("G")) {
     if (typeof DecompressionStream !== "function") {
       throw new Error("Ton navigateur ne peut pas ouvrir ces données de partage. Essaie une version récente de Chrome, Firefox ou Safari.");
     }
@@ -365,7 +412,8 @@ async function decodeCalendar(code) {
     bytes = new Uint8Array(await new Response(stream).arrayBuffer());
   }
   try {
-    return validateCalendar(JSON.parse(new TextDecoder().decode(bytes)));
+    const value = JSON.parse(new TextDecoder().decode(bytes));
+    return match[1].startsWith("AV2") ? expandCompactCalendar(value) : validateCalendar(value);
   } catch (error) {
     if (error instanceof SyntaxError) throw new Error("Le contenu du calendrier est abîmé ou incomplet.");
     throw error;
@@ -391,7 +439,7 @@ let supabaseClient = null;
 let accountUser = null;
 let accountReady = false;
 let accountSetupError = "";
-let pendingCloudCalendar = null;
+let pendingCloudCalendars = new Map();
 let cloudSaveTimer = null;
 let cloudSavePromise = null;
 
@@ -405,7 +453,7 @@ function setAccountUser(user) {
   elements.accountFields.hidden = Boolean(user);
   elements.accountSignedIn.hidden = !user;
   elements.accountUserLabel.textContent = user
-    ? `Connecté avec ${user.email}. Tes modifications sont synchronisées dans ton calendrier unique.`
+    ? `Connecté avec ${user.email}. Tes ${calendarLibrary.length} calendriers sont synchronisés avec ton compte.`
     : "";
   elements.accountButton.textContent = user ? "Mon compte ✓" : "Mon compte";
   elements.accountButton.title = user ? `Connecté avec ${user.email}` : "Créer un compte pour sauvegarder ton calendrier en ligne";
@@ -442,46 +490,124 @@ async function configureSupabaseClient() {
   return supabaseClient;
 }
 
-async function writeCalendarToCloud(value, ownerId) {
+async function writeCalendarToCloud(value, ownerId, calendarId) {
   const { error } = await supabaseClient
-    .from("advent_calendars")
+    .from(CLOUD_CALENDARS_TABLE)
     .upsert({
       owner_id: ownerId,
+      calendar_id: calendarId,
       calendar: validateCalendar(value),
       updated_at: new Date().toISOString()
-    }, { onConflict: "owner_id" });
+    }, { onConflict: "owner_id,calendar_id" });
   if (error) throw new Error(`La sauvegarde en ligne a échoué : ${error.message}`);
+}
+
+async function deleteCalendarFromCloud(calendarId) {
+  if (!accountReady || !accountUser) return;
+  const { error } = await supabaseClient
+    .from(CLOUD_CALENDARS_TABLE)
+    .delete()
+    .eq("owner_id", accountUser.id)
+    .eq("calendar_id", calendarId);
+  if (error) throw new Error(`La suppression en ligne a échoué : ${error.message}`);
+}
+
+function persistCalendarLibrary() {
+  localStorage.setItem(LIBRARY_KEY, JSON.stringify(calendarLibrary));
+  localStorage.setItem(ACTIVE_CALENDAR_KEY, activeCalendarId);
+  const activeEntry = calendarLibrary.find((entry) => entry.id === activeCalendarId);
+  if (activeEntry) localStorage.setItem(STORAGE_KEY, JSON.stringify(activeEntry.calendar));
+}
+
+function createCalendarId() {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+function makeCalendarEntry(value = emptyCalendar(), id = createCalendarId()) {
+  return { id, calendar: validateCalendar(value) };
+}
+
+function saveCalendarLibrary() {
+  try {
+    persistCalendarLibrary();
+  } catch (error) {
+    showStatus(`Impossible d'enregistrer la bibliothèque de calendriers sur cet appareil : ${error.message}`, true);
+    throw error;
+  }
+}
+
+function loadCalendarLibrary() {
+  const savedLibrary = localStorage.getItem(LIBRARY_KEY);
+  if (savedLibrary !== null) {
+    const parsed = JSON.parse(savedLibrary);
+    if (!Array.isArray(parsed)) throw new Error("La bibliothèque de calendriers est illisible.");
+    calendarLibrary = parsed.map((entry) => {
+      if (!entry || typeof entry.id !== "string" || !entry.id) throw new Error("Un calendrier enregistré n'a pas d'identifiant valide.");
+      return makeCalendarEntry(entry.calendar, entry.id);
+    });
+  }
+  if (!calendarLibrary.length) {
+    calendarLibrary = [makeCalendarEntry(loadDraft())];
+  }
+  const storedActiveId = localStorage.getItem(ACTIVE_CALENDAR_KEY);
+  activeCalendarId = calendarLibrary.some((entry) => entry.id === storedActiveId)
+    ? storedActiveId
+    : calendarLibrary[0].id;
+  calendar = calendarLibrary.find((entry) => entry.id === activeCalendarId).calendar;
+  saveCalendarLibrary();
+}
+
+function selectCalendar(calendarId) {
+  const selected = calendarLibrary.find((entry) => entry.id === calendarId);
+  if (!selected) throw new Error("Ce calendrier n'existe plus dans ta bibliothèque.");
+  activeCalendarId = selected.id;
+  calendar = selected.calendar;
+  saveCalendarLibrary();
+  renderCalendar();
+  elements.themeDecoration.value = calendar.theme.decoration;
 }
 
 async function loadCreatorCalendar(user) {
   accountReady = false;
   const { data, error } = await supabaseClient
-    .from("advent_calendars")
-    .select("calendar")
+    .from(CLOUD_CALENDARS_TABLE)
+    .select("calendar_id,calendar,updated_at")
     .eq("owner_id", user.id)
-    .maybeSingle();
+    .order("updated_at", { ascending: false });
   if (error) throw new Error(`Impossible de charger ton calendrier : ${error.message}`);
 
-  const cloudCalendar = data ? validateCalendar(data.calendar) : validateCalendar(calendar);
-  if (!data) await writeCalendarToCloud(cloudCalendar, user.id);
-  calendar = cloudCalendar;
+  if (data.length) {
+    calendarLibrary = data.map((row) => makeCalendarEntry(row.calendar, row.calendar_id));
+  } else {
+    calendarLibrary = calendarLibrary.length ? calendarLibrary : [makeCalendarEntry(calendar)];
+    for (const entry of calendarLibrary) await writeCalendarToCloud(entry.calendar, user.id, entry.id);
+  }
+  const previousId = activeCalendarId;
+  activeCalendarId = calendarLibrary.some((entry) => entry.id === previousId) ? previousId : calendarLibrary[0].id;
+  calendar = calendarLibrary.find((entry) => entry.id === activeCalendarId).calendar;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudCalendar));
+    persistCalendarLibrary();
   } catch (error) {
-    showStatus(`Le calendrier est chargé depuis ton compte, mais la copie locale n’a pas pu être mise à jour : ${error.message}`, true);
+    showStatus(`Les calendriers sont chargés depuis ton compte, mais la copie locale n’a pas pu être mise à jour : ${error.message}`, true);
   }
   accountReady = true;
   renderCalendar();
   elements.themeDecoration.value = calendar.theme.decoration;
   setAccountUser(user);
-  setAccountMessage(data
-    ? "Ton calendrier unique a été chargé depuis ton compte."
-    : "Ton calendrier actuel a été enregistré comme le calendrier unique de ton compte.");
+  renderCalendarLibrary();
+  setAccountMessage(data.length
+    ? `${data.length} calendrier${data.length > 1 ? "s" : ""} chargé${data.length > 1 ? "s" : ""} depuis ton compte.`
+    : `${calendarLibrary.length} calendrier${calendarLibrary.length > 1 ? "s" : ""} enregistré${calendarLibrary.length > 1 ? "s" : ""} dans ton compte.`);
 }
 
-function scheduleCloudSave(value) {
+function scheduleCloudSave(value, calendarId) {
   if (!accountReady || !accountUser || isReader) return;
-  pendingCloudCalendar = value;
+  pendingCloudCalendars.set(calendarId, value);
   window.clearTimeout(cloudSaveTimer);
   cloudSaveTimer = window.setTimeout(() => { void flushCloudCalendar(); }, 700);
 }
@@ -490,20 +616,20 @@ async function flushCloudCalendar() {
   window.clearTimeout(cloudSaveTimer);
   if (cloudSavePromise) {
     const saveFailed = await cloudSavePromise;
-    if (!saveFailed && accountReady && accountUser && pendingCloudCalendar) await flushCloudCalendar();
+    if (!saveFailed && accountReady && accountUser && pendingCloudCalendars.size) await flushCloudCalendar();
     return;
   }
-  if (!accountReady || !accountUser || !pendingCloudCalendar) return;
+  if (!accountReady || !accountUser || !pendingCloudCalendars.size) return;
   const saveOperation = (async () => {
     let saveFailed = false;
-    while (accountReady && accountUser && pendingCloudCalendar) {
-      const snapshot = pendingCloudCalendar;
-      pendingCloudCalendar = null;
+    while (accountReady && accountUser && pendingCloudCalendars.size) {
+      const [calendarId, snapshot] = pendingCloudCalendars.entries().next().value;
+      pendingCloudCalendars.delete(calendarId);
       try {
-        await writeCalendarToCloud(snapshot, accountUser.id);
-        setAccountMessage("Ton calendrier est synchronisé avec ton compte.");
+        await writeCalendarToCloud(snapshot, accountUser.id, calendarId);
+        setAccountMessage("Tes calendriers sont synchronisés avec ton compte.");
       } catch (error) {
-        pendingCloudCalendar = pendingCloudCalendar || snapshot;
+        if (!pendingCloudCalendars.has(calendarId)) pendingCloudCalendars.set(calendarId, snapshot);
         saveFailed = true;
         setAccountMessage(`${error.message} Réessaie la synchronisation avant de te déconnecter.`, true);
         showStatus(`${error.message} La dernière version reste enregistrée sur cet appareil.`, true);
@@ -519,7 +645,7 @@ async function flushCloudCalendar() {
   } finally {
     if (cloudSavePromise === saveOperation) cloudSavePromise = null;
   }
-  if (!saveFailed && accountReady && accountUser && pendingCloudCalendar) await flushCloudCalendar();
+  if (!saveFailed && accountReady && accountUser && pendingCloudCalendars.size) await flushCloudCalendar();
 }
 
 async function initializeCreatorAccount() {
@@ -546,6 +672,8 @@ function loadDraft() {
 }
 
 let calendar;
+let calendarLibrary = [];
+let activeCalendarId = null;
 let isReader = false;
 let openedDays = new Set();
 let openedStorageKey = null;
@@ -636,15 +764,111 @@ function markDoorOpened(index) {
 
 function saveCalendar(next) {
   const normalized = validateCalendar(next);
+  const entryIndex = calendarLibrary.findIndex((entry) => entry.id === activeCalendarId);
+  if (entryIndex === -1) throw new Error("Le calendrier actif n'existe plus dans ta bibliothèque.");
+  const previous = calendarLibrary[entryIndex];
+  calendarLibrary[entryIndex] = { ...previous, calendar: normalized };
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+    persistCalendarLibrary();
   } catch (error) {
+    calendarLibrary[entryIndex] = previous;
     showStatus("Enregistrement impossible dans ce navigateur. L'image est peut-être trop volumineuse.", true);
     throw error;
   }
   calendar = normalized;
   renderCalendar();
-  scheduleCloudSave(normalized);
+  scheduleCloudSave(normalized, activeCalendarId);
+}
+
+function renderCalendarLibrary() {
+  if (!elements.calendarLibraryList) return;
+  elements.calendarLibraryList.replaceChildren();
+  const active = calendarLibrary.find((entry) => entry.id === activeCalendarId);
+  elements.activeCalendarLabel.textContent = active ? active.calendar.title : "";
+  calendarLibrary.forEach((entry) => {
+    const row = document.createElement("div");
+    row.className = "calendar-library-item";
+    row.classList.toggle("is-current", entry.id === activeCalendarId);
+    const select = document.createElement("button");
+    select.type = "button";
+    select.className = "calendar-library-select";
+    select.textContent = `${entry.calendar.title}${entry.id === activeCalendarId ? " · ouvert" : ""}`;
+    select.setAttribute("aria-current", entry.id === activeCalendarId ? "true" : "false");
+    select.addEventListener("click", () => {
+      try {
+        selectCalendar(entry.id);
+        elements.calendarLibraryDialog.close();
+        showStatus(`« ${calendar.title} » est ouvert.`);
+      } catch (error) {
+        showStatus(error.message, true);
+      }
+    });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "calendar-library-delete";
+    remove.textContent = "Supprimer";
+    remove.setAttribute("aria-label", `Supprimer le calendrier ${entry.calendar.title}`);
+    remove.addEventListener("click", () => { void removeCalendar(entry.id); });
+    row.append(select, remove);
+    elements.calendarLibraryList.append(row);
+  });
+}
+
+async function removeCalendar(calendarId) {
+  const entry = calendarLibrary.find((item) => item.id === calendarId);
+  if (!entry) return;
+  if (!window.confirm(`Supprimer définitivement « ${entry.calendar.title} » ?`)) return;
+  const remaining = calendarLibrary.filter((item) => item.id !== calendarId);
+  if (!remaining.length) remaining.push(makeCalendarEntry(emptyCalendar()));
+  const previousLibrary = calendarLibrary;
+  const previousActiveId = activeCalendarId;
+  try {
+    if (accountReady && accountUser) {
+      await flushCloudCalendar();
+      if (pendingCloudCalendars.has(calendarId)) throw new Error("Ce calendrier n'est pas encore synchronisé. Réessaie la suppression après la synchronisation.");
+      await deleteCalendarFromCloud(calendarId);
+      pendingCloudCalendars.delete(calendarId);
+    }
+    calendarLibrary = remaining;
+    if (activeCalendarId === calendarId) activeCalendarId = remaining[0].id;
+    calendar = calendarLibrary.find((item) => item.id === activeCalendarId).calendar;
+    saveCalendarLibrary();
+    renderCalendar();
+    renderCalendarLibrary();
+    showStatus(`« ${entry.calendar.title} » a été supprimé.`);
+  } catch (error) {
+    calendarLibrary = previousLibrary;
+    activeCalendarId = previousActiveId;
+    calendar = previousLibrary.find((item) => item.id === previousActiveId).calendar;
+    renderCalendarLibrary();
+    showStatus(error.message, true);
+  }
+}
+
+function createCalendar() {
+  let nextNumber = 2;
+  while (calendarLibrary.some((entry) => entry.calendar.title === `Mon calendrier ${nextNumber}`)) nextNumber++;
+  const entry = makeCalendarEntry({ ...emptyCalendar(), title: `Mon calendrier ${nextNumber}` });
+  const previousId = activeCalendarId;
+  const previousCalendar = calendar;
+  calendarLibrary.push(entry);
+  activeCalendarId = entry.id;
+  calendar = entry.calendar;
+  try {
+    saveCalendarLibrary();
+    renderCalendar();
+    renderCalendarLibrary();
+    elements.calendarLibraryDialog.close();
+    scheduleCloudSave(calendar, entry.id);
+    showStatus("Nouveau calendrier créé. Tu peux maintenant le personnaliser.");
+  } catch (error) {
+    calendarLibrary = calendarLibrary.filter((item) => item.id !== entry.id);
+    activeCalendarId = previousId;
+    calendar = previousCalendar;
+    renderCalendar();
+    renderCalendarLibrary();
+    showStatus(`Impossible de créer ce calendrier : ${error.message}`, true);
+  }
 }
 
 function renderCalendar() {
@@ -695,6 +919,7 @@ function renderCalendar() {
   elements.badge.hidden = !isReader;
   elements.shareButton.hidden = isReader;
   elements.accountButton.hidden = isReader;
+  elements.calendarLibraryButton.hidden = isReader;
   elements.themeButton.hidden = isReader;
   elements.exitReaderButton.hidden = !isReader;
   elements.shuffleDoorsButton.hidden = isReader;
@@ -706,6 +931,7 @@ function renderCalendar() {
     ? "Une case se déverrouille chaque jour en décembre. Les cases déjà ouvertes restent accessibles."
     : "Choisis une case pour y glisser une surprise.";
   elements.editFromReveal.hidden = isReader;
+  renderCalendarLibrary();
 }
 
 function fitCalendarTitle() {
@@ -792,6 +1018,7 @@ function showReveal(index) {
   elements.revealMessage.hidden = !door.message;
   elements.revealEmpty.hidden = hasText || Boolean(door.image);
   elements.revealImage.hidden = !door.image;
+  elements.revealImage.classList.remove("is-emerging");
   elements.revealImage.src = door.image;
   elements.revealImage.alt = `Image de la surprise du ${decemberDayLabel(index)} décembre`;
   elements.revealOpeningScene.dataset.decoration = decoration;
@@ -807,6 +1034,7 @@ function showReveal(index) {
   elements.revealBurst.style.setProperty("--decoration-color", decorationColor);
   elements.revealDialog.showModal();
   restartDoorAnimation(elements.revealOpeningScene);
+  if (door.image) requestAnimationFrame(() => elements.revealImage.classList.add("is-emerging"));
 }
 
 function updateDecorationPreview() {
@@ -1276,6 +1504,7 @@ elements.editDialog.addEventListener("close", () => {
 });
 
 elements.revealDialog.addEventListener("close", () => {
+  elements.revealImage.classList.remove("is-emerging");
   if (revealedDay !== null) getDoorButton(revealedDay)?.classList.remove("is-opening");
 });
 
@@ -1318,9 +1547,9 @@ elements.shareButton.addEventListener("click", async () => {
   try {
     const shareUrl = getSharePageUrl();
     const code = await encodeCalendar(calendar);
-    shareUrl.hash = new URLSearchParams({ calendar: code }).toString();
+    shareUrl.hash = new URLSearchParams({ c: code }).toString();
     elements.shareLink.value = shareUrl.href;
-    elements.shareSize.textContent = `Lien prêt à copier · ${(new Blob([elements.shareLink.value]).size / 1024).toFixed(1)} Ko`;
+    elements.shareSize.textContent = `Lien compact prêt à copier · ${(new Blob([elements.shareLink.value]).size / 1024).toFixed(1)} Ko`;
     elements.copyLinkButton.disabled = false;
   } catch (error) {
     elements.shareLink.value = "";
@@ -1339,6 +1568,13 @@ elements.copyLinkButton.addEventListener("click", async () => {
     showStatus("Sélectionne le lien puis copie-le avec Ctrl+C ou ⌘C.");
   }
 });
+
+elements.calendarLibraryButton.addEventListener("click", () => {
+  renderCalendarLibrary();
+  elements.calendarLibraryDialog.showModal();
+});
+
+elements.newCalendarButton.addEventListener("click", createCalendar);
 
 elements.accountButton.addEventListener("click", async () => {
   elements.accountDialog.showModal();
@@ -1362,13 +1598,13 @@ elements.accountButton.addEventListener("click", async () => {
         await loadCreatorCalendar(data.session.user);
         accountSetupError = "";
       }
-      else setAccountMessage("Connecte-toi ou crée un compte. Un seul calendrier sera conservé par compte.");
+      else setAccountMessage("Connecte-toi ou crée un compte pour synchroniser tous tes calendriers entre tes appareils.");
     } catch (error) {
       accountSetupError = error.message;
       setAccountMessage(accountSetupError, true);
     }
   } else if (!accountUser && !accountSetupError) {
-    setAccountMessage("Connecte-toi ou crée un compte. Un seul calendrier sera conservé par compte.");
+    setAccountMessage("Connecte-toi ou crée un compte pour synchroniser tous tes calendriers entre tes appareils.");
   } else if (accountSetupError) {
     setAccountMessage(accountSetupError, true);
   }
@@ -1423,9 +1659,9 @@ elements.accountSyncButton.addEventListener("click", async () => {
   if (!accountUser) return;
   elements.accountSyncButton.disabled = true;
   try {
-    if (pendingCloudCalendar) {
+    if (pendingCloudCalendars.size) {
       await flushCloudCalendar();
-      if (pendingCloudCalendar) throw new Error("La sauvegarde en ligne a échoué. Vérifie ta connexion avant de réessayer.");
+      if (pendingCloudCalendars.size) throw new Error("La sauvegarde en ligne a échoué. Vérifie ta connexion avant de réessayer.");
     } else {
       await loadCreatorCalendar(accountUser);
     }
@@ -1440,16 +1676,16 @@ elements.accountSignOutButton.addEventListener("click", async () => {
   elements.accountSignOutButton.disabled = true;
   try {
     await flushCloudCalendar();
-    if (pendingCloudCalendar) throw new Error("Ton calendrier n’a pas pu être synchronisé. Réessaie avant de te déconnecter.");
+    if (pendingCloudCalendars.size) throw new Error("Tes calendriers n’ont pas pu être synchronisés. Réessaie avant de te déconnecter.");
     const { error } = await supabaseClient.auth.signOut();
     if (error) throw error;
     accountReady = false;
     accountUser = null;
-    pendingCloudCalendar = null;
+    pendingCloudCalendars.clear();
     setAccountUser(null);
-    calendar = loadDraft();
+    calendar = calendarLibrary.find((entry) => entry.id === activeCalendarId)?.calendar || loadDraft();
     renderCalendar();
-    setAccountMessage("Tu es déconnecté. Le brouillon local est de nouveau affiché.");
+    setAccountMessage("Tu es déconnecté. La bibliothèque conservée sur cet appareil reste disponible.");
   } catch (error) {
     setAccountMessage(error.message, true);
   } finally {
@@ -1461,7 +1697,7 @@ elements.exitReaderButton.addEventListener("click", () => {
   isReader = false;
   window.history.replaceState(null, "", window.location.href.split("#")[0]);
   try {
-    calendar = loadDraft();
+    calendar = calendarLibrary.find((entry) => entry.id === activeCalendarId)?.calendar || loadDraft();
     renderCalendar();
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (error) {
@@ -1493,13 +1729,16 @@ for (const dialog of document.querySelectorAll("dialog")) {
 
 async function initializeCalendar() {
   try {
-    calendar = loadDraft();
+    loadCalendarLibrary();
   } catch (error) {
-    calendar = emptyCalendar();
-    showStatus(`Le brouillon n'a pas pu être chargé : ${error.message}`, true);
+    calendarLibrary = [makeCalendarEntry(emptyCalendar())];
+    activeCalendarId = calendarLibrary[0].id;
+    calendar = calendarLibrary[0].calendar;
+    showStatus(`La bibliothèque n'a pas pu être chargée : ${error.message}`, true);
   }
 
-  const sharedCode = new URLSearchParams(window.location.hash.slice(1)).get("calendar");
+  const shareParameters = new URLSearchParams(window.location.hash.slice(1));
+  const sharedCode = shareParameters.get("c") || shareParameters.get("calendar");
   if (sharedCode) {
     try {
       calendar = await decodeCalendar(sharedCode);
