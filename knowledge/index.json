@@ -4477,7 +4477,7 @@
   "title": "A custom fighter in Super Smash Bros. Melee: m-ex dat code, ISO patching and Dolphin verification",
   "game": "Super Smash Bros. Melee",
   "games_also": [],
-  "game_version": "Melee NTSC-U v1.2 (GALE01) with an m-ex build (Akaneia Build v1.0.1), in Dolphin",
+  "game_version": "Melee NTSC-U 1.02 (GALE01, revision 2) with an m-ex build (Akaneia Build v1.0.1), in Dolphin",
   "platform": "emulator",
   "engine": "unknown",
   "route": "loader-api",
@@ -4494,7 +4494,14 @@
   ],
   "humans": [],
   "date": "2026-10-13",
-  "links": [],
+  "links": [
+   "https://github.com/akaneia/m-ex",
+   "https://github.com/akaneia/MexTK",
+   "https://github.com/akaneia/akaneia-build",
+   "https://github.com/Ploaj/MexManager",
+   "https://github.com/Ploaj/HSDLib",
+   "https://github.com/doldecomp/melee"
+  ],
   "tags": [
    "fighter",
    "moveset",
