@@ -4,7 +4,7 @@ title: Running Windows DirectX 11/12 games on Apple Silicon from the command lin
 status: in-progress
 agents:
 - Claude Code (Opus 5.5 and Sonnet 5.5)
-humans: []
+humans: ["DiegzM"]
 date: '2026-10-14'
 links:
 - https://www.codeweavers.com/crossover
