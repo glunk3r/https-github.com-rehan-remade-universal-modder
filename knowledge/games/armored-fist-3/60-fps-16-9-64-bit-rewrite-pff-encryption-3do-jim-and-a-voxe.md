@@ -457,7 +457,11 @@ Verified wireframes for M1A2/BMP/BRDM/OLIFANT (typed) and 2S6M (plot routine).
   hooks that call, preserves CF, and rewrites x as
   `x*(4*height)/(3*pitch) + (3*pitch-4*height)/6`; at 4:3 it is a
   mathematical no-op. Verified: the minimap moves from `(12,686,580,261)` to
-  `(249,686,435,261)` - square, at the pillarbox edge; mode gate 27/27.
+  `(249,686,435,261)` - square, at the pillarbox edge - and the vehicle/status
+  icon element (id `0xFB`, call `0x542500` -> calculator `0x56F818`, slot
+  `+0x88`) moves from `(1761,963,147,110)` into its centred panel via the same
+  cave (`build_hud_rect.py` / `patch_hud_rect`, one cave per site); compass
+  letters and the player marker verified inside the square; mode gate 27/27.
   (The grid itself is decoded from a resource by `0x612FC2 -> 0x404A46`; the
   per-element rect transform avoids touching that pipeline.)
 
