@@ -573,6 +573,32 @@ def test_remake_runner_errors_are_attributed_to_the_case_in_progress():
     assert remake.aggregate(b) == "error" and remake.aggregate(a) == "pass"
 
 
+
+def _godot_or_skip() -> str:
+    try:
+        return remake.godot_exe(None)
+    except SystemExit:
+        pytest.skip("needs a Godot 4.7 console exe")
+
+
+def test_remake_runner_case_limit_is_the_scenario_declaration_else_the_default(tmp_path):
+    """hang.gd declares nothing: the runner's default 30 s. limit_short declares 2 s, limit_long 40 s (it runs 31 s)."""
+    exe = _godot_or_skip()
+    proj = tmp_path / "fixture"
+    shutil.copytree(Path(__file__).parent / "godot_fixture", proj)
+    shutil.rmtree(proj / "addons" / "gd_remake", ignore_errors=True)
+    shutil.copytree(remake.ADDON_SRC, proj / "addons" / "gd_remake")   # the addon under test, not a stale fixture copy
+    out = tmp_path / "out.json"
+    names = ["hang", "limit_short", "limit_long"]
+    args = ["--scenarios", ",".join(f"res://tests/scenarios/{n}.gd" for n in names), "--out", out.as_posix()]
+    rc, log = remake._capture(remake.runner_cmd(exe, proj, args), timeout=240)
+    res = {Path(r["scenario"]).stem: r for r in json.loads(out.read_text(encoding="utf-8"))["results"]}
+    assert res["hang"]["status"] == "timeout" and "within 30.0s" in res["hang"]["message"]
+    assert 30000 <= res["hang"]["duration_ms"] < 33000
+    assert res["limit_short"]["status"] == "timeout" and "within 2.0s" in res["limit_short"]["message"]
+    assert 2000 <= res["limit_short"]["duration_ms"] < 5000
+    assert res["limit_long"]["status"] == "pass" and res["limit_long"]["duration_ms"] >= 31000, log[-2000:]
+
 def test_remake_variants_promote(tmp_path):
     root = _remake_tree(tmp_path / "p", {
         "project.godot": "", "variants/hero/v1.png": b"one", "variants/hero/v2.png": b"two",

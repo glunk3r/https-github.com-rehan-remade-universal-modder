@@ -43,6 +43,13 @@ func cases() -> Array[Dictionary]:
 	return [{"name": "default"}]
 
 
+## Override to give each case of this scenario its own wall-clock limit in seconds; 0 (the default) = the runner's
+## --timeout (30 s unless the caller passes another). For a case whose length real time decides (separate processes
+## playing a live session): declare the case's own deadline, never more.
+func time_limit_s() -> float:
+	return 0.0
+
+
 ## Override. May await. Returning ends the case.
 func run() -> void:
 	expect(false, "%s does not override run()" % get_script().resource_path)

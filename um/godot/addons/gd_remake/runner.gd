@@ -3,6 +3,7 @@ extends SceneTree
 ##   godot --headless --path <project> -s res://addons/gd_remake/runner.gd -- \
 ##         --scenarios res://tests/scenarios/a.gd,res://tests/scenarios/b.gd --out <abs.json> \
 ##         [--timeout 30] [--case <name>]
+##   --timeout: seconds per case (default 30), unless the scenario declares its own (GdScenario.time_limit_s).
 ##   godot --headless --path <project> -s res://addons/gd_remake/runner.gd -- --boot 120 --out <abs.json>
 ##   godot --path <project> -s res://addons/gd_remake/runner.gd -- \
 ##         --grid res://tests/scenarios/a.gd --out <abs.png> [--cell 480x270] [--at 2.0] [--case <name>]
@@ -129,18 +130,22 @@ func _run_case(script: Script, path: String, case: Dictionary, timeout: float) -
 	node.set("params", case.duplicate(true))
 	root.add_child(node)
 	current_scene = node
+	var limit := timeout
+	var own := float(node.call("time_limit_s")) if node.has_method("time_limit_s") else 0.0
+	if own > 0.0:
+		limit = own  # the scenario's declared limit for its cases (GdScenario.time_limit_s)
 	var state := {"done": false}
 	_drive(node, state)
 	var timed_out := false
 	while not state.done:
 		if _log.script_errors_since(mark) > 0:
 			break
-		if (Time.get_ticks_msec() - t0) >= timeout * 1000.0:
+		if (Time.get_ticks_msec() - t0) >= limit * 1000.0:
 			timed_out = true
 			break
 		await process_frame
 	entry.duration_ms = Time.get_ticks_msec() - t0
-	_finish(entry, node, _log.since(mark), timed_out, "run() did not return within %ss" % timeout)
+	_finish(entry, node, _log.since(mark), timed_out, "run() did not return within %ss" % limit)
 	print("GDR_END %s|%s %s" % [path, case.name, entry.status])
 	await _cleanup(before)
 	return entry

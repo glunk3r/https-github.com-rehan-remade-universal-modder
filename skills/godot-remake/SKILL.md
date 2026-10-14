@@ -71,6 +71,9 @@ func run() -> void:
 Helpers: `frames(n)`, `seconds(t)`, `press/release/tap(action)`, `expect`, `expect_near`, `expect_eq`,
 `metric`, `spawn(scene)`, `params`. Scenarios run headless and in sequence; engine `SCRIPT ERROR` lines
 during a case turn it into `error`, so a pass means the case ran clean.
+Each case gets `um remake check --timeout` seconds (30 by default). A case whose length real time decides
+(separate processes playing a live session) declares its own deadline with `func time_limit_s() -> float`;
+size it from what the case waits for, never as headroom for a slow test.
 
 **Contact sheet** (the visual edge-case report): every case of one scenario side by side, labelled,
 failures marked red, in one PNG. Look at it once; it shows clipping, z-order, wrong scale and broken
