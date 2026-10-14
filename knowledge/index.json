@@ -2863,6 +2863,52 @@
   ]
  },
  {
+  "path": "games/kenshi/kenshi-generated-mods.md",
+  "kind": "game",
+  "title": "Data mods without FCS: generated .mod files, Blender weapons, a race, custom weapon grades",
+  "game": "Kenshi",
+  "games_also": [],
+  "game_version": "1.0.65 x64 (Newland), Steam public branch (buildid 13871665)",
+  "platform": "windows",
+  "engine": "native",
+  "route": "data",
+  "tools": [
+   "Python 3.12",
+   "Blender 5.2.2",
+   "Kenshi_IO_Continued (2024-08-21, patched)",
+   "OgreXMLConverter (bundled with Kenshi IO)",
+   "Pillow",
+   "numpy",
+   "OpenConstructionSet (source read only)",
+   "dnfile"
+  ],
+  "anti_cheat": "none (offline single-player)",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [],
+  "date": "2026-10-15",
+  "links": [
+   "https://github.com/lmaydev/OpenConstructionSet",
+   "https://codeberg.org/Kindrad/Kenshi_IO_Continued",
+   "https://github.com/BFrizzleFoShizzle/RE_Kenshi"
+  ],
+  "tags": [
+   "kenshi",
+   "ogre",
+   "physx",
+   "fcs",
+   "mod-file-format",
+   "ogre",
+   "blender",
+   "weapons",
+   "races",
+   "kep",
+   "data-mod"
+  ]
+ },
+ {
   "path": "games/left-4-dead/left-4-dead-infected-and-tank-in-minecraft.md",
   "kind": "game",
   "title": "Left 4 Dead's common infected (19 looks) and Tank as animated Minecraft mobs",
