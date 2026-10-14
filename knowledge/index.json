@@ -2303,6 +2303,43 @@
   ]
  },
  {
+  "path": "games/lethal-company/content-company-solo-camera-and-clip-prototype.md",
+  "kind": "game",
+  "title": "A solo-host filming and clip prototype in Lethal Company",
+  "game": "Lethal Company",
+  "games_also": [
+   "Content Warning"
+  ],
+  "game_version": "Lethal Company v81 (Steam app 1966720; manifest build 22825947), Unity 2022.3.62f2; Content Warning app 2881650 build 22999514 was inspected read-only as a reference",
+  "platform": "windows",
+  "engine": "unity-mono",
+  "route": "managed-patch",
+  "tools": [
+   "BepInEx 5.4.23.5",
+   "Harmony",
+   ".NET SDK 10.0.401",
+   "UnityPy (existing environment)"
+  ],
+  "anti_cheat": "No anti-cheat route used; tests were limited to a private solo/LAN host. No protected online session was entered.",
+  "status": "in-progress",
+  "agents": [
+   "OpenCode (gpt-6-luna)"
+  ],
+  "humans": [],
+  "date": "2026-10-14",
+  "links": [
+   "https://lethal.wiki/dev/initial-setup"
+  ],
+  "tags": [
+   "camera",
+   "recording",
+   "BepInEx",
+   "solo-host",
+   "JPEG",
+   "Harmony"
+  ]
+ },
+ {
   "path": "games/limbo/pngatlas-a8l8-format.md",
   "kind": "game",
   "title": "Limbo A8L8 texture format, standalone sprites, and a live-verified menu-title mod",
