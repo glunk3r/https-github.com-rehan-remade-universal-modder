@@ -40,7 +40,7 @@ tags: [macos, apple-silicon, crossover, wine, d3dmetal, moltenvk, directx-11, di
 | Godot 4.3 single-exe game, Vulkan, **no Steam**, clean bottle | **Validated** to a running race (Vulkan through MoltenVK); scripts recovered; a patched exe was not built |
 | Other 64-bit DirectX 11/12 games | Expected to be possible, **untested**, per game |
 | DirectX 9/10, OpenGL, other Vulkan games | Other translation paths. **Untested** here (the Halo Trial note under Seen in ran a D3D9 game through mtld3d) |
-| 32-bit games | D3DMetal is 64-bit only. **Untested** |
+| 32-bit games | D3DMetal is described as 64-bit Direct3D 11/12 only (Gcenx's Sikarugir README; no Apple or CodeWeavers statement found). **Untested** |
 | Kernel anti-cheat (EasyAntiCheat, BattlEye, Vanguard, ACE, ...) | Generally will not run. **Stop and tell the user; never bypass** |
 | Launchers other than Steam, installers (`setup.exe`) | **Untested** |
 | Intel Macs, other Apple Silicon chips | **Untested** (D3DMetal is Apple Silicon only) |
@@ -52,9 +52,13 @@ re-tested after the audio finding in Gotcha 9).
 
 ## Setup (what was used)
 - Apple M5 (a MacBook Pro), 16 GB, macOS 26.5.1, Rosetta 2. CrossOver 26.3 (only `cxbottle`, `wine`, `wineserver`;
-  bottle template `win11_64`; default graphics backend D3DMetal).
-- Apple's Game Porting Toolkit app 3.0-3 (its Wine reports 7.7), Gcenx Wine stable 11.0_1 and devel/staging 11.18
-  (sha256 checked), Homebrew `mingw-w64` 14.0.0_3 (to build probes as Windows exes).
+  bottle template `win11_64`; the bottle's graphics setting was left as created, and D3DMetal is what loaded.
+  CodeWeavers documents the setting's "Auto" mode as a per-game choice from its database, falling back to wined3d,
+  so another game may get DXMT, DXVK or wined3d instead: check with `lsof` (step 6)).
+- Gcenx's Game Porting Toolkit 3.0-3 build (the `game-porting-toolkit` cask from `Gcenx/homebrew-wine`: a binary
+  build of Apple's GPTK 1.1 Wine recipe, based on CrossOver 22.1.1 sources; its Wine reports 7.7; Apple's current
+  release is GPTK 4, not tested), Gcenx Wine stable 11.0_1 and devel/staging 11.18 (sha256 checked), Homebrew
+  `mingw-w64` 14.0.0_3 (to build probes as Windows exes).
 - SteamCMD (Homebrew cask, build 1791918946), Windows Steam client build 1791918634, BepInEx 5.4.23.5, GDRE Tools
   2.7.4, ILSpy `ilspycmd` 11.1 on .NET SDK 10.
 - Rules that apply (repo safety rules): only games the user owns; never bypass anti-cheat, DRM or ownership checks;
@@ -77,22 +81,24 @@ re-tested after the audio finding in Gotcha 9).
    through a flip-model swap chain, reads the back buffer with the READBACK-heap pattern in
    [D3D12 frame readback: buffers only](d3d12-frame-readback-buffers-only.md), checks a corner and the centre pixel
    and exits 0 on PASS. It needs no screenshot permission. Observed: feature level 12_2, shader model 6.6, adapter
-   `AMD Compatibility Mode` (D3DMetal) under CrossOver; the same under Apple's bundled Wine 7.7; only feature level
-   11_0 under the free Gcenx Wine 11.x builds (Wine's own DX12 over MoltenVK, no D3DMetal).
+   `AMD Compatibility Mode` (D3DMetal) under CrossOver; the same under the GPTK 3.0-3 build's Wine 7.7; only
+   feature level 11_0 under the free Gcenx Wine 11.x builds (Wine's own DX12 over MoltenVK, no D3DMetal).
 4. **Get the game (Steam, no Mac build).** SteamCMD can download the Windows depot of a game the account owns by
    forcing the platform:
    ```
    steamcmd +@sSteamCmdForcePlatformType windows +force_install_dir "$LAB/games/<name>" \
             +login <username> +app_update <appid> validate +quit < /dev/null > download.log 2>&1
    ```
-   `+@sSteamCmdForcePlatformType windows` must come first (else `Invalid platform`); `+force_install_dir` before
-   `+login`. **The user logs in once in their own terminal**; later runs use the cached login
+   `+@sSteamCmdForcePlatformType windows` must come first (here, anything else gave `Invalid platform`; Valve's
+   SteamCMD wiki example also puts it first); `+force_install_dir` before `+login`, as the wiki asks. **The user
+   logs in once in their own terminal**; later runs use the cached login
    (`steamcmd +login <username> +quit < /dev/null` should say `Logging in using cached credentials`). If it reports
    no subscription, stop: no other account, no entitlement tricks. Find the app id from the store URL or the public
    `store.steampowered.com/api/storesearch/?term=<name>&cc=us&l=en`. Observed: 1.8 GB and 5.4 GB games downloaded
    in under a minute each.
-5. **Windows Steam, only if the game loads Steamworks.** Valve's installer from
-   `cdn.fastly.steamstatic.com/client/installer/SteamSetup.exe`, run as `wine --bottle NAME SteamSetup.exe /S`,
+5. **Windows Steam, only if the game loads Steamworks.** Valve's installer (the store's download page links
+   `cdn.akamai.steamstatic.com/client/installer/SteamSetup.exe`; this run used the `cdn.fastly` mirror), run as
+   `wine --bottle NAME "$PWD/SteamSetup.exe" /S` (an absolute path, Gotcha 1; `/S` is the NSIS silent switch),
    then start `steam.exe -no-cef-sandbox -cef-disable-gpu -cef-disable-gpu-compositing` from
    `C:\Program Files (x86)\Steam` with the shell's open-files limit raised (`ulimit -Sn 61440`). The first launches
    self-update (a 336 MB client package, then a 64-bit one) and each ends with
@@ -131,8 +137,8 @@ What was observed, per game (one session, 13-14 October 2026):
 
 | Game | Result |
 |---|---|
-| **PEAK** (Steam app 3527290, Unity 6000.3.15f1 Mono, v2.6.b) | Apple's bundled Wine 7.7: crashed right after input init. Gcenx 11.x: booted on Vulkan (Apple M5 via MoltenVK), stalled at the Steam check. **CrossOver CLI + signed-in Windows Steam:** Direct3D 11 (`Direct3D 11.0 [level 11.1]`, renderer `AMD Compatibility Mode`; Unity's own filter denied DX12), reached gameplay (airport, island), keyboard and mouse driven, BepInEx plus a plugin loaded, a command-file bridge ran the game's console commands with verified on-screen effects (Gotcha 17). Epic login failed |
-| **MECCHA CHAMELEON** (Steam app 4704690, Unreal Engine 5.6 by its config folder) | SteamCMD download 5.4 GB. The launcher stub refused to start (Gotcha 5); the real shipping exe ran: **title screen on DirectX 12** (`lsof` showed `d3d12.dll`, `dxgi.dll`, `DirectML.dll`, D3DMetal, `libmetalirconverter`). Epic login failed. Gameplay not seen; one Enter key press was inconclusive |
+| **PEAK** (Steam app 3527290, Unity 6000.3.15f1 Mono, v2.6.b) | GPTK 3.0-3 build (Wine 7.7): crashed right after input init. Gcenx 11.x: booted on Vulkan (Apple M5 via MoltenVK), stalled at the Steam check. **CrossOver CLI + signed-in Windows Steam:** Direct3D 11 (`Direct3D 11.0 [level 11.1]`, renderer `AMD Compatibility Mode`; Unity's own filter denied DX12), reached gameplay (airport, island), keyboard and mouse driven, BepInEx plus a plugin loaded, a command-file bridge ran the game's console commands with verified on-screen effects (Gotcha 17). Epic login failed |
+| **MECCHA CHAMELEON** (Steam app 4704690, Unreal Engine 5.6 by its config folder; an online PvP game, with no single-player mode on its store page: nothing was injected into it, and the mod-loader step 8 doesn't apply to it) | SteamCMD download 5.4 GB. The launcher stub refused to start (Gotcha 5); the real shipping exe ran: **title screen on DirectX 12** (`lsof` showed `d3d12.dll`, `dxgi.dll`, `DirectML.dll`, D3DMetal, `libmetalirconverter`). Epic login failed. Gameplay not seen; one Enter key press was inconclusive |
 | **A small Godot racing game** (the contributor's own export) | no Steam, no extra install: Vulkan 1.2 Forward+ via MoltenVK, reached a race with HUD (position, lap, timer, leaderboard, boost). Scripts recovered 45 of 45. A patched exe was not built |
 
 Checked only weakly: sound (the game process loaded `winecoreaudio.drv`; nobody listened), performance (no frame
@@ -142,7 +148,7 @@ rate or load times), input outside PEAK, any online feature.
 1. **Symptom.** `cannot execute L"game.exe"` from CrossOver's `wine`. **Cause:** the wrapper wants an absolute
    path. **Fix:** pass `"$PWD/game.exe"`.
 2. **Symptom.** A Unity 6 game logs `Crash!!!` right after `<RI> Initializing input.` (stack in `UnityMain2`).
-   **Cause:** Wine too old; Apple's Game Porting Toolkit app bundles Wine 7.7. **Fix:** use CrossOver's Wine or
+   **Cause:** Wine too old; the GPTK 3.0-3 build is Wine 7.7. **Fix:** use CrossOver's Wine or
    Gcenx Wine 11.x. Do not debug the game.
 3. **Symptom.** `[D3D12 Device Filter] ... D3D12 API denied by user filter` (Unity). **Cause:** the game's own
    filter (feature level below 12.1 or 4 cores or fewer). **Fix:** none needed; Unity falls back to D3D11 or
@@ -174,15 +180,15 @@ rate or load times), input outside PEAK, any online feature.
    `Illegal termination of worker thread 'CFileWriterThread'`, `Failed to create thread (error 0x5)` and
    `Waited 6000 iterations in CFileWriter::Flush`. **Cause (mechanism):** `wine_unix_call()` in mmdevapi calls the
    Mac-side CoreAudio driver and then does `assert(!status)`, so any CoreAudio error aborts; the same code is in
-   upstream Wine 11.0 and 11.18. It is **intermittent and environment-dependent**: Steam started fine with audio on
-   for about 45 minutes, then failed on every start until audio was disabled, with nothing changed in Wine or the
-   bottle. The Mac had 9 output and 7 input devices including virtual ones (BlackHole, Zoom, Teams drivers) and a
-   USB default output; none was proven to matter. **Not found:** the failing call. A probe that lists every device,
-   reads each mix format and starts a real shared-mode stream ran 14 times without failing. **Rejected as the
-   cause:** the open-files limit (it crashed with the limit raised), a cold Wine server, the Visual C++ runtime
-   install, a bottle-level `WINEDLLOVERRIDES` entry. **Fix (workaround only, apply only when the first line above
-   is present; ask first, it edits the registry):** back up the bottle's `user.reg`, set
-   `HKCU\Software\Wine\Drivers` value `Audio` to empty
+   upstream Wine 11.0 and 11.18 (line 120 in 11.0, which CrossOver 26 is based on; line 118 in 11.18). It is
+   **intermittent and environment-dependent**: Steam started fine with audio on for about 45 minutes, then failed
+   on every start until audio was disabled, with nothing changed in Wine or the bottle. The Mac had 9 output and 7
+   input devices including virtual ones (BlackHole, Zoom, Teams drivers) and a USB default output; none was proven
+   to matter. **Not found:** the failing call. A probe that lists every device, reads each mix format and starts a
+   real shared-mode stream ran 14 times without failing. **Rejected as the cause:** the open-files limit (it
+   crashed with the limit raised), a cold Wine server, the Visual C++ runtime install, a bottle-level
+   `WINEDLLOVERRIDES` entry. **Fix (workaround only, apply only when the first line above is present; ask first, it
+   edits the registry):** back up the bottle's `user.reg`, set `HKCU\Software\Wine\Drivers` value `Audio` to empty
    (`wine --bottle NAME reg add 'HKCU\Software\Wine\Drivers' /v Audio /t REG_SZ /d '' /f`), start Steam, and when
    it says `Logged On` delete the value (`reg delete ... /v Audio /f`). Steam keeps running without sound and
    **games started afterwards get sound** (their process loads `winecoreaudio.drv`; check with `lsof`). If the
@@ -202,7 +208,8 @@ rate or load times), input outside PEAK, any online feature.
     `wine --bottle NAME reg add 'HKCU\Software\Wine\DllOverrides' /v winhttp /t REG_SZ /d native,builtin /f` (back
     up `user.reg` first). Proof: the log appears (`BepInEx 5.4.23.5 - <Game> ... Running under Unity v6000.3.15`).
 13. **Symptom.** `WINEDEBUG=+loaddll` prints nothing through CrossOver. **Cause:** the wrapper ignores the plain
-    variable. **Fix:** `wine --bottle NAME --debugmsg +reg,+loaddll game.exe`.
+    variable. **Fix:** `wine --bottle NAME --debugmsg +reg,+loaddll game.exe`. CodeWeavers' own support pages
+    document the `CX_DEBUGMSG` and `CX_LOG` environment variables for the same job.
 14. **Symptom.** Steam and the game die together. **Cause:** `wineserver -k` stops every process in the bottle.
     **Fix:** kill the game's exact PID instead; only run `wineserver -k` when nothing else shares the bottle.
 15. **Symptom.** The Mac Steam app shows "Refresh Sign In" after a SteamCMD login, or a Windows Steam download is
