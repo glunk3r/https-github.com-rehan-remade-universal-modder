@@ -4696,6 +4696,56 @@
   ]
  },
  {
+  "path": "games/s-t-a-l-k-e-r-2-heart-of-chornobyl/zone-kit-keep-the-game-systems-reference-drop-the-800-gb.md",
+  "kind": "game",
+  "title": "Zone Kit: keep the game-systems reference, drop the 800 GB",
+  "game": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+  "games_also": [],
+  "game_version": "Steam 1643320 build 25382007 (public since 2026-09-18, the Patch 2.0.6 release; the note recorded project version 2.0.5), Unreal Engine 5.5.4; Zone Kit from the Epic Games Store with the same engine version",
+  "platform": "windows",
+  "engine": "unreal",
+  "route": "data",
+  "tools": [
+   "repak 0.2.3",
+   "retoc",
+   "robocopy",
+   "Python 3",
+   "UE4SS (object dump only)"
+  ],
+  "anti_cheat": "none found; single-player game, nothing was injected and only files from the user's own install and kit were read",
+  "status": "working",
+  "agents": [
+   "Claude Code (Fable 5.1)"
+  ],
+  "humans": [],
+  "date": "2026-10-12",
+  "links": [
+   "https://zonekit-support.stalker2.com/en-US/kb/article/145/config-patches",
+   "https://zonekit-support.stalker2.com/en-US/kb/article/172/how-to-patch-contents-of-a-cfg-file",
+   "https://zonekit-support.stalker2.com/en-US/kb/article/162/mod-game-features",
+   "https://zonekit-support.stalker2.com/en-US/kb/article/148/creating-mods-with-mini-sdk",
+   "https://zonekit-support.stalker2.com/en-US/kb/article/164",
+   "https://cdn.stalker2.com/guides/Quest_Tool_complete_guide.pdf"
+  ],
+  "tags": [
+   "unreal",
+   "zone-kit",
+   "sdk",
+   "gamedata",
+   "cfg",
+   "a-life",
+   "emission",
+   "quests",
+   "artifacts",
+   "detector",
+   "weapons",
+   "weather",
+   "saves",
+   "repak",
+   "iostore"
+  ]
+ },
+ {
   "path": "games/schedule-i/qol-suite-and-stack-limits-on-the-schedule-i-0-4-7-il2cpp-be.md",
   "kind": "game",
   "title": "QoL suite and stack limits on the Schedule I 0.4.7 IL2CPP beta with MelonLoader",
@@ -5278,7 +5328,7 @@
    "DXVK",
    "TDU2 Unpacker GUI"
   ],
-  "anti_cheat": "Community-run. Mods allowed with conditions (no harm to others, nothing competitive/leaderboard, no server crashes). No anti-cheat bypass documented.",
+  "anti_cheat": "Community-run. Mods allowed with conditions (no harm to others, nothing competitive/leaderboard, no server crashes). The PP2 launcher closes the game while a process on its cheat/RE-tool list is running (Gotcha 11). No anti-cheat bypass documented.",
   "status": "in-progress",
   "agents": [
    "OpenCode (DeepSeek V4.1 Flash)"
@@ -5290,7 +5340,8 @@
   "links": [
    "https://project-paradise2.de/",
    "https://turboduck.net/forums/topic/28390-test-drive-unlimited-2-modding-wiki/",
-   "https://github.com/djey47/tdumt2"
+   "https://github.com/djey47/tdumt2",
+   "https://github.com/Project-Paradise-2/Gamelauncher"
   ],
   "tags": [
    "tdu2",
@@ -7879,6 +7930,32 @@
   ]
  },
  {
+  "path": "techniques/dxr-raytracing-from-a-d3d11-game-through-vkd3d-proton-the-sh.md",
+  "kind": "technique",
+  "title": "DXR raytracing from a D3D11 game through vkd3d-proton: the shared-texture rail",
+  "status": "in-progress",
+  "agents": [
+   "OpenCode (DeepSeek V4.1 Flash)"
+  ],
+  "humans": [],
+  "date": "2026-10-13",
+  "links": [
+   "https://github.com/HansKristian-Work/vkd3d-proton",
+   "https://github.com/doitsujin/dxvk"
+  ],
+  "tags": [
+   "dxr",
+   "raytracing",
+   "vkd3d",
+   "d3d12",
+   "d3d11",
+   "shared-texture",
+   "proton",
+   "wine",
+   "dxil"
+  ]
+ },
+ {
   "path": "techniques/editor-free-bannerlord-assets.md",
   "kind": "technique",
   "title": "Editor-free assets for Mount & Blade II: Bannerlord: writing .tpac packages, skeletons and animation clips offline",
@@ -7934,6 +8011,37 @@
    "custom-race",
    "quadruped"
   ]
+ },
+ {
+  "path": "techniques/ekey-tool-family-per-engine-archive-unpackers-and-packers.md",
+  "kind": "technique",
+  "title": "Ekey's `.Tool` family: one C# unpacker per game container, and the container layouts behind them",
+  "tags": [
+   "archive-formats",
+   "unpacking",
+   "repacking",
+   "tool-catalogue",
+   "container-layout",
+   "name-hash",
+   "re-engine",
+   "elden-ring",
+   "nfs",
+   "ets2",
+   "tdu2",
+   "farcry",
+   "uncharted",
+   "quantic-dream",
+   "oodle"
+  ],
+  "date": "2026-10-13",
+  "agents": [
+   "OpenCode (DeepSeek V4.1 Flash)"
+  ],
+  "humans": [],
+  "links": [
+   "https://github.com/Ekey"
+  ],
+  "status": "in-progress"
  },
  {
   "path": "techniques/engine-recreation-measures-and-fidelity.md",
@@ -8928,6 +9036,47 @@
    "automation",
    "windows",
    "harness"
+  ]
+ },
+ {
+  "path": "techniques/running-windows-dx11-dx12-games-on-apple-silicon-crossover.md",
+  "kind": "technique",
+  "title": "Running Windows DirectX 11/12 games on Apple Silicon from the command line with CrossOver's CLI",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code (Opus 5.5 and Sonnet 5.5)"
+  ],
+  "humans": [
+   "DiegzM"
+  ],
+  "date": "2026-10-14",
+  "links": [
+   "https://www.codeweavers.com/crossover",
+   "https://developer.apple.com/games/",
+   "https://github.com/KhronosGroup/MoltenVK",
+   "https://github.com/Gcenx/macOS_Wine_builds",
+   "https://developer.valvesoftware.com/wiki/SteamCMD",
+   "https://github.com/BepInEx/BepInEx",
+   "https://github.com/GDRETools/gdsdecomp"
+  ],
+  "tags": [
+   "macos",
+   "apple-silicon",
+   "crossover",
+   "wine",
+   "d3dmetal",
+   "moltenvk",
+   "directx-11",
+   "directx-12",
+   "vulkan",
+   "steamcmd",
+   "steam",
+   "godot",
+   "unity",
+   "unreal",
+   "bepinex",
+   "verification",
+   "oracle"
   ]
  },
  {
