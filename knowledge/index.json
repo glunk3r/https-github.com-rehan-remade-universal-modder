@@ -7400,7 +7400,7 @@
   ]
  },
  {
-  "path": "techniques/running-windows-directx-11-12-games-on-apple-silicon-from-th.md",
+  "path": "techniques/running-windows-dx11-dx12-games-on-apple-silicon-crossover.md",
   "kind": "technique",
   "title": "Running Windows DirectX 11/12 games on Apple Silicon from the command line with CrossOver's CLI",
   "status": "in-progress",
