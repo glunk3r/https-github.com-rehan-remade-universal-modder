@@ -425,16 +425,20 @@ Verified wireframes for M1A2/BMP/BRDM/OLIFANT (typed) and 2S6M (plot routine).
   threshold is `429*height/480` (the old `429*pitch/640` computed 1287 px at
   1080p and never fired). At 4:3 both are mathematical no-ops. The 4:3 gate
   stays 27/27.
-- **Minimap mechanism (mapped, fix parked)**: the wide HUD layout is an
-  element-id grid at `[0x613200]` with dims `[0x613224]x[0x613228]`, set to
-  pitch x height at mode init (`0x412C39`/`0x45ECD0`). Element rects are the
-  bounding boxes of each id in the grid (`0x56F680`/`0x56F818`, written into
-  the slot struct by `0x5416FE`). The grid zones are the native 640x480 zones
-  scaled **x*pitch/640, y*height/480** - the minimap zone `(4,305,193,116)`
-  maps exactly to the observed `(12,686,580,261)`. The engine's own centering
-  helper is `0x6134D0` (sets `[0x651888]=640`, `[0x65182C]=(grid_w-640)/2`).
-  The remaining task is to find the grid *fill* (runs before cdb can attach;
-  watch `0x613224` from process start) and patch the x scale there.
+- **Minimap fixed at 16:9**: the wide HUD layout is an element-id grid at
+  `[0x613200]` with dims `[0x613224]x[0x613228]`, set to pitch x height at
+  mode init (`0x412C39`/`0x45ECD0`); element rects are the bounding boxes of
+  each id (`0x56F680`/`0x56F818`, written into the slot struct by `0x5416FE`).
+  The grid zones are the native 640x480 zones scaled x*pitch/640,
+  y*height/480 - the anisotropy every wide element inherits. The minimap is
+  id `0xF7`, its bbox computed at call site `0x542614`, written to slot
+  `+0xFC`. A 100-byte cave (`build_minimap_rect.py`, `patch_minimap_rect`)
+  hooks that call, preserves CF, and rewrites x as
+  `x*(4*height)/(3*pitch) + (3*pitch-4*height)/6`; at 4:3 it is a
+  mathematical no-op. Verified: the minimap moves from `(12,686,580,261)` to
+  `(249,686,435,261)` - square, at the pillarbox edge; mode gate 27/27.
+  (The grid itself is decoded from a resource by `0x612FC2 -> 0x404A46`; the
+  per-element rect transform avoids touching that pipeline.)
 
 **Batch tooling.** `AF3_Mod/scripts/AF3_ScenarioSheet.py` renders the showcase
 mission list headlessly (terrain map auto-resolved from each TRN prefix) and
