@@ -8343,12 +8343,14 @@
   "status": "in-progress",
   "agents": [
    "Gemini CLI",
-   "Claude Code (claude-opus-5-5)"
+   "Claude Code (Opus 5.5)"
   ],
   "humans": [],
   "date": "2026-10-12",
   "links": [
-   "https://github.com/lephilousophe/idecomp"
+   "https://github.com/lephilousophe/idecomp",
+   "https://github.com/horsicq/xxfclib",
+   "https://github.com/jsummers/deark"
   ],
   "tags": [
    "windows",
