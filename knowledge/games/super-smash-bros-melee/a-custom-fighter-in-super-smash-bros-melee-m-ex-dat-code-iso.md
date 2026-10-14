@@ -3,7 +3,7 @@ kind: game
 title: 'A custom fighter in Super Smash Bros. Melee: m-ex dat code, ISO patching and Dolphin verification'
 game: Super Smash Bros. Melee
 games_also: []
-game_version: 'Melee NTSC-U v1.2 (GALE01) with an m-ex build (Akaneia Build v1.0.1), in Dolphin'
+game_version: 'Melee NTSC-U 1.02 (GALE01, revision 2) with an m-ex build (Akaneia Build v1.0.1), in Dolphin'
 platform: emulator
 engine: unknown
 route: loader-api
@@ -14,7 +14,13 @@ agents:
 - opencode (Big Pickle)
 humans: []
 date: '2026-10-13'
-links: []
+links:
+  - https://github.com/akaneia/m-ex
+  - https://github.com/akaneia/MexTK
+  - https://github.com/akaneia/akaneia-build
+  - https://github.com/Ploaj/MexManager
+  - https://github.com/Ploaj/HSDLib
+  - https://github.com/doldecomp/melee
 tags: ['fighter', 'moveset', 'custom-character', 'iso-patching', 'dat', 'powerpc', 'dolphin-osreport']
 ---
 # A custom fighter in Super Smash Bros. Melee: m-ex dat code, ISO patching and Dolphin verification
@@ -28,17 +34,26 @@ tags: ['fighter', 'moveset', 'custom-character', 'iso-patching', 'dat', 'powerpc
 
 ## Setup
 
-- **Game:** Super Smash Bros. Melee, **NTSC-U v1.2**, GameCube, ID `GALE01`. Emulated in **Dolphin**.
-  Record the MD5 of your own dump and keep one pristine ISO; build the mod on a **copy**, never the base.
-- **Framework:** **m-ex** ("Melee EX") is the mod framework behind **Akaneia Build**, **Project+** and
-  other EX ISOs — this note used **Akaneia Build v1.0.1**. m-ex overloads fighters/items/stages at
-  runtime; fighters remain plain HAL `Pl*.dat` files inside the disc's FST.
+- **Game:** Super Smash Bros. Melee, **NTSC-U 1.02** (`GALE01`, revision 2), GameCube, dumped from a disc
+  you own; don't download disc images. Emulated in **Dolphin**. Record the MD5 of your own dump and keep one
+  pristine ISO; build the mod on a **copy**, never the base.
+- **Framework:** **m-ex** ("Melee EX") is the mod framework behind **Akaneia Build** and other m-ex
+  builds — this note used **Akaneia Build v1.0.1**. Akaneia ships as a patch: its builder applies it to your
+  own clean 1.02 ISO, and its README gives the MD5 of both the clean and the patched image. m-ex overloads
+  fighters/items/stages at runtime; fighters remain plain HAL `Pl*.dat` files inside the disc's FST.
 - **Toolchain (Windows):** **devkitPPC** from **devkitPro** (the `powerpc-eabi-*` toolchain) and
   **MexTK** (the DAT compiler, shipped with m-ex). **HSDRaw** for reading DATs. **MexManager** (GUI) if
   you need to build a whole ISO, add a fighter slot or edit menus. **doldecomp/melee** as the
   symbol/struct reference.
 - **Safety:** no anti-cheat involved; offline/single-player only. Ship patches and tools, never an ISO
-  or extracted assets.
+  or extracted assets. The built `PlMr.dat` starts from the game's own file, so it is a game file with your
+  code attached: share the C source and the build steps (or a binary diff against the player's own file),
+  not the DAT.
+- **Related:** Melee's decompiled engine running as a native DLL inside Terraria, with Slippi Dolphin as
+  the oracle:
+  [the Melee-in-Terraria note](../terraria/super-smash-bros-melee-s-decompiled-engine-inside-terraria-a.md),
+  [hosting a decompiled engine](../../techniques/hosting-a-decompiled-console-engine-as-a-native-dll-inside-a.md)
+  and [bit-exact decomp ports](../../techniques/bit-exact-decomp-ports-reproduce-the-original-compiler-s-and.md).
 
 ## Route and why
 
@@ -97,8 +112,9 @@ entry repointed.
 ## Build steps
 
 1. Install **devkitPPC** and get **m-ex + MexTK**. Make one junction at `C:\devkitpro` pointing at the
-   real devkitPro tree, and always call MexTK through a small wrapper — it looks for the compiler at
-   that literal path and ignores `DEVKITPRO`/`DEVKITPPC`.
+   real devkitPro tree, and always call MexTK through a small wrapper — on Windows it looks for the
+   compiler at that literal path (`C:/devkitpro/devkitPPC/` in its `Compiling.cs`) and ignores
+   `DEVKITPRO`/`DEVKITPPC` (it reads `DEVKITPPC` only on other OSes).
 2. Start from a **working template** (m-ex ships `examples/mario/src/mario.c`). Copy its `OnLoad` body
    and edit around it — never hand-roll `OnLoad`.
 3. Build **ft-only**, starting from the game's own `PlMr.dat` so the build's attributes/model survive:
@@ -112,7 +128,7 @@ entry repointed.
    override actually got overridden.
 
 4. Patch the DAT into a **copy** of the ISO through the FST. If it fits, write in place; if it grew,
-   append and **pad the image to a 0x8000 (32 KiB) sector boundary**.
+   append and **pad the image to a 0x8000 (32 KiB) boundary**.
 5. **Verify by hash**, not by timestamp: read the DAT back out of the ISO and compare MD5 with your
    build.
 6. Launch Dolphin with a profile that logs OSReport output (`-u <profile> -e <iso>`) and read
@@ -141,17 +157,20 @@ entry repointed.
    for that fighter, and MexTK cannot write `MxDt`. **Fix:** build `-s ftFunction` only until you have
    `MxDt` entries (add them via MexManager); meanwhile have the move spawn a vanilla item by ID.
 3. **`The disc could not be read` on boot after a patch.** **Cause:** the appended file left the image
-   tail unaligned to a disc sector, or the FST entry was written wrong. **Fix:** pad the image to
+   tail unaligned to 32 KiB, or the FST entry was written wrong. **Fix:** pad the image to
    `0x8000`; re-read the FST entry.
 4. **An ISO edit "succeeded" but the game still runs the old code.** **Cause:** copying over an ISO a
    running Dolphin held open — Windows lets the copy succeed silently and preserves the source's
    timestamp, so the file's mtime lies; writers then fail later with "being used by another process".
    **Fix:** close the emulator first; replace; then read the file back and compare MD5.
 5. **MexTK can't find the compiler, or gcc dies with `cannot execute 'cc1'`.** **Cause:** devkitPPC is
-   not at the literal path MexTK expects (`devkitpro\devkitPPC\bin`); the environment variables are
-   ignored; a `devkitpro` folder in the working directory shadows the real one. **Fix:** exactly one
-   junction, at `C:\devkitpro`, nothing named `devkitpro` in the cwd, and a wrapper script.
-6. **`MexTK.exe -h` crashes.** **Cause:** there is no `-h`. **Fix:** run it with no arguments for usage.
+   not at the literal path MexTK expects (`C:\devkitpro\devkitPPC\bin`); the environment variables are
+   ignored on Windows; when the compiler isn't there, MexTK tries the same path relative to the working
+   directory, so a stray `devkitpro` folder in the cwd gets used instead. **Fix:** exactly one junction, at
+   `C:\devkitpro`, nothing named `devkitpro` in the cwd, and a wrapper script.
+6. **`MexTK.exe -h` crashes.** **Cause:** `-h` expects a command after it and reads past the end of the
+   arguments without one. **Fix:** `MexTK.exe -h -ff` prints the fighter-function help; no arguments at
+   all prints the general usage.
 7. **A savestate "confirms" a DAT change.** **Cause:** the code is already in RAM. **Fix:** fresh boot
    for every verification.
 8. **You can't see the emulator to read an error dialog.** **Fix:** OSReport markers plus the log;
