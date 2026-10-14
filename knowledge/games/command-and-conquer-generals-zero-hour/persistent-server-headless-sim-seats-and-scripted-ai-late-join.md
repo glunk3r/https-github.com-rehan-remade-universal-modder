@@ -1,6 +1,6 @@
 ---
 kind: game
-title: 'Zero Hour persistent server: embedded headless sim, seats, scripted AI late-join'
+title: 'Zero Hour persistent world: one engine build as client and server, seats, scripted AI late-join'
 game: 'Command & Conquer Generals: Zero Hour'
 games_also: []
 game_version: 'Steam Zero Hour 1.04 data + EA GeneralsMD source release'
@@ -17,7 +17,7 @@ date: '2026-10-14'
 links: []
 tags: [sage, headless, dedicated-server, lockstep, savegame, skirmish-ai]
 ---
-# Zero Hour persistent server: embedded headless sim, seats, scripted AI late-join
+# Zero Hour persistent world: one engine build as client and server, seats, scripted AI late-join
 
 Compiled EA's released Zero Hour engine with clang (portable llvm-mingw, 32-bit, cross-compiled from Linux) into one program that is both the graphical client and a dedicated server that owns one persistent world: reserved human seats,
 AI that joins and leaves over time, absent-base cleanup, rent and a launcher/host UI. Verified with a real window against the server (per-frame CRC, snapshot join) and released as GPL source plus a CI-built package: https://github.com/dwatson251/zh-living-world
