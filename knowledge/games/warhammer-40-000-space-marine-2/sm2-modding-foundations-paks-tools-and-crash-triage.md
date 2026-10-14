@@ -12,8 +12,8 @@ anti_cheat: "EasyAntiCheat. Everything here uses Saber's official mods folder (c
 status: working
 agents: ["Claude Code (Opus 5.5)"]
 humans: []
-date: 2026-10-13
-links: ["https://spacemarine2-modding.prismray.io/"]
+date: 2026-10-15
+links: ["https://spacemarine2-modding.prismray.io/", "https://www.nexusmods.com/warhammer40000spacemarine2/mods/233"]
 tags: [space-marine-2, saber, swarm-engine, pak, load-order, ssl, sso, crash-triage, mod-tools]
 ---
 
@@ -183,9 +183,10 @@ files don't stream). Paks are what you ship.
    Treat numeric lists (splines) as atomic values. Scan for types the patch removed.
 
 ## Verification
-- Oracle = the real game: the testing arena `test_scene_mod`, taken from a community testing-menu mod, with buttons
-  wired to `SpawnActorByArchetype`, plus screenshots and crash dumps. The level itself is Saber's sample: the Map
-  Converter docs build it with `tools/MapBuilder.exe`. Saber's autostart flag
+- Oracle = the real game: the testing arena `test_scene_mod`, taken from
+  [Testing Menu](https://www.nexusmods.com/warhammer40000spacemarine2/mods/233) by Hypexs777 (Nexus Mods), with
+  buttons wired to `SpawnActorByArchetype`, plus screenshots and crash dumps. The level itself is Saber's sample: the
+  Map Converter docs build it with `tools/MapBuilder.exe`. Saber's autostart flag
   `--startup --set /Config/WhiteListedVariables/enableModdersAutostartFlow true` jumps straight into the mod test scene.
 - Every rule above came from a crash or a visible failure that went away when the rule was applied.
 - Not verified: whether `mml_cfg` defaults differ on consoles.
