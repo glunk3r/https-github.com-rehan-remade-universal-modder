@@ -15,31 +15,35 @@ agents:
 humans: [thetunguskaevent]
 date: '2026-10-08'
 links:
-- https://github.com/thetunguskaevent/AF3_FULL_MOD (private: this work)
-- https://github.com/Novahq-net/NovaResearch (community file-format docs: PFF/3DO/AI/BFC/SCR)
-- https://github.com/Novahq-net/NHQTools (reference C# parsers + the SCR cipher)
-- https://codecs.multimedia.cx/2024/08/looking-at-nova-logic-fmv-formats (KDV = FMV video)
+- "https://github.com/Novahq-net/NovaResearch"
+- "https://github.com/Novahq-net/NHQTools"
+- "https://github.com/Novahq-net/Nova3di"
+- "https://codecs.multimedia.cx/2024/08/looking-at-nova-logic-fmv-formats"
 tags: [novalogic, voxel-space, pff, 3do, jim, terrain, native-hook, rust, reimplementation]
 ---
 # 60 fps + 16:9 + 64-bit rewrite: PFF, encryption, 3DO/JIM and a VoxelSpace renderer
 
 > Armored Fist 3 (NovaLogic Voxel Space 32, 1999) was taken from a 4:3/30 fps
-> engine to **60 fps in a 1920x1080 window with game speed unchanged**, using a
-> Rust 32-bit launcher + injected payload (runtime hooks only; the on-disk game
-> is never touched). In parallel, the 64-bit path was started: a clean-room
-> Rust program that reads the user's own PFF archives and renders the terrain
-> (and soon the 3DO/JIM mission data) in its own VoxelSpace renderer at 60 fps.
-> Verified in the real game by counters/readback (loop 59.8/s, world renders
-> 59.4/s, sim tick 30.25/s unchanged, 62% of one core, 60+ s soak) and for the
-> rewrite by rendered frames compared against the game's own terrain.
+> engine to **60 fps with game speed unchanged** in the real game, using a Rust
+> 32-bit launcher + injected payload (runtime hooks only; the on-disk game is
+> never touched). That's verified at 1152x864 by counters/readback (loop
+> 59.8/s, world renders 59.4/s, sim tick 30.25/s unchanged, 62% of one core,
+> 60+ s soak); at 1920x1080 the 32-bit game is render-bound at about 42
+> renders/s, with a 16:9 HUD fixed up. In parallel, a 64-bit program written
+> from scratch in Rust reads the user's own PFF archives and renders the
+> terrain plus the placed scenario objects in its own VoxelSpace renderer at
+> 60 fps at 1920x1080, checked by rendered frames against the game's own.
 
 ## Setup
 
 - Windows 11 x64, retail AF3 **v1.00.20** (Steam/retail; `AF3.EXE` 2,433,024
   bytes, SHA-256 `52ED80CC...7EA7`), complete install with `*.PFF` and the real
   `AF3INTRO.BIK` (336,378,083 bytes).
-- The game is 32-bit, software-rendered, DirectDraw; no anti-cheat, no loader,
-  single-player/offline.
+- The game is still sold on Steam (app 32710). The 1999 disc release had a
+  simple disc check; PCGamingWiki lists v1.00.20 among its retail patches.
+- The game is 32-bit, software-rendered, DirectDraw; no anti-cheat, no loader.
+  It had NovaWorld online play; everything here was tested single-player,
+  offline.
 - Toolchain that worked:
   - Python 3.12 + `keystone-engine`/`capstone` (cave builders + probes).
   - `cdb.exe` x86 (Windows SDK Debuggers) for live readback.
@@ -48,10 +52,18 @@ tags: [novalogic, voxel-space, pff, 3do, jim, terrain, native-hook, rust, reimpl
   - **MinGW linker:** rustc's `*-windows-gnu` targets need `libgcc`/`libgcc_eh`;
     LLVM-MinGW ships compiler-rt instead and **fails to link** rustc output.
     Use WinLibs GCC (real MinGW-w64): i686 build extracted locally, x86_64 via
-    winget `BrechtSanders.WinLibs.POSIX.UCRT`.
+    winget `BrechtSanders.WinLibs.POSIX.UCRT`. (Rust's separate
+    `*-pc-windows-gnullvm` targets are the ones meant for LLVM-MinGW.)
   - `windows-mcp` (real mouse/keyboard; the game only reads input with the
     cursor inside its window) driven through its stdio JSON-RPC client.
   - Ghidra 12.1.3 + JDK 21 for static reading (read-only).
+- Format references, credited: the Novahq-net community's
+  [NovaResearch](https://github.com/Novahq-net/NovaResearch) docs (PFF, 3DO,
+  AI, RTXT), [NHQTools](https://github.com/Novahq-net/NHQTools) (C# parsers and
+  the SCR cipher), [Nova3di](https://github.com/Novahq-net/Nova3di) (3DI and AI
+  composition, including the AF3 attachment tables), and
+  [a post on NovaLogic's FMV formats](https://codecs.multimedia.cx/2024/08/looking-at-nova-logic-fmv-formats)
+  (KDV). The mod's own code is in the author's private repo.
 
 ## Route and why
 
@@ -64,15 +76,17 @@ Two tracks:
    applies the base byte patches and injects `af3full_payload.dll`, which
    installs a single frame-pacing hook. Nothing is written to disk in the game
    folder and the DLL lives beside the launcher.
-2. **Clean-room 64-bit rewrite (`af3modern`).** The binary cannot be "ported":
+2. **64-bit rewrite from scratch (`af3modern`).** The binary cannot be "ported":
    it is 32-bit machine code with self-modifying MMX and 32-bit pointers. The
    64-bit path reads the user's own archives (PFF/3DO/JIM/terrain) and renders
-   with a modern Rust renderer. This is also the only way to escape the MMX
-   rasterizer's cost at 1080p+.
+   with a modern Rust renderer. It also sidesteps the MMX rasterizer's cost at
+   1080p+ (replacing that rasterizer inside the 32-bit game is still open).
 
-Rejected: a proxy `dinput8`/`winmm` DLL (needs a C toolchain and gains no
-engine access), and patching the frame rate by halving the tick (it doubles
-game time — measured, see Gotchas).
+Rejected: a proxy DLL (`winmm.dll` or a DirectInput DLL) in the game folder.
+Loaded in-process, it would have the same access as the injected payload (and
+Rust can build one), but the launcher keeps the game folder untouched. Also
+rejected: patching the frame rate by halving the tick (it doubles game time —
+measured, see Gotchas).
 
 ## How the game works (what we had to learn)
 
@@ -110,13 +124,16 @@ entry length, entry-table offset), data blobs, entry table, footer. Entries are
 32 bytes (PFF3 variant 1: `DeadSpaceFlags, DataOffset, DataSize, Timestamp,
 Name[16]`) or 36 bytes with a trailing CRC; PFF2 reuses the first dword as a
 CRC. `AF3.EXE` uses PFF3 for TERRAIN/RESOURCE/MENUS/NORMAL/VOICE/AF3MED and
-PFF2 for MISSIONS/CORE/MAPS.
+PFF2 for MISSIONS/CORE/MAPS. (NovaResearch and NHQTools list AF3 as PFF3 only
+and describe PFF data as unencrypted, so the PFF2 archives and the pad below
+are this note's own finding.)
 
 **The encryption (the unlock for all mission data).** Every entry of a **PFF2
 archive is XOR-padded with a fixed 32-byte repeating key**; PFF3 archives are
 plain. The pad was derived from 170 files stored plain in RESOURCE and padded
 in MISSIONS (identical sizes; every twin XORs to the same sequence) and
-verified on all 1729 `3DO` entries (they decrypt to `"3DO1"`), both KDV movies
+verified on all 1729 `3DO` entries in the padded archives (they decrypt to
+`"3DO1"`), both KDV movies
 (`"xVDK"` header) and all JIM files. Pad:
 `00 78 2e 7c 70 07 c2 77 e7 80 3c 17 be 38 03 e1 bb f3 c0 1e 0b df 9c 01 f0 5d
 f9 e0 0f 85 ef ce`. The NHQTools SCR/ARX cipher does **not** apply to AF3
@@ -147,8 +164,8 @@ giant stray planes. AI parts are one LOD tier each (`_H*`/`_M*`/`_L*`); the
 child `.3DO` parts, then `>IDOV` (id), a 5-line `>DATA` block (LOD cutoffs in
 metres + collision flags) and an optional `>LEAF` count. Part names are **LOD
 variants** (`..._L01/_H02/_L03/_H04` pairs + shared parts), not additive
-pieces; composing a full vehicle needs the per-part placement that is not yet
-solved. The first line may be a comment with the type on the next line
+pieces; composing a full vehicle needs the engine's per-type assembly tables
+(solved later, see Open question 2 and the Update section). The first line may be a comment with the type on the next line
 (`;TANKJACK` / `43 ;type`), and part lines can carry a trailing comment
 (`TRAP_L.3DO ;SINGLE ?`).
 
@@ -159,13 +176,13 @@ padding, then a NUL-separated ASCII object table. Tags: `0x7f` objectives
 `0x01` start. `C6M7.JIM` resolves to `1-START POINT`, `2-CP ALPHA`,
 `3-OBJ ACKERMAN`, `4-OBJ HAINES`, `5-CP BRAVO`, `6-RELEASE POINT` plus unit
 records. All 85 missions parse (1569 records; `C2M9.JIM` is a 1-byte
-placeholder).
+placeholder). JIMs turned out to be mission-editor documents that the game
+never loads (Open question 1); the game's missions are the BMS scenarios below.
 
 **CORE.PFF** holds the same JIMs plus `.ORD` per-mission briefing text
 (`>TEXT`-style markup) and per-map `.INF` info text (94 maps `MP01..MP94`) and
-`.POS` binary position tables. The mission→map association was not found in the
-archives or the decrypted code image; it is probably a hard-coded campaign
-table.
+`.POS` binary position tables. Each scenario's map comes from its own TRN file
+(`dg2_dy03.trn` -> `AFDG2`, Open question 1).
 
 **BMS scenarios (the mission text/placement files).** `*.BMS` in MISSION.PFF /
 UPDATED.PFF are **not** PFF2-padded: they are stored raw and end with a clear
@@ -246,7 +263,7 @@ af3modern run    TERRAIN.PFF AFDG2 --scenario MISSION.PFF F3C01M01.BMS \
 af3modern bench  TERRAIN.PFF AFD1 --width 1920 --height 1080
 ```
 
-Verification harness (Python, in `AF3_Mod/scripts/`): `AF3_VerifyMode.py` (the
+Verification harness (Python, in the private repo's `AF3_Mod/scripts/`): `AF3_VerifyMode.py` (the
 27-assertion acceptance gate), `AF3_TimeProbe.py` (sim tick / render stamp /
 accumulator), `AF3_RustStats.py` (named-mapping stats from the payload),
 `AF3_DriveToMission.py` (menus → mission via windows-mcp), `AF3_LoadWatch.py`
@@ -275,9 +292,13 @@ accumulator), `AF3_RustStats.py` (named-mapping stats from the payload),
   live byte coverage ~100%); the pad by decrypting all 1729 3DOs to `"3DO1"`;
   3DO/JIM/AI parsers have unit tests plus real-file round-trips (OBJ export,
   wireframes, scene renders, material histograms).
-- **NOT verified:** the JIM world-unit → map-pixel scale and the mission→map
-  association (so mission overlays are not authoritative); full vehicle
-  composition from AI parts; 2560x1440 in the 32-bit payload; 16:9 HUD work.
+- **Later sessions (see Update):** vehicle composition from the typed AI
+  manifests (wireframes for M1A2, BMP, BRDM, OLIFANT and 2S6M), and the 16:9
+  HUD in the 32-bit payload (window fit, strip text, minimap) with the 4:3 mode
+  gate still 27/27.
+- **NOT verified:** 60 fps at 1080p in the 32-bit game (about 42 renders/s, see
+  above); 2560x1440 in the 32-bit payload; 3DO/3DI scale against the engine's
+  world units (Open question 3).
 
 ## Gotchas
 
@@ -313,7 +334,7 @@ accumulator), `AF3_RustStats.py` (named-mapping stats from the payload),
     always read the live code/table before touching it.
 12. **`AF3INTRO.BIK` is load-bearing** for the wrapper's validation; the intro
     spawns a `BINKPLAY.EXE` child that can zombie and hang the boot wait — kill
-    it by PID/image once.
+    it by its exact PID (`um win kill`), never by image name.
 13. **At 16:9 the engine still draws its own strip text** at 640-space x~0
     (clipped left), coloured by whatever palette entries the mod last wrote.
     The glyph cave's band guard (cursor y >= 429*pitch/640) does not catch the
@@ -395,9 +416,9 @@ One long session (~6 h). Toolchain installs: rustup + WinLibs + gh via winget
 3. 3DO/3DI model orientation/scale calibration against the engine's world
    units (the rewrite normalises each model to a per-name target size).
 4. 16:9 in the 32-bit payload: **window fit and the doubled strip text are
-   done** (see the update section); the minimap is the last known element (its
-   mechanism is mapped - see below); the SSE2 / multi-threaded terrain
-   rasterizer for the 32-bit path is still open (18.35 ms at 1080p).
+   done**, and so is the minimap (see the Update section); the SSE2 /
+   multi-threaded terrain rasterizer for the 32-bit path is still open (18.35 ms
+   at 1080p).
 5. The rewrite's HUD/cameras/simulation and mission loading from JIM (moot now
    that JIMs are editor-only).
 6. ~~Animated materials/texture frames~~ — **moot**: all 4140 3DO models
