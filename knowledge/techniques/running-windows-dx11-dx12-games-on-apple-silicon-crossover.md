@@ -39,7 +39,7 @@ tags: [macos, apple-silicon, crossover, wine, d3dmetal, moltenvk, directx-11, di
 | Unreal Engine 5 game, DirectX 12, Steam, no anti-cheat | **Validated** to the title screen on DirectX 12 (D3DMetal loaded); gameplay not seen |
 | Godot 4.3 single-exe game, Vulkan, **no Steam**, clean bottle | **Validated** to a running race (Vulkan through MoltenVK); scripts recovered; a patched exe was not built |
 | Other 64-bit DirectX 11/12 games | Expected to be possible, **untested**, per game |
-| DirectX 9/10, OpenGL, other Vulkan games | Other translation paths. **Untested** |
+| DirectX 9/10, OpenGL, other Vulkan games | Other translation paths. **Untested** here (the Halo Trial note under Seen in ran a D3D9 game through mtld3d) |
 | 32-bit games | D3DMetal is 64-bit only. **Untested** |
 | Kernel anti-cheat (EasyAntiCheat, BattlEye, Vanguard, ACE, ...) | Generally will not run. **Stop and tell the user; never bypass** |
 | Launchers other than Steam, installers (`setup.exe`) | **Untested** |
@@ -226,7 +226,8 @@ rate or load times), input outside PEAK, any online feature.
     frontmost; Wine's macOS driver only reacts when its window is active. **Fix:** focus the game first
     (`tell application "System Events" to set frontmost of (first process whose unix id is <pid>) to true`), then
     post to the HID tap. Needs Accessibility (check with `AXIsProcessTrusted`); it steals focus, so tell the user
-    first ([Driving real games safely](driving-real-games-safely.md)).
+    first ([Driving real games safely](driving-real-games-safely.md)). The HL2-under-Wine note (gotcha 13) saw the
+    same in a Sikarugir wrapper: `NSRunningApplication.activate` can't bring Wine to the front, System Events can.
 20. **Symptom.** A click lands in the wrong place. **Cause:** screen points, not pixels (Retina screenshots are
     2x), and zsh does not word-split unquoted variables (`set -- $VAR`). **Fix:** compute
     `window_origin + pixel / 2` and parse window bounds in Python.
@@ -250,6 +251,8 @@ rate or load times), input outside PEAK, any online feature.
   (the Wine/Proton counterpart),
   [Half-Life 2 guns in Minecraft (HL2 Demo under Wine on macOS)](../games/minecraft/half-life-2-guns-in-minecraft-passthrough-hl2-demo-under-win.md)
   (Windows Steam in a Sikarugir wrapper, Wine 10 with DXVK),
+  [Max Payne bullet time in Halo Trial on macOS/Wine](../games/halo-trial/max-payne-bullet-time-shootdodge-and-voice-in-halo-trial-via.md)
+  (a D3D9 game under GameHub's Wine with mtld3d, D3D9 to Metal),
   [D3D12 frame readback: buffers only](d3d12-frame-readback-buffers-only.md),
   [Oracles](oracles-how-agents-know-a-mod-works.md), [Driving real games safely](driving-real-games-safely.md). The
   mashup case list in `skills/mashup-mods/references/mashup-cases.md` also links CrossOver-with-D3DMetal bridges
