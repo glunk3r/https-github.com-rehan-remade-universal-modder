@@ -9,7 +9,7 @@ engine: unreal
 route: loader-api
 tools:
 - UE4SS experimental v3.0.1-1168-g4e079ec4 (2026-10-13)
-anti_cheat: none (single player)
+anti_cheat: 'none: single-player only, with no multiplayer, leaderboards or in-game purchases'
 status: working
 agents:
 - Claude Code (Opus 5.5)
@@ -70,7 +70,7 @@ tags: [ue4ss, lua, cheat-menu, trainer, stats, gameplay-tags, runtime-umg, overl
   - `SetStat` clamps to the limits and fires the delegate, so the HUD updates at once.
 - **Every need is higher-is-better, Bladder included.** Bladder reads 1.0 right after using the toilet, and
   the HUD bar is full at 1.0 (it shows relief, not fullness).
-- **The UI widgets** (`WG_WCG_Money_C`, `WG_WCG_Stat_Subscribers_C`, â€¦) only display values. Don't write to
+- **The UI widgets** (`WG_WCG_Money_C`, `WG_WCG_Stat_Subscribers_C`, …) only display values. Don't write to
   them.
 
 ## Build steps
@@ -85,15 +85,15 @@ tags: [ue4ss, lua, cheat-menu, trainer, stats, gameplay-tags, runtime-umg, overl
 5. **Panel:**
    - `StaticConstructObject` a `/Script/UMG.UserWidget` with the game instance as outer.
    - Construct a `WidgetTree` with the widget as outer and assign it to `w.WidgetTree`.
-   - Build `CanvasPanel` (as `tree.RootWidget`) â†’ `Border` (`AddChildToCanvas`, slot `SetAutoSize(true)`,
-     `SetPosition`) â†’ `VerticalBox` â†’ `TextBlock` rows, all with the tree as outer.
+   - Build `CanvasPanel` (as `tree.RootWidget`) → `Border` (`AddChildToCanvas`, slot `SetAutoSize(true)`,
+     `SetPosition`) → `VerticalBox` → `TextBlock` rows, all with the tree as outer.
    - Change the font size by copying `t.Font`, setting `.Size`, then calling `t:SetFont(font)`.
    - Call `w:AddToViewport(1000)`.
    - Show it with `SetVisibility(3)` (HitTestInvisible, so it never takes the mouse). Hide it with `1`
      (Collapsed) instead of removing it.
 6. **Input:**
-   - `RegisterKeyBind(Key.F1, â€¦)` toggles the panel; arrows navigate. Modifier variants:
-     `RegisterKeyBind(Key.RIGHT_ARROW, {ModifierKey.SHIFT}, â€¦)`.
+   - `RegisterKeyBind(Key.F1, …)` toggles the panel; arrows navigate. Modifier variants:
+     `RegisterKeyBind(Key.RIGHT_ARROW, {ModifierKey.SHIFT}, …)`.
    - Wrap every callback in `ExecuteInGameThread`.
 7. **Freeze:** a `LoopAsync(500)` loop calls `SetStat(max)` on any need that has drifted.
 
@@ -108,7 +108,7 @@ tags: [ue4ss, lua, cheat-menu, trainer, stats, gameplay-tags, runtime-umg, overl
   - Freeze holds the needs.
   - Donations, Orgasm and the energy-drink counter all work.
 - **Bridge only:**
-  - `SetStat` for Used.EnergyDrink (0 â†’ 2) and `ResetStat` (â†’ 0).
+  - `SetStat` for Used.EnergyDrink (0 → 2) and `ResetStat` (→ 0).
   - A direct `Stats:Add(tag, 0.0)` write.
 - **Human, game rules:** donations are paid out as money after a stream, and the energy-drink counter
   resets daily. This comes from normal play, not from tracing the Blueprint.
@@ -127,9 +127,10 @@ tags: [ue4ss, lua, cheat-menu, trainer, stats, gameplay-tags, runtime-umg, overl
 3. **`Set-Content -Encoding utf8` in Windows PowerShell 5 writes a BOM.** Lua `load()` then fails with
    `unexpected symbol near '<\239>'`. **Fix:** strip `^\239\187\191` before `load`, or write the file with
    `[IO.File]::WriteAllText`.
-4. **`UClass:FindProperty` and `FMapProperty:GetValueProp` aren't exposed** in this UE4SS Lua build. It
-   errored with "attempt to call a TrivialObject value". **Fix:** to find a map's value struct, walk
-   `ForEachFunction` â†’ `ForEachProperty` on a Blueprint function that has a local of that type (here
+4. **`UClass:FindProperty` and `FMapProperty:GetValueProp` aren't exposed** in this UE4SS Lua build, and the UE4SS
+   Lua API docs don't list them either (`UStruct` documents only `GetSuperStruct`, `ForEachFunction` and
+   `ForEachProperty`). It errored with "attempt to call a TrivialObject value". **Fix:** to find a map's value
+   struct, walk `ForEachFunction` → `ForEachProperty` on a Blueprint function that has a local of that type (here
    `SetStat`'s `CallFunc_Map_Find_Value`), then call `GetStruct()`.
 5. **Don't trust the stat name for its direction.** We first assumed Bladder meant fullness, so low would be
    good. It's the other way round. Check against an in-game action (the toilet) and the HUD bar.
