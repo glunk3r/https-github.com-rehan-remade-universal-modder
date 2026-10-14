@@ -5,7 +5,7 @@ game: Second Life
 games_also: []
 game_version: 'Firestorm 7.2.4.80712 (Windows x64); tested on the Aditi beta grid, October 2026'
 platform: windows
-engine: Second Life viewer (Firestorm)
+engine: unknown
 route: asset-only
 tools:
 - Blender 4.5.10 LTS (headless, Python)
@@ -22,7 +22,7 @@ links:
 - https://wiki.secondlife.com/wiki/PBR_Materials
 - https://modemworld.me/2023/01/17/firestorm-6-6-8-profiles-local-mesh-and-more/
 - https://x.com/BeautyEbody/status/2063800033578000434
-tags: [second-life, rigged-mesh, fitted-mesh, collada, avastar, blender, pbr, gltf, bvh, anim, animation-override, lsl]
+tags: [second-life, firestorm, rigged-mesh, fitted-mesh, collada, avastar, blender, pbr, gltf, bvh, anim, animation-override, lsl]
 ---
 # Rigged mesh hobble dress for eBody Reborn + Waifus: headless Blender build, own Collada writer, .anim animations
 
@@ -49,12 +49,15 @@ tags: [second-life, rigged-mesh, fitted-mesh, collada, avastar, blender, pbr, gl
 ## Route and why
 Content route only: rigged mesh `.dae` + glTF material + animations, uploaded through the viewer, plus one
 LSL script. Second Life is online; nothing about the viewer or protocol is touched.
+- Fit against the body's official dev kit, used under its license. Never fit against mesh exported from the
+  viewer or its cache (copybot-style ripping of another creator's body or clothing): SL's terms and the body
+  makers' licenses forbid it, and the dev kit exists for exactly this job.
 - Considered: building on SL's default avatar. Rejected: clothing has to be fitted to the body's dev kit
   (its shape and weights), otherwise it won't follow that body's sliders.
 - Considered: Avastar (the usual SL rigging add-on, paid). Not installed; a ~200-line Collada writer
   (Gotcha 1) and an `.anim` writer (Gotcha 10) did the job without it.
 - Considered: Maitreya LaraX instead of eBody. Its kit application is selective ("if your store is
-  selected") and reportedly often unanswered; eBody's kit came quickly without a store.
+  selected"); eBody's kit came quickly without a store.
 
 ## How the game works (what we had to learn)
 - **Frames.** The kit rig in Blender faces −Y with +X as the avatar's left. SL's skeleton faces +X with +Y
