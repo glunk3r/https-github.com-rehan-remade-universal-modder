@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import locale
 import os
 import platform
 import shutil
@@ -24,6 +25,19 @@ def is_wsl() -> bool:
     return "microsoft" in platform.release().lower() or os.path.exists("/proc/sys/fs/binfmt_misc/WSLInterop")
 
 
+def ps_exe() -> str:
+    """Windows PowerShell. Falls back to its full path: an agent's PATH often lacks System32\\WindowsPowerShell\\v1.0."""
+    name = "powershell.exe" if is_wsl() else "powershell"
+    found = shutil.which(name)
+    if found:
+        return found
+    if is_wsl():
+        full = "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"
+    else:
+        full = os.path.join(os.environ.get("SystemRoot") or r"C:\Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+    return full if os.path.exists(full) else name
+
+
 def to_win(path: str | Path) -> str:
     """/mnt/c/Games/x -> C:\\Games\\x (WSL); paths that are already Windows paths pass through."""
     p = str(path)
@@ -34,7 +48,7 @@ def to_win(path: str | Path) -> str:
     if p.startswith("/mnt/") and len(p) == 6:
         return p[5].upper() + ":\\"
     if is_wsl() and shutil.which("wslpath"):
-        return subprocess.run(["wslpath", "-w", p], capture_output=True, text=True).stdout.strip()
+        return subprocess.run(["wslpath", "-w", p], capture_output=True, **text_utf8()).stdout.strip()
     return p
 
 
@@ -53,11 +67,42 @@ def data_dir() -> Path:
     return d
 
 
+def text_utf8(**kw) -> dict:
+    """The kwargs for a command whose text output we parse.
+
+    ffmpeg (for a path), git and gh (for a note title) print UTF-8 on Windows, and so does PowerShell
+    once a script starts with PS_UTF8, while a bare `text=True` decodes with
+    `locale.getpreferredencoding()`: cp936 on a Chinese Windows, cp1252 on a Western one. One CJK window
+    title, save folder or game path is then enough to raise `UnicodeDecodeError` in subprocess's reader
+    thread and take the command down (`um win ps`, `um video` on a 中文 path). `errors="replace"` keeps a
+    wrong guess to one mojibake line instead of a traceback.
+    """
+    return dict(text=True, encoding="utf-8", errors="replace", **kw)
+
+
+def text_console(**kw) -> dict:
+    """The kwargs for Windows' own console tools (taskkill, reg), which print in the console's code page.
+
+    That's the OEM code page unless `chcp` changed it. On CJK Windows it equals the locale codec (936, 932,
+    949, 950), so these keep decoding with the locale, as before; `errors="replace"` turns a mismatch (a
+    Western OEM code page, or WSL's UTF-8 locale) into replacement characters instead of a traceback.
+    """
+    return dict(text=True, encoding=locale.getpreferredencoding(False), errors="replace", **kw)
+
+
+# Windows PowerShell 5.1 encodes what it prints to a pipe with [Console]::OutputEncoding, the console's code
+# page (OEM, so 936 on a Chinese Windows). Start every -Command script with this so its output is UTF-8 and
+# matches text_utf8(). Best-effort: with no console attached the setter throws, and the script still runs.
+PS_UTF8 = "try{[Console]::OutputEncoding=[Text.Encoding]::UTF8}catch{};"
+
+
 def run(cmd: list[str], check: bool = True, capture: bool = True, timeout: float | None = None, **kw) -> subprocess.CompletedProcess:
     try:
-        return subprocess.run(cmd, check=check, capture_output=capture, text=True, timeout=timeout, **kw)
+        return subprocess.run(cmd, check=check, capture_output=capture, **text_utf8(), timeout=timeout, **kw)
     except FileNotFoundError:
         die(f"not found: {cmd[0]}")
+    except subprocess.TimeoutExpired:
+        die(f"{' '.join(map(str, cmd[:3]))}... timed out after {timeout}s")
     except subprocess.CalledProcessError as e:
         die(f"{' '.join(map(str, cmd[:3]))}... failed ({e.returncode}):\n{(e.stderr or e.stdout or '').strip()[-2000:]}")
 
