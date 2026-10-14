@@ -23,16 +23,19 @@ tags: [space-marine-2, saber, npc, enemy, boss, tyranid, morpheme, nmb, sani, an
 > Tyrant's moves) that spawns, fights and animates next to an untouched retail Hive Tyrant, plus a hovering flyer
 > prototype and an execution (finisher) for the boss. The hard part was the Morpheme animation side: cloning a network
 > without colliding with the original, and the naming rules behind every animation lookup. This note lists every rule
-> we paid a boot crash for. Builds on "Space Marine 2 modding foundations: paks, load order, Saber's tools, manifests
-> and crash triage" (manifests, crash dumps) and the models note (tpl export). Verified in game unless marked.
+> we paid a boot crash for. Builds on [the foundations note](sm2-modding-foundations-paks-tools-and-crash-triage.md)
+> (manifests, crash dumps, the new-brand crash) and
+> [the models note](sm2-models-tpl-format-modelconverter-and-textures.md) (tpl export). The Marine-side network edits
+> for weapon clips are in [the weapons note](sm2-weapons-skins-reloads-perks-vfx-and-sounds.md). Verified in game
+> unless marked.
 
 ## Setup
 - Steam build 25799387 (Patch 15.1); most of the work on Patch 14.x. Saber Mod Tools (Oct 2026) incl.
   `ModEditor/documentation/CLS_File_Guide.pdf` and `Enum_Extension_Tutorial.pdf`.
 - Animations: `default_animation.pak` (`.sani` + `.sani_data` sidecars, `morpheme/<set>/<set>.nmb`); manifests
   (`.mr.resource`, `.sani.resource`) in `resources.pak` (client and server copies are identical).
-- Always extract from the CURRENT paks: an extraction from an older patch silently differed.
-- Test bed: the community testing-menu mod's arena level `test_scene_mod` with spawn buttons (below).
+- Test bed: the arena level `test_scene_mod` (Saber's sample level, as shipped by a community testing-menu mod) with
+  spawn buttons (below).
 
 ## Route and why
 Data route plus binary patching of animation assets. A new enemy is: a class (Saber's NPC modder slot, or the newer
@@ -53,11 +56,9 @@ donor creature: everything is cloned, because the engine keys animations by name
   paired, already in both initial-replica lists, same shape as a declaration-only retail NPC). Put the WHOLE class text
   into the slot's `.cls` (model, bundle, actor name, links, abilities swapped) and give the slot's `.cls.resource` the
   donor's links with the slot's `.ssc.resource`. Verified in game.
-- **Since Oct 2026, officially unlimited classes:** `CLS_File_Guide.pdf` "Creating custom NPC": copy the retail pair
-  into your folder, write an `.ssc.resource` per side with `noSsl: true` (no ssl/sslbin fields), `className` +
-  `clientClassName`, `isServerReplicaModule` / `isClientReplicaModule`, links = own `.cls.resource` + the parent's
-  `.ssc.resource`, `parentClassName`; append both to `initial/replicas/initial_replicas_all_{server,client}.resource`.
-  This also answers "text-only can't pick its client class". Not yet tried by us.
+- **Since Oct 2026, officially unlimited classes:** `CLS_File_Guide.pdf` "Creating custom NPC" describes the
+  `noSsl` route (a copied retail pair with its own `.ssc.resource` per side and `clientClassName`; recipe in the
+  foundations note). It would also answer "text-only can't pick its client class". Not yet tried by us.
 - Spawnable = an archetype in `ssl/spawn_system/archetypes/archetypes_library.sso` (server `default_other`) whose
   server class appears in that file's `.sso.resource` `dynamicLinks`, plus a `LevelArchetype` pool entry AND a
   `linksDescWeak` class link in every scenario that spawns it (foundations note). Archetype names, smart names and
@@ -132,13 +133,9 @@ donor creature: everything is cloned, because the engine keys animations by name
 5. Every anim-table entry that names a clip of your set is a SLOT entry (`pathToAnim`), never network-only.
 6. `AnimInfoTrajectory` clips carry Footsteps start/end events (200 / 205).
 7. Every new clip has a `.sani.resource` and a link in the set's `.mr.resource`.
-8. Reused network anim slots are looked up by LEAF name and the first namesake in the network's name table wins:
-   reusing a slot that is the first namesake of a gameplay anim (e.g. a finisher) hijacks it. Assert an earlier
-   namesake exists before reusing a slot.
-9. A Blend2 never sits under a SingleFrame (crash in the sync-event combine), and a Blend2 at weight 1 passes no
-   events (use Switch wrappers when markers must arrive).
-10. Additive streams are relative to the clip's own frame 0; reload-style networks subtract frame 0 of the LIVE retail
-    clip, so templates must come from the current pak.
+8. From the Marine network work (details in the weapons note's network section): reused anim slots resolve by LEAF
+   name and the first namesake wins; a Blend2 never sits under a SingleFrame or wraps a clip whose markers must
+   arrive; additive streams start from the LIVE retail clip's frame 0.
 
 ### `.sani` clip format (what our writer handles)
 - A chunked file plus a `.sani_data` sidecar. Chunks: 241 meta (channel names), 242 regular animation data (inline;
@@ -251,48 +248,47 @@ donor creature: everything is cloned, because the engine keys animations by name
   official `noSsl` NPC route, combat AI on new movesets (built clips are not yet wired into AI behaviour trees).
 
 ## Gotchas
-1. **Boot crash reading 0x48 with "AnimTableActor" on the stack.** Cause: a new data brand with a hand-built sslbin.
-   Fix: inline objects / modder slots.
-2. **New NPC looks exactly like the donor in game.** Cause: hand-built class sslbins are ignored and the client class
+1. **New NPC looks exactly like the donor in game.** Cause: hand-built class sslbins are ignored and the client class
    comes from the donor's compiled pair. Fix: `npc_modded_N` slots or the `noSsl` CLS route.
-3. **Boot crash in AbilityLibrary StringToEnum.** Cause: new ability uid without enum extension. Fix: enum extension
+2. **Boot crash in AbilityLibrary StringToEnum.** Cause: new ability uid without enum extension. Fix: enum extension
    or an unused retail uid.
-4. **The retail creature suddenly plays your retargeted motion.** Cause: clip file names reused (names are global), or
+3. **The retail creature suddenly plays your retargeted motion.** Cause: clip file names reused (names are global), or
    network asset IDs shared with the donor. Fix: unique file names AND new asset IDs.
-5. **Server crash at barge load after renaming anim names.** Cause: `animName` is matched to loaded FILE names minus
+4. **Server crash at barge load after renaming anim names.** Cause: `animName` is matched to loaded FILE names minus
    the set suffix; renaming the suffix or the set breaks it. Fix: `<prefix>_<move>_<set>` naming with an own set.
-6. **Boot crash on a network-only entry (`TraversalDown.End`-style) no matter how the network is renamed.** Cause:
+5. **Boot crash on a network-only entry (`TraversalDown.End`-style) no matter how the network is renamed.** Cause:
    network-only names resolve only against base-game networks. Fix: make every own-set entry a slot entry.
-7. **Clone crashes the moment it finally uses its own network (a float parameter on a null network).** Cause: renamed
+6. **Clone crashes the moment it finally uses its own network (a float parameter on a null network).** Cause: renamed
    hashed strings left the sorted hash array unsorted. Fix: keep retail node names/hashes; only own set name + CRCs.
-8. **Clone "works" only while it shares the donor's IDs.** Cause: one global network served both. Fix: new IDs, then
+7. **Clone "works" only while it shares the donor's IDs.** Cause: one global network served both. Fix: new IDs, then
    fix whatever the clone's own network breaks.
-9. **Execution crashed the client reading a float (1.0) as a pointer.** Cause: trajectory slot clip without
+8. **Execution crashed the client reading a float (1.0) as a pointer.** Cause: trajectory slot clip without
    Footsteps start/end events. Fix: copy the source clip's Footsteps track.
-10. **Execution crashed: interplay sequence null.** Cause: new xseq only listed in a class-inline override. Fix:
-    register it in `interplay_controller_default.sso`.
-11. **Boot crash on a null stream, "Filename is empty!".** Cause: clip without `.sani.resource` / `.mr.resource` link.
+9. **Execution crashed: interplay sequence null.** Cause: new xseq only listed in a class-inline override. Fix:
+   register it in `interplay_controller_default.sso`.
+10. **Boot crash on a null stream, "Filename is empty!".** Cause: clip without `.sani.resource` / `.mr.resource` link.
     Fix: ship both.
-12. **Retargeted creature's feet take giant strides / chest folds into the belly.** Cause: wrong retarget reference
+11. **Retargeted creature's feet take giant strides / chest folds into the belly.** Cause: wrong retarget reference
     (staggered idle for legs, bind for the hunched spine). Fix: per-region reference + lean correction.
-13. **Elbows/claws bend unnaturally on borrowed moves.** Cause: copied joint rotations off the hinge axis. Fix:
+12. **Elbows/claws bend unnaturally on borrowed moves.** Cause: copied joint rotations off the hinge axis. Fix:
     project onto limits learned from approved clips.
-14. **Crest/back tears in attacks.** Cause: donor head-vs-back swings up to 127 deg. Fix: soft rotation limits and
+13. **Crest/back tears in attacks.** Cause: donor head-vs-back swings up to 127 deg. Fix: soft rotation limits and
     rigid plates on the back bone.
-15. **Slow bones frozen after re-encoding.** Cause: constant-channel epsilon too large. Fix: ~1e-9.
-16. **A clip decodes as garbage with an older public reader.** Cause: it takes the last 242/243 chunk and pads
+14. **Slow bones frozen after re-encoding.** Cause: constant-channel epsilon too large. Fix: ~1e-9.
+15. **A clip decodes as garbage with an older public reader.** Cause: it takes the last 242/243 chunk and pads
     Optimized rows wrongly. Fix: walk the chunk table; 16-byte row padding.
-17. **Effects (eye glow, claw fx) at the wrong place on a custom mesh.** Cause: `fx_*` locators are markup entities /
+16. **Effects (eye glow, claw fx) at the wrong place on a custom mesh.** Cause: `fx_*` locators are markup entities /
     rig locators, not tpl nodes. Fix: ship the donor markup; offset effects in the class.
-18. **Spawn button does nothing.** Cause: archetype missing from the level's explicit pool or its `linksDescWeak`.
+17. **Spawn button does nothing.** Cause: archetype missing from the level's explicit pool or its `linksDescWeak`.
     Fix: add both in the arena scenario copy.
-19. **Display name still the donor's.** Cause: name comes from `ui_ai_archetypes_library` keyed by archetype, and the
+18. **Display name still the donor's.** Cause: name comes from `ui_ai_archetypes_library` keyed by archetype, and the
     first-sorting pak's `strings_english.str` wins. Fix: own entry + merged strings file.
 
 ## Assets
 The boss mesh was AI-generated (Tripo) and repainted by the human in Substance Painter; motion is the retail
 creatures' own clips retargeted offline; eyes/teeth are retail parts reused by material name. Nothing from the game
-is attached to this note.
+is attached to this note. Saber's mod rules forbid AI-generated content in mods (see the foundations note's Setup),
+so keep builds with the AI-generated boss private.
 
 ## Open questions
 - Wiring retargeted cross-creature moves into AI behaviour (kata trees, smarts) for a new boss.

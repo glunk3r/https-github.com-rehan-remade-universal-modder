@@ -23,8 +23,9 @@ tags: [space-marine-2, saber, voice, vo, talker, wwise, bnk, wem, media-bundle, 
 > combat chatter, ability calls, social wheel, emote chant, mission dialogue, plus grunts), made one of them a modded
 > class's default voice, cloned an ability's shout as new Wwise events, and played an intro line from a mission
 > script. This note covers the mechanics only: talkers, routing, bundles, banks, loudness and the in-game helmet
-> radio effect. Builds on "Space Marine 2 modding foundations: paks, load order, Saber's tools, manifests and crash
-> triage". Verified in game unless marked otherwise.
+> radio effect. Builds on [the foundations note](sm2-modding-foundations-paks-tools-and-crash-triage.md); the class
+> side of a default voice is in [the class note](sm2-new-playable-class-on-character-mod-slot.md). Verified in game
+> unless marked otherwise.
 
 ## Setup
 - Steam build 25799387 (Patch 15.1). Voice media: `sounds/desktop/*.zip` + `.header` bundles; banks (`.bnk`) in the
@@ -86,8 +87,8 @@ sslbin + `.ssc.resource` + brand `.sso`) crashed at boot (reading 0x48, an objec
   `vo_story_intro_<speaker>_NNN`; the prologue's squad leader speaks as `kill_team_leader`, not under the hero's id).
 - An event without a line of its own can reuse another entry (an alias: e.g. a battle-cry ability call reusing a
   generic line).
-- Subtitles: one key per line in `texts/strings_english.str` (UTF-16LE with BOM, `KEY<tabs>"value"`); plaintext values
-  render even though retail values are obfuscated. Social wheel labels are `UI_SOCIAL_COMMAND_*` keys.
+- Subtitles: one key per line in `texts/strings_english.str` (format in the foundations note). Social wheel labels
+  are `UI_SOCIAL_COMMAND_*` keys.
 - Encoding that worked: mono `.wem` from Wwise 2019.2 with the game's mono voice conversion, normalised to about
   -27 LUFS integrated.
 - Mission scripts can play an external line directly: `BlueprintNodePlayStoryVoiceover` with `useExternal True`, the
@@ -142,7 +143,9 @@ sslbin + `.ssc.resource` + brand `.sso`) crashed at boot (reading 0x48, an objec
   lines a short per-voice prefix) and mirror ids 1:1 between voices so routing scripts can be reused.
 - The emote chant has two alternating takes (`social_emote_chant_01` / `_02`); retail ships only `_01`, so add `_02`
   (or copy `_01` into it). The social wheel is six command lines with UI labels.
-- With AI TTS: generate the few lines that contain hard proper nouns first and fix their spelling for pronunciation;
+- With AI TTS (private builds only: Saber's mod rules forbid AI-generated content, see the foundations note), use a
+  stock or designed voice, never a clone of a real person such as one of the game's voice actors. Generate the few
+  lines that contain hard proper nouns first and fix their spelling for pronunciation;
   record two takes per line and pick; keep a lock on lines the human has approved so later re-voicing cannot change
   them (assert byte equality at build time).
 
@@ -190,7 +193,8 @@ sslbin + `.ssc.resource` + brand `.sso`) crashed at boot (reading 0x48, an objec
 
 ## Assets
 New lines were generated with an AI TTS service from scripts written for each voice and recorded/selected by the
-human; grunts were transformed retail grunts. No game audio is attached to this note.
+human; grunts were transformed retail grunts. No game audio is attached to this note. Saber's mod rules forbid
+AI-generated content in mods, so keep TTS voices in private builds; a released voice pack needs recorded lines.
 
 ## Open questions
 - A data route for a per-class default CUSTOM talker (only base `talkerRef` was found).

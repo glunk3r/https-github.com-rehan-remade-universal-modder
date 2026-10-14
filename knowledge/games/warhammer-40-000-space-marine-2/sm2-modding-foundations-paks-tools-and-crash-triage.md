@@ -13,7 +13,7 @@ status: working
 agents: ["Claude Code (Opus 5.5)"]
 humans: []
 date: 2026-10-13
-links: []
+links: ["https://spacemarine2-modding.prismray.io/"]
 tags: [space-marine-2, saber, swarm-engine, pak, load-order, ssl, sso, crash-triage, mod-tools]
 ---
 
@@ -24,8 +24,22 @@ tags: [space-marine-2, saber, swarm-engine, pak, load-order, ssl, sso, crash-tri
 > are read, which files are text and which are compiled, the manifest rules that cause most crashes, and how to read
 > a crash when the game gives you nothing. Everything below was verified in the real game unless marked otherwise.
 
+The other SM2 notes build on this one, and each fact lives in one of them:
+[models and textures](sm2-models-tpl-format-modelconverter-and-textures.md),
+[weapons](sm2-weapons-skins-reloads-perks-vfx-and-sounds.md),
+[new enemies and Morpheme animation](sm2-new-enemies-npc-classes-and-morpheme-animation.md),
+[a new playable class](sm2-new-playable-class-on-character-mod-slot.md),
+[missions and the spawn director](sm2-missions-scenarios-faction-swaps-and-esd-spawning.md) and
+[voices and Wwise audio](sm2-voices-talkers-and-wwise-audio.md).
+
 ## Setup
 - Steam build 25799387 (Patch 15.1). Patch 14 -> 15 moved many files, so date your findings.
+- Saber's official modding docs: <https://spacemarine2-modding.prismray.io/> (installing the Mod Editor, Model
+  Converter and Map Converter references, uploading, playing with mods).
+- **Saber's mod rules (the docs' Legal Notice):** mods must not contain AI-generated or AI-assisted content, must
+  not be sold, and may only use Warhammer 40,000 IP; uploading to Steam Workshop or saber.games means accepting the
+  EULA's Mods section. Several of these notes used AI-generated meshes, textures and TTS voices, so keep builds
+  that contain them private, and use hand-made art and recorded voices for anything you release.
 - Saber's Mod Tools (Steam app "Warhammer 40,000: Space Marine 2 - Mod Tools"). Prefer the standalone tool folder
   over the older copy inside the game. Docs ship in `ModEditor/documentation/` (`CLS_File_Guide.pdf`,
   `Enum_Extension_Tutorial.pdf`, `whitelisted_enums.txt`, `Map_Converter_Guide.pdf`, samples) and a modding how-to
@@ -45,6 +59,12 @@ file at the same path. Gameplay logic is mostly plain-text `.sso` / `.cls` / `.p
 code is compiled `.sslbin`, which you cannot replace (see Gotchas). No loader or injection exists or is needed.
 EasyAntiCheat blocks RenderDoc and live-memory tools, so all inspection is offline.
 
+Modded play stays inside Saber's mod support. Its "Playing with Mods" page says that when mods are detected the
+game leaves public matchmaking, plays in private lobbies only (invite or code), shows a watermark, and keeps a
+progression separate from the official one. For quick iteration the docs also allow loose files in
+`client_pc/root/local/` (same relative paths; the game warns about corrupt files and loads slower, because loose
+files don't stream). Paks are what you ship.
+
 ## How the game works (what we had to learn)
 
 ### Pak layout
@@ -62,15 +82,18 @@ EasyAntiCheat blocks RenderDoc and live-memory tools, so all inspection is offli
   but plaintext values also render. Some values span lines with real newlines; edit single-line keys only.
 
 ### Load order and conflicts
-- **When two mod paks contain the same file, the pak that sorts FIRST alphabetically wins** (Saber's own how-to
-  says so). This is the reverse of the usual "z_ loads last" convention. Name an override `00000_0_...` to beat a
-  pak named `00000_t...`; `0000_x` sorts AFTER `00000` because `'0' < '_'`.
+- **When two mod paks contain the same file, the pak that sorts FIRST alphabetically wins.** Saber's "Using Mod
+  Packs" page says so: mod paks override the default paks and are sorted alphabetically, and if modA and modB change
+  the same file the virtual file system takes modA's. This is the reverse of the usual "z_ loads last" convention.
+  Name an override `00000_0_...` to beat a pak named `00000_t...`; `0000_x` sorts AFTER `00000` because `'0' < '_'`.
+  The same page says editing the default paks directly crashes the game at start: mod paks are the only route.
 - Shared files (`strings_english.str`, `mml_cfg/all_levels.mml_cfg`, `sounds/localization/english.sound_localization.resource`,
   big libraries like `melee_actor_factory.sso`) are winner-takes-all. Two mods that both ship one silently erase each
   other's entries. Build your copy as a MERGE: current retail + every installed mod's changed keys + yours, and
   rebuild whenever those mods change.
-- **Write mod paks with `zipfile.ZIP_STORED` for every file.** The engine streams `tpl_data` and texture mips by
-  byte range straight out of the pak. A DEFLATED pak loads but renders black textures and invisible near LODs.
+- **Write mod paks with `zipfile.ZIP_STORED` for every file** (Saber's page: a pak is a ZIP with compression set to
+  Store). The engine streams `tpl_data` and texture mips by byte range straight out of the pak. A DEFLATED pak loads
+  but renders black textures and invisible near LODs.
 
 ### Manifests (`.resource`) and the crash rules they cause
 - `.sso.resource` has several link sections (`linksDesc`, `linksDescWeak`, `linksSsl`, `parents`, `dynamicLinks`).
@@ -86,9 +109,9 @@ EasyAntiCheat blocks RenderDoc and live-memory tools, so all inspection is offli
 - Symptom of breaking either rule: ACCESS_VIOLATION reading `0x8` (null class pointer) during scene load.
 - `.tpl.resource`: always start from RETAIL's and only add `linksPct` / `linksTd` entries (alphabetical, CRLF).
   The exporter's own `.tpl.resource` leaves `linkTplMarkup` / `tplMarkup` empty, which crashes on a shader-cache
-  miss (see the models note).
+  miss (see the [models note](sm2-models-tpl-format-modelconverter-and-textures.md)).
 - New animation clips need a `.sani.resource` and a link in `<set>.mr.resource`, or the game crashes at boot (see
-  the NPC/animation note).
+  the [NPC/animation note](sm2-new-enemies-npc-classes-and-morpheme-animation.md)).
 - A node type that exists in `meta_desc_ssl.ps` is not necessarily shipped. Assert that every node type you use
   has a resource in that side's `resources.pak` (example: `BlueprintNodeEsdClientGetStage` is described but not shipped).
 
@@ -128,8 +151,8 @@ EasyAntiCheat blocks RenderDoc and live-memory tools, so all inspection is offli
 - Cosmetic challenge locks are data: `challengeLock = { challengeUid, tier, __type "ChallengeLockReason" }` blocks on
   regions in `character_customization_library.sso` and on decals.
 - Lobby/session: `ssl/main/user/mod_support_consts.sso` holds mod-support switches (e.g.
-  `isTwelvePlayerPveLobbyEnabled`). That flag also makes each player load their own hub barge; the routing reads
-  it on both client and server, so a host-only setting cannot work.
+  `isTwelvePlayerPveLobbyEnabled`, which also splits the hub barge: see the
+  [missions note](sm2-missions-scenarios-faction-swaps-and-esd-spawning.md)).
 - The retail game writes no log files. Your only runtime readouts are crash reports, `.ssldmp` script dumps and
   on-screen debug (`BlueprintNodeDrawModUiLog` = "Draw UI Mod Message", client side; its input pin is `Draw`).
 
@@ -145,6 +168,8 @@ EasyAntiCheat blocks RenderDoc and live-memory tools, so all inspection is offli
   which libraries were built, and inspect objects (e.g. which anim lookups resolved) right before the crash.
 - Since 15.1, server code lives in `...Retail.dll` (thread DLL_SERVER_MAIN), not the exe.
 - Compare module+offset only within one build.
+- Saber's "Install Extra Tools" page also describes an advanced crash reporter: copy the toolset's `CrashReporter`
+  files into `client_pc/root/bin/pc` for more detail on each crash. This note doesn't cover it.
 
 ## Build steps
 1. Extract the retail files you change from the CURRENT paks (an extraction from an older patch silently differs;
@@ -158,8 +183,9 @@ EasyAntiCheat blocks RenderDoc and live-memory tools, so all inspection is offli
    Treat numeric lists (splines) as atomic values. Scan for types the patch removed.
 
 ## Verification
-- Oracle = the real game: the testing arena from a community testing-menu mod (`test_scene_mod`, buttons wired to
-  `SpawnActorByArchetype`), plus screenshots and crash dumps. Saber's autostart flag
+- Oracle = the real game: the testing arena `test_scene_mod`, taken from a community testing-menu mod, with buttons
+  wired to `SpawnActorByArchetype`, plus screenshots and crash dumps. The level itself is Saber's sample: the Map
+  Converter docs build it with `tools/MapBuilder.exe`. Saber's autostart flag
   `--startup --set /Config/WhiteListedVariables/enableModdersAutostartFlow true` jumps straight into the mod test scene.
 - Every rule above came from a crash or a visible failure that went away when the rule was applied.
 - Not verified: whether `mml_cfg` defaults differ on consoles.
@@ -171,8 +197,9 @@ EasyAntiCheat blocks RenderDoc and live-memory tools, so all inspection is offli
    Cost us ~6 test rounds chasing geometry first.
 3. **Server crashes at startup after shipping a "harmless" patched sslbin.** Cause: retail sslbins can't be
    replaced. Fix: data-only changes.
-4. **Boot crash reading 0x48, stack mentions the new type.** Cause: a new compiled brand / hand-built sslbin.
-   Fix: inline objects, existing types, modder slots or the `noSsl` CLS route.
+4. **Boot crash reading 0x48, stack mentions the new type** (e.g. `AnimTableActor` for a new anim-table type).
+   Cause: a new compiled brand / hand-built sslbin. Fix: inline objects, existing types, modder slots or the `noSsl`
+   CLS route.
 5. **Scene-load crash reading 0x8.** Cause: undeclared always-declared node type, or a `LevelArchetype` without its
    `linksDescWeak` class. Fix: follow the two manifest rules.
 6. **Client crash at scenario load with a garbage type index.** Cause: a blueprint link to a pin that doesn't exist
@@ -181,14 +208,15 @@ EasyAntiCheat blocks RenderDoc and live-memory tools, so all inspection is offli
 7. **Server crash on a scenario int field.** Cause: `IntRefParam` written as a quoted string `"2"`. Fix: write
    Int/Float/Bool values bare.
 8. **Custom textures look soft on High but fine on Ultra.** Cause: not listed in `all_levels.mml_cfg`. Fix: add entries.
-9. **"Mods Detected" even for a tiny performance tweak.** Any mod pak does it; there is no "vanilla-safe" pak.
+9. **"Mods Detected" even for a tiny performance tweak.** Any mod pak does it, and with it come private lobbies only
+   and the separate progression; there is no "vanilla-safe" pak.
 10. **Saber's tools crash and fill the disk.** Running them with a cwd on a small drive, one tool wrote a 270 MB
     dump per model into `<cwd>\sandbox\crash_dumps` (12 GB in one run). Run them from a roomy drive and watch that folder.
 11. **ModelConverter exits with code 82 and a "Press any key" exception.** Harmless; it happens after the work is done
     when stdin isn't a console. Don't treat exit codes as failure signals for these tools.
 12. **A patch silently changes text you merged.** Strings, cloth colours, presets and class names moved in Patch 15
-    (`PVP_*` presets -> `PVE_PVP_*`, new `PVE_MEDIC`). Any preset you add must match retail's key set, or whole
-    armour slots grey out as "not available for the selected Class".
+    (`PVP_*` presets -> `PVE_PVP_*`, new `PVE_MEDIC`). Fix: the 3-way merge in Build steps; for armour presets see
+    the models note (gotcha "not available for the selected Class").
 
 ## Assets
 None in this note.

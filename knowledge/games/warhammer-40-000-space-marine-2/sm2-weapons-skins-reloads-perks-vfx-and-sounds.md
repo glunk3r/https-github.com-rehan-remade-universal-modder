@@ -23,8 +23,11 @@ tags: [space-marine-2, saber, weapons, weapon-skin, melee, firearm, reload, acti
 > reload, shot sound and a hip-fire "fanning" animation; a pump-action shotgun as a custom melta version; a new
 > one-handed melee weapon; a power sword that sets enemies on fire; frost VFX on a chainsword; an active-reload
 > mechanic with a jam animation and HUD markers. All through data (text `.sso`/`.cls`), tpl models and careful binary
-> edits of the Marine's Morpheme animation network. Builds on "Space Marine 2 modding foundations: paks, load order,
-> Saber's tools, manifests and crash triage" and the models note. Verified in game unless marked otherwise.
+> edits of the Marine's Morpheme animation network. Builds on
+> [the foundations note](sm2-modding-foundations-paks-tools-and-crash-triage.md),
+> [the models note](sm2-models-tpl-format-modelconverter-and-textures.md) and, for the `.nmb` / `.sani` formats,
+> [the NPC/animation note](sm2-new-enemies-npc-classes-and-morpheme-animation.md). Verified in game unless marked
+> otherwise.
 
 ## Setup
 - Steam build 25799387 (Patch 15.1). Patch 15/15.1 changed a lot of weapon data (new frost VFX, one-handed thunder
@@ -192,9 +195,8 @@ sideEffects   =   [
 - Crashed: a brand-new actor for the sound; injecting `prop_blueprints` into a child actor; the base cls edit without
   the resource link.
 - Weapon-exclusive media can also be replaced inside the retail `wpn` bank (same event ids, new media) - scope is
-  every version that uses those media. See the voices/Wwise note for the bank format. Judge loudness and tone against
-  retail guns recorded in the same scene; an offline "median of retail 2D media" target misleads because retail spreads
-  a shot over several 2D/3D layers.
+  every version that uses those media. The bank format and how to judge loudness are in the
+  [voices/Wwise note](sm2-voices-talkers-and-wwise-audio.md): compare against retail guns recorded in the same scene.
 
 ### Crosshairs and the reload HUD
 - Chain: the firearm description's `sightPreset` (enum: AUTO, SINGLE, HEAVY_AUTO, SHOTGUN, PRECISE_AUTO, SNIPER,
@@ -244,8 +246,9 @@ sideEffects   =   [
   only swappable clip slots are `AnimationSlot_Melee` and `AnimationSlot_Finisher` (full-body). Weapon scripts can
   order table entries (`BlueprintNodeOrderMorphemeAnimation`, `animTableLinkRef` like
   `Primaris.Melee.AdditivePreLight1`).
-- The `.nmb` is a bundle of assets with 40-byte headers (rig, rig-to-anim map, controller, animation set, network,
-  anim list). We decoded the node table, node definitions, name table, children, control-parameter (CP) connections,
+- The `.nmb` container (assets with 40-byte headers, global asset IDs, hashed and sorted string tables) is described
+  in the NPC/animation note. Inside the network asset we decoded the node table, node definitions, name table,
+  children, control-parameter (CP) connections,
   Saber's Expression bytecode (compare-equal, compare-not-equal, move, jump; operands are input indices or constants)
   and state-machine transition conditions (CP-in-range with a NOT flag, CP > a). Useful anim-node attributes: additive
   flag, loop flag, clip index into the network's own anim list (NOT the `.mr.resource` order), duration. All of these
@@ -267,10 +270,9 @@ sideEffects   =   [
   7. Frame 0 must equal the LIVE retail clip's frame 0: reload networks subtract a SingleFrame of frame 0 for their
      additive layers. Extract templates from the current `default_animation.pak` - an older extraction differed by
      90-114 deg on some channels.
-- **Adding clips to the network**: append an anim-list entry (four parallel tables: path, load format `sani` or
-  `sani+` for clips with an additive stream, two empty strings), ship the clip's `animation/<path>.sani.resource` and
-  add a link in `morpheme/primaris/primaris.mr.resource` (identical client/server copies). A new path without both
-  manifests crashed the game at boot (null stream, "Filename is empty!"). New nodes: clone a same-type node over a node
+- **Adding clips to the network**: an anim-list entry plus the clip's `.sani.resource` and a link in
+  `morpheme/primaris/primaris.mr.resource` (identical client/server copies); the anim-list layout and the boot crash
+  without the manifests are in the NPC/animation note. New nodes: clone a same-type node over a node
   in a never-entered debug tree, keeping each Expression's unique index; or append whole records at the end of the
   asset and repoint the node-table offsets (verified working; the node COUNT was not grown).
 - **Slots hijack lookups by name**: the server resolves finisher and other gameplay animations by anim-node LEAF name,
@@ -373,48 +375,46 @@ sideEffects   =   [
 11. **Aura sat mid-blade and drifted sideways.** Cause: sub-effects parented to a scaled locator. Fix: parent to an
     unscaled locator.
 12. **"Gold" effect came out purple.** Cause: SSL colours are A,R,G,B. Fix: write alpha first.
-13. **Boot crash after adding a clip ("Filename is empty!", null stream).** Cause: no `.sani.resource` / `.mr.resource`
-    link. Fix: ship both manifests.
-14. **Server crash at boot inside finisher init, with a reload clip's duration under a finisher's name.** Cause: a
+13. **Server crash at boot inside finisher init, with a reload clip's duration under a finisher's name.** Cause: a
     reused network slot was the first namesake of a finisher anim. Fix: only reuse slots with an earlier namesake;
     assert it.
-15. **Markers in a wrapped clip never arrive; the rifle stays raised.** Cause: Blend2 at weight 1 passes no events. Fix:
+14. **Markers in a wrapped clip never arrive; the rifle stays raised.** Cause: Blend2 at weight 1 passes no events. Fix:
     Switch wrappers.
-16. **Client crash after wrapping a reload path.** Cause: a Blend2 under a SingleFrame (subtraction reference). Fix:
+15. **Client crash after wrapping a reload path.** Cause: a Blend2 under a SingleFrame (subtraction reference). Fix:
     never wrap those.
-17. **Custom reload twists joints in game but looks right offline.** Cause: template clip from an older patch, frame 0
+16. **Custom reload twists joints in game but looks right offline.** Cause: template clip from an older patch, frame 0
     differs from the live clip. Fix: extract from the live pak and diff frame 0.
-18. **Custom hip-fire clip: arm stretched sideways, gun never fires.** Cause: hold bones off the hands and `GUN_ANIM`
+17. **Custom hip-fire clip: arm stretched sideways, gun never fires.** Cause: hold bones off the hands and `GUN_ANIM`
     swung > 40 deg. Fix: rules 1-3.
-19. **Fanning hand 45 cm off the hammer.** Cause: `GUN_ANIM` at the stance aim point, so runtime aim rotation swung the
+18. **Fanning hand 45 cm off the hammer.** Cause: `GUN_ANIM` at the stance aim point, so runtime aim rotation swung the
     IK'd gun hand. Fix: put `GUN_ANIM` (and `Gun_pose`) on the gun / the contact point.
-20. **Shoulder pad clipping the helmet in a custom clip.** Cause: `shoulder_R` is an animated pad channel. Fix:
+19. **Shoulder pad clipping the helmet in a custom clip.** Cause: `shoulder_R` is an animated pad channel. Fix:
     re-solve it per frame from retail.
-21. **Sword floats near the hip or stays in the hand.** Cause: `melee_weapon_pivot` is a hidden holster point; switch
+20. **Sword floats near the hip or stays in the hand.** Cause: `melee_weapon_pivot` is a hidden holster point; switch
     clips move it into the hand. Fix: don't animate `GUN_R` onto it; pin the pivot in custom clips.
-22. **"Press during the window" never triggered the blueprint.** Cause: `InputHold` needs a hold. Fix: detect via
+21. **"Press during the window" never triggered the blueprint.** Cause: `InputHold` needs a hold. Fix: detect via
     duration-event deactivate + body-state check.
-23. **Inverted "recently" condition always true; reload swallowed for seconds.** Cause: `ConditionInvert` on
+22. **Inverted "recently" condition always true; reload swallowed for seconds.** Cause: `ConditionInvert` on
     `ConditionTriggerMorphemeEventRecently`. Fix: positive conditions only.
-24. **Client crash at scene load with a new blueprint graph.** Cause: a link to a pin that doesn't exist, an undeclared
+23. **Client crash at scene load with a new blueprint graph.** Cause: a link to a pin that doesn't exist, an undeclared
     node type, or a debug-print node in a client+authority blueprint. Fix: validate pins against `meta_desc_ssl.ps`,
     declare every node type.
-25. **Melee skin crashed in the armoury, then showed a white wedge.** Cause: exporter strips `rb_*` collider streams
+24. **Melee skin crashed in the armoury, then showed a white wedge.** Cause: exporter strips `rb_*` collider streams
     and writes all-visible `.lods_base`. Fix: see the models note.
-26. **Cloned ability cast hangs (charge kept, can't shoot).** Cause: ability anim task pointed at an emote, `OnFail`
-    unwired. Fix: never do that; use `EnterSmart` for emotes.
-27. **Red/gold HUD copies visible from the start.** Cause: extra `UiSightWidget` instances ignore Hide rules. Fix: use
+25. **Cloned ability cast hangs (charge kept, can't shoot).** Cause: ability anim task pointed at an emote (emotes
+    only play through the smart / level-sequence path), and `OnFail` unwired. Fix: keep the retail anim; start emotes
+    with a server `BlueprintNodeEnterSmart` and an inline smart desc; wire `OnFail` before experimenting.
+26. **Red/gold HUD copies visible from the start.** Cause: extra `UiSightWidget` instances ignore Hide rules. Fix: use
     a hidable team-status widget with rule overrides.
-28. **Custom HUD element in the wrong colour.** Cause: no `colorEffect`, so it inherits the crosshair tint. Fix:
+27. **Custom HUD element in the wrong colour.** Cause: no `colorEffect`, so it inherits the crosshair tint. Fix:
     `colorEffect "ADVANCED"` + `advancedTintMult`.
-29. **Cross-weapon perk accepted?** Yes - a version's `perkUids` takes any perk; use it to get an exclusive flag.
-30. **Shared library edits vanish when another weapon mod is installed.** Cause: first-alphabetical pak wins whole
-    files (`melee_actor_factory.sso`, libraries, `mml_cfg`, strings). Fix: merge onto the winning copy at build time.
+28. **Cross-weapon perk accepted?** Yes - a version's `perkUids` takes any perk; use it to get an exclusive flag.
 
 ## Assets
 Weapon models from AI 3D generation (Tripo) plus retail parts reused from the game's own tpls; textures baked or
 repainted (models note). Animation clips were authored offline (IK posing on decoded retail clips) and written with
-our own `.sani` writer. No game files are attached to this note.
+our own `.sani` writer. No game files are attached to this note. Saber's mod rules forbid AI-generated content in
+mods (see the foundations note's Setup), so keep builds with the Tripo models private.
 
 ## Open questions
 - Second cause of the holster "glue" after fast weapon switches.

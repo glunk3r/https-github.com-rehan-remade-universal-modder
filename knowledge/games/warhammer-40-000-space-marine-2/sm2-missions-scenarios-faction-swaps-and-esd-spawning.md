@@ -22,8 +22,10 @@ tags: [space-marine-2, saber, scenario, mission, faction-swap, tyranids, chaos, 
 > Mission-level modding in Space Marine 2: swapping a mission stage's enemies from Chaos to Tyranids (working in
 > game), turning the campaign prologue into a PvE operation with the stock enemy spawn director (in progress: the map
 > plays, the navmesh was rebuilt with 388 spawn points, enemies from the director not yet seen),
-> per-level vehicle swaps, and why the 12-player flag splits the hub barge. Builds on "Space Marine 2 modding
-> foundations: paks, load order, Saber's tools, manifests and crash triage" (scenario manifest rules, crash triage).
+> per-level vehicle swaps, and why the 12-player flag splits the hub barge. Builds on
+> [the foundations note](sm2-modding-foundations-paks-tools-and-crash-triage.md) (scenario manifest rules, blueprint
+> pin and value rules, crash triage); level collision and models are in
+> [the models note](sm2-models-tpl-format-modelconverter-and-textures.md).
 
 ## Setup
 - Steam build 25799387 (Patch 15.1). Scenario text in `default_other.pak` (`xscenes/<level>/<level>_scenario_server.sso`
@@ -31,8 +33,10 @@ tags: [space-marine-2, saber, scenario, mission, faction-swap, tyranids, chaos, 
   equivalent) under `scenes/<level>.scn/`.
 - Saber Mod Tools with the documented toolchain layout (the package extracted into the game's `client_pc/root`, or
   a mirror of that layout elsewhere with junctions to the game paks) for AIConverter / Furnace / MapBuilder.
-- `client_pc/root/tools/meta_descs/meta_desc_ssl.ps` for every node's pins (validate every link).
-- On-screen debug lines: `BlueprintNodeDrawModUiLog` ("Draw UI Mod Message", input pin `Draw`), client side.
+- `meta_desc_ssl.ps` for every node's pins and the on-screen debug node `BlueprintNodeDrawModUiLog`: see the
+  foundations note.
+- Saber's own Map Converter / Furnace pages (spacemarine2-modding.prismray.io) cover building NEW levels from glTF;
+  this note works on existing levels.
 
 ## Route and why
 Data route: scenario graphs are plain text and can be edited freely as long as every node type is declared and every
@@ -74,9 +78,8 @@ scenario.
   same file is in the client and server scene paks), `lwi_container` (instanced props), terrain. Client and server
   have their own cd_list and class_list (spawn points and `server_driven` physics parts are server-side).
 - Invisible walls come from two places: static-collision objects in the `.lg` named `scripting|constrains|...`,
-  `*_playable_zone`, camera constraints (the scene `.cdt` is MOPP code over those triangles; remove a wall by making
-  its faces degenerate in `.lg_data`, same file size), and scripted 1x1 m `invisible_player_blocker` entities in the
-  cd_list scaled by their matrix. The navmesh stops at those walls too.
+  `*_playable_zone` and camera constraints (removing one: see the models note's level collision), and scripted 1x1 m
+  `invisible_player_blocker` entities in the cd_list scaled by their matrix. The navmesh stops at those walls too.
 - Saber ships `SaberTools/Scene/CDList.cs`, `ClassList.cs`, `DOMList.cs`, `SaberScene.cs`, `MapConverter.cs` and
   MapBuilder in `ModelConverter/ToolsSource`; a straight port round-trips retail files byte-exactly, and entities can
   be APPENDED.
@@ -159,10 +162,8 @@ scenario.
   independent timers while debugging, with numbered on-screen checkpoints.
 - Objective gates: `InteractWithObjectStage`; the default highlight preset's marker has no distance cull (a cloned
   preset with `isCullByDistance` fixes far markers - prepared, not tested).
-- Client graph crashes at level load: a link to a nonexistent pin (e.g. `Input` instead of `Draw`), and a debug
-  readout using a node with zero retail client uses (`Vector3dToString`). A node type described in `meta_desc_ssl.ps`
-  may not be shipped at all (`BlueprintNodeEsdClientGetStage`): assert every node type has a resource on that side.
-- Int/Float/Bool ref params must be written bare (`2`, not `"2"`) or the server crashes converting the value.
+- Client graph crashes at level load, beyond the foundations note's pin, shipped-node and bare-value rules: a debug
+  readout using a node with zero retail client uses (`Vector3dToString`). Prefer nodes retail uses on that side.
 
 ### Hub barge and the 12-player flag
 - `ssl/main/user/mod_support_consts.sso` `isTwelvePlayerPveLobbyEnabled` is read in five places (decompiled): on the
@@ -225,10 +226,9 @@ Spawn points on a level without them:
     downgrade it in a copy of the pak the tools read.
 13. **Client crash at level load after adding a debug readout.** Cause: a client node with no retail use, or a link to
     a missing pin. Fix: validate pins, use retail-proven nodes.
-14. **Server crash on a scenario int.** Cause: `IntRefParam` written as a string. Fix: bare values.
-15. **Teleport + get-up in one step: camera cuts, Marine just stands.** Cause: same-frame teleport and EnterSmart. Fix:
+14. **Teleport + get-up in one step: camera cuts, Marine just stands.** Cause: same-frame teleport and EnterSmart. Fix:
     wait ~0.5 s between them.
-16. **With the 12-player flag every player loads their own barge.** Cause: the flag makes clients ignore the match's
+15. **With the 12-player flag every player loads their own barge.** Cause: the flag makes clients ignore the match's
     hub data. Fix: flag False (shared barge); a host-only setting cannot work.
 
 ## Assets

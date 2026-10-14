@@ -23,8 +23,8 @@ tags: [space-marine-2, saber, swarm-engine, tpl, gltf, modelconverter, usfexport
 > armour constructors, new weapon models, a whole new creature model, a vehicle swap and many texture repaints. This
 > note is the model/texture layer: how a `.tpl` is laid out, what Saber's glTF -> USF -> tpl pipeline silently changes,
 > the prebuilt shader cache that turns any unexpected material into a crash, and the rules for AI-generated meshes.
-> Assumes "Space Marine 2 modding foundations: paks, load order, Saber's tools, manifests and crash triage" (pak
-> layout, ZIP_STORED, load order, mml_cfg, crash reports). Verified in game unless marked otherwise.
+> Assumes [the foundations note](sm2-modding-foundations-paks-tools-and-crash-triage.md) (pak layout, ZIP_STORED,
+> load order, mml_cfg, crash reports, Saber's mod rules). Verified in game unless marked otherwise.
 
 ## Setup
 - Steam build 25799387 (Patch 15.1). Patch 15 grew the soldier/raider constructors by ~15 % and changed many class
@@ -185,7 +185,8 @@ Prefer 1 for anything structural; prefer 2 when you only touch a few objects and
   the LOD's own tangent plane): to match retail exactly, copy retail bytes by matching position + UV, don't recompute.
   Supplying TANGENT does not change the FVF, so it is permutation-safe.
 - **Vertex colours** reach the tpl only if the USF material has `colorSets` (the built-in "Default" material has
-  none, "Cloth" has 0-3), and the channels come out rotated: `tpl(R,G,B,A) = glTF(A,R,G,B)`. Pre-rotate. A glTF
+  none, "Cloth" has 0-3), and the channels come out rotated: `tpl(R,G,B,A) = glTF(A,R,G,B)` (Saber's Color
+  Channels page calls COLOR0 / COLOR1 "Vector4 ARGB data"). Pre-rotate. A glTF
   `mesh.extras.materials = [{"data":{"str": <material ps text>}}]` replaces the generated material of the same name -
   that is how to give a non-`_sim` mesh colour sets. Verify by reading tpl_data bytes, not by round-tripping (the
   round trip shows the rotation too).
@@ -224,7 +225,8 @@ Prefer 1 for anything structural; prefer 2 when you only touch a few objects and
   `_grp` before export or presets stop matching.
 - Animation keys are read as consecutive 30 fps frames: author at exactly 1/30 s or timing stretches. Every round trip
   adds one frame to each clip (normal). The converter's rest pose is the first frame of the alphabetically first
-  animation.
+  animation. Frame events are offset by the clip's start on the converter's concatenated timeline, so list
+  `RELOAD_FULL` first (see the [weapons note](sm2-weapons-skins-reloads-perks-vfx-and-sounds.md)).
 - Re-exporting into a `models/database/<name>.tpl` folder that still holds the previous run's intermediates makes
   UsfExport exit 0 and write nothing; wipe it. `convert_tpl.py` deletes the project's `models/` folder, so two exports
   sharing one exporter project destroy each other mid-run: use a private project copy per job (it needs `.project`
@@ -256,7 +258,8 @@ Prefer 1 for anything structural; prefer 2 when you only touch a few objects and
   solverFrequency, damping, drag } }]`. The render mesh is remapped onto the sim mesh at runtime by proximity. The sim
   mesh is a hidden object (`_SIM`, skinned 100 % to CENTRE, needs `visibility_hidden` or it renders as a grey tube)
   whose **pin weight is COLOR_0.r: 0 = pinned, 254 = free**. With the converter's channel rotation, unrotated pins
-  read as "nothing pinned" and robes fly apart.
+  read as "nothing pinned" and robes fly apart. (Saber's Cloth page agrees on the direction: some sim vertices must
+  be completely black, "otherwise cloth falls off".)
 - **Grafted bones must be animated.** Pieces skinned to bones the class's animation set does not drive (bones grafted
   from an NPC rig) look perfect in the lobby (rest pose at the origin) and stretch into huge sheets in missions. Move
   such weights to the nearest driven ancestor, or to a jiggle-driven bone the class already simulates. Test in a
@@ -265,13 +268,12 @@ Prefer 1 for anything structural; prefer 2 when you only touch a few objects and
   hair strands onto them is the cheap route to secondary motion (not tried in game). Changing weights onto bones a
   vertex already uses cannot move geometry at bind pose - it only changes deformation.
 - The armoury figure is a separate dummy (`ssl/loading_scene_logic/customizable_character_dummy_factory.sso`), keyed
-  by mastery type and carrying its own physics. A modded class copied from Tactical keeps
-  `characterInfo.masteryType = "PVE_SOLDIER"` there and resolves its loadout in the wrong library section. Robe cloth
-  that works in missions exploded on the dummy; removing the robe sims from the dummy only fixed it.
-- Presets copied from another class include `isChampion` presets that are only a `skinOverride` pointing at a
-  champion doll the new class doesn't have: the armoury freezes (`.ssldmp` shows `TakeDoll` returning null). Drop them.
+  by mastery type and carrying its own physics. Robe cloth that works in missions exploded on the dummy; removing the
+  robe sims from the dummy only fixed it. The dummy and preset traps of a cloned class (`masteryType`, `isChampion`
+  presets) are in the [class note](sm2-new-playable-class-on-character-mod-slot.md).
 - After Patch 15 split sections into HALO / CLOTH / COAT, any preset missing those keys leaves the equipped uid blank
-  and the WHOLE slot shows "not available for the selected Class". Presets must match retail's key set.
+  and the WHOLE slot shows "not available for the selected Class". Presets must match retail's key set for the
+  current patch. An equipped challenge-locked item gives the same message.
 - Painted backpacks draw albedo from `<tex>_a` and a mask `<tex>_cc`; overriding the base diffuse does nothing under
   paint. Retail also ships unused alternate textures (e.g. a `_1` set of a helmet) worth checking before repainting.
 - Colour values for "game-like" metals come from `ssl/body/customization/armor_color_library.sso` (tints, metalness
@@ -297,6 +299,7 @@ Prefer 1 for anything structural; prefer 2 when you only touch a few objects and
   0 in sockets/mouth. Don't ship an all-zero channel or a near-flat normal map; aim for retail's statistics.
 
 ### AI-generated meshes (Tripo-style): rules that held
+These apply to private builds only: Saber's mod rules don't allow AI-generated content in mods you release.
 - **Measure the UV atlas before planning LODs**: chart count, median triangles per chart, share of vertices on a seam.
   Atlases with thousands of 2-triangle charts (~92 % seam vertices) cannot be decimated (triangles end up spanning two
   unrelated charts) and their mips bleed. Big-chart atlases (~3 % seam vertices) decimate fine with pymeshlab's
@@ -355,11 +358,11 @@ Prefer 1 for anything structural; prefer 2 when you only touch a few objects and
 - Prefab vehicles: a modded tpl BIND pose is ignored for animation; the game poses prefab bones from the retail rest
   and stacks additive TPL clips on it. Build anything riding a prefab bone relative to the retail rest pose and
   re-author the clips that move it.
-- Swapping one vehicle model for another per level: change `nameTpl` of the hull class in each level's `class_list`
-  and add `linksTpl` in `<level>.scn.resource`; hide the old parts with `objectsOverrides` by RUNTIME object name
-  (unnamed skinned objects can't be targeted - hide `ROOT`), or point part classes at a locator-only tpl. A rigid
-  hull placed directly inside an animated rig (no skin compounds) crashed in vertex-buffer binding; a static tpl on a
-  root-attached part worked.
+- Swapping one vehicle model for another per level is a level-file edit (`class_list` `nameTpl`, `linksTpl`,
+  cutscene copies: see the [missions note](sm2-missions-scenarios-faction-swaps-and-esd-spawning.md)). Model side:
+  `objectsOverrides` hides old parts by RUNTIME object name, but unnamed skinned objects can't be targeted (hide
+  `ROOT`), or point part classes at a locator-only tpl. A rigid hull placed directly inside an animated rig (no skin
+  compounds) crashed in vertex-buffer binding; a static tpl on a root-attached part worked.
 - Effect locators (jets, eye glows) come from the ANIMATION RIG at runtime; moving them in the tpl changes nothing.
   Either ship a renamed copy of a locator-only tpl and point `geom.nameTpl` at it, or offset the effect's own
   `transform` in the class, which IS applied relative to the locator.
@@ -368,7 +371,7 @@ Prefer 1 for anything structural; prefer 2 when you only touch a few objects and
 - Morpheme clips carry every bone's translation, so at runtime joints sit where the HOST's clips put them, whatever
   bind pose your tpl stores. Fitting the tpl skeleton to the new mesh stretched it in game. Either deform the mesh
   offline onto the host's bone offsets, or give the creature its own skeleton and rewrite the clips' fixed offsets
-  (see the NPC/animation note).
+  (see the [NPC/animation note](sm2-new-enemies-npc-classes-and-morpheme-animation.md)).
 - Verify by posing with the game's skinning (linear blend on the real rig), not by reading weight tables: rigid
   islands that share a welded shell (head vs hood) need a blend band between them; armour plates must be rigid on one
   bone each or they fold at the elbow; fingers need whole-finger components on the WELDED mesh.
@@ -434,51 +437,51 @@ armoury dummy.
     objects. Fix: `isHidden` regions per class covering every leftover object.
 14. **Removing a crashing vanilla item made the crash happen earlier, at load.** Cause: orphaned tpl object drawn
     unconditionally. Fix: hide the region instead of deleting it.
-15. **Armoury freezes when entering it with a cloned class.** Cause: copied `isChampion` presets need a champion doll.
-    Fix: remove them.
-16. **Whole armour slot "not available for the selected Class".** Cause: preset lacks a Patch 15 section key ->
-    blank equipped uid. Fix: match retail's preset key set.
-17. **A helmet rendered collapsed although its own bytes were retail.** Cause: the previous object's streams changed
+15. **Whole armour slot "not available for the selected Class" (misleading text).** Cause: a preset lacks a Patch 15
+    section key (blank equipped uid), or an equipped item is challenge-locked. Fix: match retail's preset key set for
+    the current patch; strip or satisfy challenge locks.
+16. **A helmet rendered collapsed although its own bytes were retail.** Cause: the previous object's streams changed
     size (vertex stream growth), plus misaligned maxTile entries. Fix: keep vertex stream sizes, fix maxTile per split.
-18. **Textures tiling at the wrong scale on some parts.** Cause: maxTile table read/written as a flat array. Fix: the
+17. **Textures tiling at the wrong scale on some parts.** Cause: maxTile table read/written as a flat array. Fix: the
     per-split `u8 count` + (u8 set, i16 tile) layout.
-19. **UVs look like they sample a quarter of the atlas.** Cause: dividing u16 UVs by 65535. Fix: 32768 x maxTile.
-20. **Writing the stream-size table 5 bytes off crashed the game, and the validator said PASS.** Cause: hard-coded
+18. **UVs look like they sample a quarter of the atlas.** Cause: dividing u16 UVs by 65535. Fix: 32768 x maxTile.
+19. **Writing the stream-size table 5 bytes off crashed the game, and the validator said PASS.** Cause: hard-coded
     offset, validator read the same wrong place. Fix: locate tables by searching, verify at the discovered location.
-21. **Melee skin crashed in the armoury preview; then the collider drew as a white wedge.** Cause: `rb_*` objects lose
+20. **Melee skin crashed in the armoury preview; then the collider drew as a white wedge.** Cause: `rb_*` objects lose
     UV/tangent streams in UsfExport, and the exported `.lods_base` makes every object visible. Fix: stand-in name +
     byte swap; ship retail `.lods_base`.
-22. **Reload animation events fire late on the weapon.** Cause: ModelConverter offsets action frames by the clip's
-    start on the concatenated timeline. Fix: put `RELOAD_FULL` first in the animations list.
-23. **Exporter exits 0 and writes nothing.** Cause: stale `models/database/<name>.tpl` intermediates. Fix: wipe it.
+21. **Exporter exits 0 and writes nothing.** Cause: stale `models/database/<name>.tpl` intermediates. Fix: wipe it.
     Two jobs sharing one exporter project also wipe each other: use private copies.
-24. **Moving tpl locators/bind pose changed nothing in game.** Cause: locators and bone positions come from the
+22. **Moving tpl locators/bind pose changed nothing in game.** Cause: locators and bone positions come from the
     animation rig; prefab bind patches are ignored. Fix: offset effects in the class, re-author clips.
-25. **Mesh fitted to a custom skeleton warped "to hell" when animated.** Cause: clips carry the host's bone
+23. **Mesh fitted to a custom skeleton warped "to hell" when animated.** Cause: clips carry the host's bone
     translations. Fix: deform the mesh to the host offsets, or rewrite the clips' offsets for an own skeleton.
-26. **Dark blobs on a custom face that change with the light.** Cause: normals averaged per vertex index on an AI atlas
+24. **Dark blobs on a custom face that change with the light.** Cause: normals averaged per vertex index on an AI atlas
     (seam duplicates) -> away-facing normals. Fix: weld before averaging.
-27. **Polygonal patches on skin that survive every texture fix.** Cause: AI normal-map patch mosaic, or tangents copied
+25. **Polygonal patches on skin that survive every texture fix.** Cause: AI normal-map patch mosaic, or tangents copied
     from donor vertices with different UVs. Fix: drop the AI normal map on skin; write UV-derived tangents.
-28. **Face looks clean close up, muddy at distance.** Cause: box-filter mips across tiny charts, and an unlisted 4K
+26. **Face looks clean close up, muddy at distance.** Cause: box-filter mips across tiny charts, and an unlisted 4K
     texture halved on High. Fix: chart-aware mips or a re-unwrap; `mml_cfg` entries.
-29. **Every chitin/armour texel went black after resizing.** Cause: Pillow's premultiplied RGBA resize with an SSS
+27. **Every chitin/armour texel went black after resizing.** Cause: Pillow's premultiplied RGBA resize with an SSS
     alpha of 0. Fix: resize RGB and alpha separately.
-30. **Level crashed loading an exported prop with physics.** Cause: convex `*_glr` shapes read stream data that was not
+28. **Level crashed loading an exported prop with physics.** Cause: convex `*_glr` shapes read stream data that was not
     resident. Fix: markup box shapes.
-31. **Invisible wall the player can't pass after moving a prop.** Cause: level static collision (scene `.cdt` over
+29. **Invisible wall the player can't pass after moving a prop.** Cause: level static collision (scene `.cdt` over
     `.lg`) or the prefab's `cdtSkeleton`, not Havok. Fix: degenerate the wall faces in `.lg_data`; remove
     `cdtSkeleton` from the class. `collisionLayerName` does not help.
-32. **Lens lost its glow after export.** Cause: the lens faces were merged into the `default` submaterial. Fix: keep
+30. **Lens lost its glow after export.** Cause: the lens faces were merged into the `default` submaterial. Fix: keep
     the lens as its own primitive with the retail `glass` (or an emissive) submaterial, with `intensity` set.
-33. **Boot crash reading near-null after adding a texture set.** Cause: a cloned `.td.resource` lost its `name:` /
+31. **Boot crash reading near-null after adding a texture set.** Cause: a cloned `.td.resource` lost its `name:` /
     `td:` lines. Fix: assert both on every td manifest.
-34. **Robes explode on the armoury figure only.** Cause: dummy cloth config. Fix: remove the robe sims from the dummy.
+32. **Robes explode on the armoury figure only.** Cause: dummy cloth config. Fix: remove the robe sims from the dummy
+    entries (missions keep them), or use Saber's long-robe dummy settings.
 
 ## Assets
 Custom meshes came from AI 3D generation (Tripo) and from retail parts re-used inside the game's own tpls; textures
 were baked from those sources, repainted in Substance Painter by the human, or derived from retail textures
-(recoloured, high-pass detail transferred triplanar). Nothing from the game is attached to this note.
+(recoloured, high-pass detail transferred triplanar). Nothing from the game is attached to this note. Saber's mod
+rules forbid AI-generated content in mods (see the foundations note's Setup), so keep builds with the Tripo meshes
+private and use hand-made meshes for a release.
 
 ## Open questions
 - Root cause of the convex-shape physics crash on exported props.
