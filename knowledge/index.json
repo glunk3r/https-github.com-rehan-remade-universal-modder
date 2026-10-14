@@ -999,6 +999,38 @@
   ]
  },
  {
+  "path": "games/command-and-conquer-generals-zero-hour/persistent-server-headless-sim-seats-and-scripted-ai-late-join.md",
+  "kind": "game",
+  "title": "Zero Hour persistent server: embedded headless sim, seats, scripted AI late-join",
+  "game": "Command & Conquer Generals: Zero Hour",
+  "games_also": [],
+  "game_version": "Steam Zero Hour 1.04 data + EA GeneralsMD source release",
+  "platform": "windows",
+  "engine": "native",
+  "route": "reimplementation",
+  "tools": [
+   "llvm-mingw",
+   "cmake",
+   "ninja"
+  ],
+  "anti_cheat": "none (offline engine reimplementation; no online client touched)",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code"
+  ],
+  "humans": [],
+  "date": "2026-10-14",
+  "links": [],
+  "tags": [
+   "sage",
+   "headless",
+   "dedicated-server",
+   "lockstep",
+   "savegame",
+   "skirmish-ai"
+  ]
+ },
+ {
   "path": "games/crash-bandicoot-n-sane-trilogy/croc-inside-crash-n-sane-live-two-engine-mashup.md",
   "kind": "game",
   "title": "Croc inside Crash N. Sane: live two-engine mashup and native port",
