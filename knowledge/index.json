@@ -1001,7 +1001,7 @@
  {
   "path": "games/command-and-conquer-generals-zero-hour/persistent-server-headless-sim-seats-and-scripted-ai-late-join.md",
   "kind": "game",
-  "title": "Zero Hour persistent server: embedded headless sim, seats, scripted AI late-join",
+  "title": "Zero Hour persistent world: one engine build as client and server, seats, scripted AI late-join",
   "game": "Command & Conquer Generals: Zero Hour",
   "games_also": [],
   "game_version": "Steam Zero Hour 1.04 data + EA GeneralsMD source release",
