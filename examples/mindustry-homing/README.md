@@ -39,16 +39,23 @@ python3 -m zipfile -c /tmp/modlab-homing-lab.zip mod.json content scripts sprite
 
 ## Read the saved run
 
-Open `modlab-last-run.json` in the optional independent
-[log viewer](https://modlabguides.online/tools/universal-modder-run-log-viewer). After the page loads,
-selected file contents are read locally; no account or API key is needed. The
-[MIT standalone source](https://github.com/liubrain39/universal-modder-run-log-viewer) can also be served
-locally.
+The helper writes `modlab-last-run.json` to the game-data folder, the parent of the folder that
+**Mods → Open Folder** opens. It is plain JSON, written when the 30 seconds are up and again when F9 exits the lab:
 
-Lane 0 is the straight baseline; lane 1 is homing. The viewer checks counts and simulation timing before
-showing percentages. Zero shots have no hit percentage, and unfinished logs stay marked incomplete.
-On the web viewer, use **View / copy CSV** for the selected run's rows. The checks do not authenticate a log's
-origin or turn the scripted arena into a normal-play benchmark.
+- `shots` and `hits` have two entries. Index 0 is the straight baseline lane and index 1 is the homing lane.
+  Shots are each turret's `totalShots`; hits are `UnitDamageEvent`s on a lane's target from bullets its own
+  turret fired.
+- `simulationTicks` and `durationSeconds` (ticks / 60) are simulation time, which stops while the game is
+  paused.
+- `finished` is `false` if F9 ended the run before 30 seconds. Those counts are not a finished comparison.
+
+A lane with zero shots has no hit percentage. The counts describe this scripted arena only: they don't prove
+where a log came from, and they are not a normal-play benchmark.
+
+Optional: ModLab's [run log viewer](https://github.com/liubrain39/universal-modder-run-log-viewer) (MIT, by
+this example's author) is a static page that shows both lanes, checks the counts and timing, and previews or
+downloads the selected run as CSV. Served locally with `python3 -m http.server`, it reads the file in the
+browser and sends it nowhere.
 
 ## Recorded verification
 
