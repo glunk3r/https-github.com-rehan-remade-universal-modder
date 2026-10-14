@@ -9,6 +9,9 @@ date: '2026-10-13'
 links:
 - https://github.com/cadmic/mwcc-debugger
 - https://github.com/InusualZ/mhtri-decomp/tree/main/tools/mwcc-debugger
+- https://github.com/stephenjayakar/melee-mwcc-register-skill
+- https://github.com/zeldaret/tww/blob/main/docs/regalloc.md
+- https://github.com/zcanann/SFA-Decomp/blob/main/docs/allocation_model.md
 tags:
 - mwcc
 - register-allocation
@@ -35,8 +38,9 @@ tags:
 - objdiff reports a function at high % where the only diffs are register operands
   (`DIFF_ARG_MISMATCH`) on otherwise identical instructions — a colour permutation, e.g.
   a 3-cycle `{a,b,c}` allocated `{R1,R2,R3}` instead of `{R3,R1,R2}`.
-- You have (or can build) `cadmic/mwcc-debugger`, and the exact compiler version that
-  produced the target.
+- You have (or can build) `cadmic/mwcc-debugger` (upstream supports GC/1.1 and GC/2.6; other
+  builds need a derived version row, step 1), and the exact compiler version that produced the
+  target.
 - A permuter / declaration reordering / type changes have stopped moving the score.
 
 ## How
@@ -47,14 +51,22 @@ tags:
    For an unsupported MWCC build, a `versions.py` row can be derived from the compiler's
    own CodeView symbol blob + the `_CodeGen_Generator`/`_colorinstructions` drivers (the
    Windows-native port documents the recipe).
-2. **Read the colour order.** MWCC (Chaitin) walks variables in **descending vreg index**
-   and hands out saved registers `r31, r30, r29, …` in that order. So among the webs that
-   want callee-saved registers, **ascending vreg index ⇒ ascending register number**.
-3. **Know how vreg indices are assigned.** Declared function locals occupy one contiguous
-   block numbered in **reverse declaration order** (first-declared local = highest index of
-   the block). Compiler-generated temporaries (constant pools, bit-extract/field-load temps)
-   are numbered **above** the entire local block. A first-declared local therefore sits one
-   below the temp floor and usually **cannot** out-rank a pool temp by reordering.
+2. **Read the colour order.** MWCC (Chaitin) builds its priority list by scanning the vregs
+   in ascending index and pushing each web whose degree is below the free-register count to
+   the front, so within one pass (a "level") the colouring order is **descending vreg index**,
+   and new saved registers are handed out `r31, r30, r29, …` in that order (cadmic's
+   mwcc-debugger README). A web with too many neighbours waits for a later level. So among the
+   webs of one level that want callee-saved registers, **ascending vreg index ⇒ ascending
+   register number**.
+3. **Know how vreg indices are assigned.** In this function on `Wii/0x4201_127`, declared
+   locals occupied one contiguous block numbered in **reverse declaration order**
+   (first-declared local = highest index of the block). Compiler-generated temporaries
+   (constant pools, bit-extract/field-load temps) were numbered **above** the entire local
+   block. A first-declared local therefore sat one below the temp floor and could **not**
+   out-rank a pool temp by reordering. Vreg ids come from the post-optimisation IR, so treat
+   this as an observation for this compiler rather than a law: a write-up of Melee's GC/1.2.5n
+   allocator (stephenjayakar/melee-mwcc-register-skill) says the ids "do not encode lexical
+   declaration order".
 4. **Pick the lever.**
    - To **de-cycle** a variable, split its lifetime: introduce a second local that carries
      the value over a later region (`T* x2 = x;` and use `x2` after the split point). This
@@ -84,7 +96,10 @@ f32* const pe = p3 - 3;                // folded to the same address, but a *tem
 ```
 The frontend folds `(g+3)-3` back to `g` **as an address temp numbered above the pool**, so
 the descending-vreg colouring hands it the pool's register (`r30` instead of `r28`). On the
-real function: **93.4368 → 94.3914**. Two further *shapes* completed it:
+real function: **93.4368 → 94.3914**. This is the lever cadmic's mwcc-debugger README lists as
+"making something a compiler temp instead of a real variable"; the sub-address form is one way to
+get a temp for a constant address that otherwise stays a declared local. Two further *shapes*
+completed it:
 - **type change to defeat a CSE:** `u8`/`s8 playerIdx` (not `s32`) stops the frontend hoisting
   the four `(u8)playerIdx` call casts into one `clrlwi`, reproducing retail's per-call
   truncation (`95.9427`; note a *signed* `s8` leaves a stray `extsb`, `u8` is clean);
@@ -106,9 +121,12 @@ spellings differ whenever the frontend mints different temps/CSEs. So the lever 
    *through an adjacent temp* (`p = g + k; x = p - k;`) changes its **class** (local → compiler
    temp) while staying one web — that **does** recolour it. Splitting and sub-addressing are
    different levers; try both.
-3. **Degree ≠ priority.** Interference degree does not drive the order; adding co-live
-   temporaries to "raise a variable's degree" does not move its saved register. The order is
-   vreg-index order (rule 1).
+3. **Degree ≠ priority, below the threshold.** Here, adding co-live temporaries to "raise a
+   variable's degree" did not move its saved register: within a level the order is vreg-index
+   order (rule 1). Degree only matters once a web has as many neighbours as there are free
+   registers (29 GPRs; a value live across a call also counts the 11 volatile GPRs as
+   neighbours). Then it waits for a later level, which the mwcc-debugger README lists as a lever
+   (adding neighbours, e.g. through coalesced copies).
 4. **A declared local can't out-rank a pool by reordering — so make it a temp.** The pool is a
    temp above the local block, so a first-declared local can't beat it by shuffling. But the
    sub-address form (§ How) puts the value in the **temp class** and colours it *above* the
@@ -142,8 +160,11 @@ before trusting an UNSAT.
   chance), and the model explicitly **declines the reloc-bearing address-materialization class**
   ("a measured refusal"). That class is exactly a `const f32* p = &global;` local, so this
   independently predicts our wall.
-- **`doldecomp/melee` `references/allocator-rules.md`** — colouring is driven by post-optimization
-  IR vreg IDs, not lexical declaration order ("only indirect evidence"), matching rule 1.
+- **`stephenjayakar/melee-mwcc-register-skill` `references/allocator-rules.md`** (Melee's GC/1.2.5n
+  compiler, not the Wii one) — the allocator scans vreg ids upward and pushes each removed node at
+  the head of the colouring list, so the order is reversed vreg order, matching rule 1. The ids come
+  from the post-optimisation IR, not lexical declaration order (its `SKILL.md`: declaration order
+  is "only indirect evidence").
 - **`zeldaret/tww` `docs/regalloc.md`** — declaration shuffle, base-pointer alias, cast style
   (`static_cast` vs C-cast), `const`, and temp decomposition are the documented levers; all are
   allocator-inert or regressive for a rematerializable constant address.
@@ -153,11 +174,16 @@ before trusting an UNSAT.
 
 ## Seen in
 - Mario Kart Wii (`mkw`, repo `rasanaruto-lgtm/mkw`) — `KartState::updateCollisions`:
-  **86.993% → 97.7327%** (838/838 instructions) with the stock `0x4201_127`. Four source
+  **86.993% → 97.7327%** (838/838 instructions) with the stock `Wii/0x4201_127` (decomp.me
+  `mwcc_42_142`). Four source
   *shapes* landed (sub-address temp, `u8 playerIdx`, typed virtual call, inline `dotZY`
   boundary); the last **19** instructions are allocator/scheduler-locked (a GPR colour tie, FPR
   names, a dot/sqrt schedule) and resisted ~150k+ candidates plus a full reverse-engineering of
   the compiler's allocator *and* scheduler. Full per-agent log + a queryable SQLite dataset
   (`subagents.db`; tables `agents/trials/regalloc/findings/rules/harvest_methods/tools_built/
   proofs`, tools `analyze_db/regstate_graph/colour_solver/kb_retrieval/run_and_log`) live in that
-  repo's `SUBAGENT_FIELD_NOTES_updateCollisions.md` and `subagent_data/`.
+  repo's `SUBAGENT_FIELD_NOTES_updateCollisions.md` and `subagent_data/`, on its `sync-doldecomp`
+  branch. As of 2026-10-13 the pushed notes stop at the 93.44% split; the sub-address-temp and
+  later shapes aren't pushed yet.
+- The earlier session on the same function (workflow, objdiff, decomp.me, the address-of lever)
+  is [the closing-gaps note](closing-mwcc-register-allocation-gaps-in-a-matching-decompil.md).

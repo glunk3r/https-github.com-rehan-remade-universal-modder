@@ -8,6 +8,7 @@ humans: []
 date: '2026-10-12'
 links:
 - https://github.com/snailspeed3/mkw
+- https://github.com/cadmic/mwcc-debugger
 - https://github.com/encounter/objdiff
 - https://decomp.me
 tags:
@@ -88,12 +89,17 @@ Other moves that moved the needle on the same function:
   does not always help (address-of on ~half the members we tried was neutral or worse), so
   measure each: the win comes from the *value moving into a higher callee-saved register*,
   which you can only confirm with objdiff. This is also the class of change a C-only permuter
-  (oblivious to which `T*` vs `T**` forms move the allocation) tends to miss.
+  (oblivious to which `T*` vs `T**` forms move the allocation) tends to miss. Why it works (an
+  overlapping live range) and when it backfires (on a rematerialisable value it collapsed a 93%
+  function to ~63%) is in
+  [the vreg-index note](mwcc-register-allocation-vreg-index-colouring-rule-and-the-l.md), Gotchas 1
+  and 5.
 
 When you genuinely cannot see the original lifetimes, use **decomp.me**, which is the
 workflow the MWCC decomp projects themselves use: every hard/nonmatching function in the
 repo carries a `// https://decomp.me/scratch/...` link. A scratch gives you the exact
-compiler (`mwcc_42_142` for Wii), a **stack diff** and regswap highlighting. You can create
+compiler (`mwcc_42_142` for MKW: dtk's `tools/project.py` maps `Wii/0x4201_127` to it), a
+**stack diff** and regswap highlighting. You can create
 one from the command line: read the unit's `scratch` metadata out of `objdiff.json`
 (`platform`, `compiler`, `c_flags`, and the preprocessed context at `*.ctx`), then
 `POST https://decomp.me/api/scratch` with JSON fields `name`, `compiler`, `platform`,
@@ -145,3 +151,7 @@ disassembly lines. The returned `slug` gives you `https://decomp.me/scratch/<slu
   (`// this variable was needed for matching purposes`,
   `// this is functionally equal to ... but this was needed to match`, `volatile` locals,
   `register` locals, `(double)0; // Hack to match`).
+- Continued from 86.99% to 97.73% in
+  [the vreg-index note](mwcc-register-allocation-vreg-index-colouring-rule-and-the-l.md), which
+  explains the colouring order behind these levers and adds the lifetime-split and sub-address-temp
+  levers.
