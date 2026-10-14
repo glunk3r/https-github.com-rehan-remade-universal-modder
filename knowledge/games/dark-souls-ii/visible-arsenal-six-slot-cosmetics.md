@@ -1,14 +1,14 @@
 ---
 kind: game
-title: "Visible Arsenal: six equipped weapons through independent native cosmetic parts"
+title: "Visible Arsenal: all six equipped weapons shown on the character, through native cosmetic model parts"
 game: "Dark Souls II: Scholar of the First Sin"
 games_also: []
 game_version: "Steam SotFS x64; tested EXE SHA-256 0045931B8914504531B7864A9488D396DC50CBAF524964016E1D69C3D1173131; displayed version not recovered"
 platform: windows
-engine: unknown
+engine: fromsoft
 route: native-hook
-tools: ["Mod Engine (installed binary fingerprint recorded)", "llvm-mingw-20261006-ucrt-x86_64", "clang 23.1.3", "C++20", ".NET 8 diagnostic tools", "Smithbox parameter definitions", "DS2AnimToolset"]
-anti_cheat: "Offline-only test scope; existing Mod Engine blockNetworkAccess=1 retained; no online tests or bypasses"
+tools: ["Mod Engine (Katalash, dinput8.dll)", "llvm-mingw-20261006-ucrt-x86_64", "clang 23.1.3", "C++20", ".NET 8 diagnostic tools", "Smithbox parameter definitions", "DS2AnimToolset"]
+anti_cheat: "no client anti-cheat, but the game has online play: offline only, with Mod Engine blockNetworkAccess=1 on for every run; nothing tested online"
 status: in-progress
 agents: ["Codex (GPT-6)"]
 humans: ["jkjkj2805"]
@@ -17,15 +17,29 @@ links: ["https://www.nexusmods.com/darksouls2/mods/978", "https://www.nexusmods.
 tags: ["cosmetic-weapons", "native-model-lifetime", "dummy-polygons", "parallel-rendering", "replay-tests", "compatibility"]
 ---
 
-# Visible Arsenal: six equipped weapons through independent native cosmetic parts
+# Visible Arsenal: all six equipped weapons shown on the character, through native cosmetic model parts
 
-Visible Arsenal v0.1 used native weapon resources and storage attachment points to display six equipped weapons in an offline SotFS session: stock hand models plus up to four independent cosmetic parts. Saved October 9, 2026 diagnostics and human visual confirmations support the result, including Steam autoload and a newly created character. This note was reconstructed from those retained project records; the original project directory was unavailable during the October 12 review, so neither current files nor a new live run were verified. A game shutdown crash remains unresolved and also occurred in a control run without Visible Arsenal.
+> Visible Arsenal v0.1 is a native DLL for Dark Souls II: Scholar of the First Sin that shows all six equipped
+> weapons on the character: the two in hand as usual, plus up to four extra cosmetic model parts hung on the
+> game's own weapon storage points, in an offline session. Diagnostics saved on October 9, 2026 and the human's
+> visual checks back it up, including autoloading from Steam and a newly created character. The note was
+> reconstructed from those saved project records; the project folder wasn't available when it was written, so
+> nothing was re-run for it. A crash on game exit is unresolved, and it also happened without the DLL.
 
 ## Setup
 
 The tested composition was Steam SotFS x64, **Seeker of Fire 2.1.4**, **DS2LightingEngine 0.9.36**, and an existing Deep Shadows configuration. The latter's exact version was not recovered; do not infer wider compatibility from its presence. The EXE fingerprint is in the front matter. The installed Mod Engine binary was identified by SHA-256 `707539A9A11FCDC1B95483A63582B1E46827B9D66550A3FDB2580E54B439A8B5`; the installed lighting proxy by `A6FB2601C1C9C8FB2D7BB2224CB1043C8643EDC84BAB1CBB3B91BC0DACB0BFAB`. An upstream Mod Engine release number was not established.
 
 The private v0.1 DLL fingerprint was `CCFA5F19C04462E70495B81C436F7F204BA0EFCDA36D2DEFA2982ED7BFC12906`, revision `native-independent-parts-v3`. It was built with C++20 and clang 23.1.3 from the dated llvm-mingw UCRT x64 package, using warnings as errors and the Windows bcrypt library for fingerprint checks. No third-party hooking-library dependency is established by the retrieved build record.
+
+Mod Engine here is Katalash's legacy ModEngine, which supports SotFS and which Seeker of Fire ships as
+`dinput8.dll` plus `modengine.ini`. Its ini has `blockNetworkAccess` (default 1) and `chainDInput8DLLPath`, the
+chain option that loaded the cosmetic DLL here.
+
+**Offline only.** Dark Souls II has online play (the PC SotFS servers have been back since October 2022), so
+every run was offline: the installed Mod Engine's `blockNetworkAccess=1` was on, so the hooked game was kept off
+FromSoftware's servers, and nothing was tested online. Keep it on while this DLL (or any hook) is loaded, and
+don't remove it to work around the exit crash (Gotcha 6).
 
 ## Route and why
 
@@ -35,9 +49,9 @@ The existing `dinput8.dll` Mod Engine and `dxgi.dll` lighting proxy were retaine
 
 ## How the game works (what we had to learn)
 
-`ChrEquipWeaponCtrl`, `ChrAsmCtrl`, `ChrAsmModel`, `ChrAsmModelParts` and `ChrAsmModelPoseDummyPolygon` are useful native boundaries. Six equipped slots are read as LH1-LH3 and RH1-RH3, mapped to resource sources 5-10 in this build. Readiness requires agreement between equipped item, resource, type row and loaded asset; equipment entries alone are insufficient.
+`ChrEquipWeaponCtrl`, `ChrAsmCtrl`, `ChrAsmModel`, `ChrAsmModelParts` and `ChrAsmModelPoseDummyPolygon` are useful native boundaries (all five are in the public SotFS vftable list in GrandpaGameHacker/DS2Mod, `Notes/Ds2Objects.txt`). Six equipped slots are read as LH1-LH3 and RH1-RH3, mapped to resource sources 5-10 in this build. Readiness requires agreement between equipped item, resource, type row and loaded asset; equipment entries alone are insufficient.
 
-`WeaponTypeParam` carries storage modes and separate character/weapon dummy IDs. A dummy ID is not a bone-array index. Public [Smithbox definitions](https://raw.githubusercontent.com/vawser/Smithbox/main/src/Smithbox.Data/Assets/PARAM/DS2S/Defs/WEAPON_TYPE_PARAM.xml) document the fields; the local Seeker parameter supplied the actual rows. Pose handling can use animated dummy attachment rather than a world-space ornament. [DS2AnimToolset](https://github.com/LordRadai/DS2AnimToolset) was a format/reference aid, not proof of runtime behavior.
+`WeaponTypeParam` carries storage modes and separate character/weapon dummy IDs (`dmyPolyId…Chr` and `dmyPolyId…Weapon`, with right and left storage variants). A dummy ID is not a bone-array index. Public [Smithbox definitions](https://raw.githubusercontent.com/vawser/Smithbox/main/src/Smithbox.Data/Assets/PARAM/DS2S/Defs/WEAPON_TYPE_PARAM.xml) document the fields; the local Seeker parameter supplied the actual rows. Pose handling can use animated dummy attachment rather than a world-space ornament. [DS2AnimToolset](https://github.com/LordRadai/DS2AnimToolset) was a format/reference aid, not proof of runtime behavior.
 
 The planner excludes resources already visible through stock parts, omits empty/unready slots, selects native storage anchors and separates competing placements into layers. Ownership is by slot source and the item/resource/asset combination, so a change to that combination destroys/replaces the relevant owned instance instead of periodically recreating all extras.
 
@@ -117,4 +131,3 @@ The original elapsed effort was not reconstructed. This retrospective review use
 - Current installation integrity cannot be asserted until the original project is accessible and fingerprints are checked again.
 - A public, licensed source release would be needed for independent reproduction; this knowledge note is not that release and includes no private profile or DLL.
 
-Related field note: [what an observed effect can and cannot prove](../../techniques/authored-effects-are-not-player-agency-evidence.md).
