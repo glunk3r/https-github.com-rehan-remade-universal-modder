@@ -49,7 +49,8 @@ Considered and rejected:
   plugin, running `ClassInjector`, and fighting IL2CPP stripping, to change one float. The game's own
   loader does it with a JSON field.
 - **Native hooks** — no need; there is no loader gap to fill.
-- **Asset editing (UABEA/AssetRipper)** — items are not defined in the shipped assets (see below).
+- **Asset editing (UABEA/AssetRipper)** — item values weren't found in any asset UnityPy could read (see
+  below), and the game's own loader already replaces an item.
 
 ## How the game works (what we had to learn)
 
@@ -103,21 +104,25 @@ encode the item id: `100<4-digit id>` is the item **name**, `110<4-digit id>` is
 arrows 150–152.
 
 Vanilla *values* (how much hunger item 211 restores) could not be read from anything on disk:
-the 22 `TextAsset`s in `resources.assets` are dialogue, quests and rig data only; IL2CPP builds strip
-typetrees so UnityPy cannot read `MonoBehaviour` (it raises a short-read byte-count error);
-`env.container` is empty; and the saves under `GameData\*.game` are binary. Getting the vanilla table
-needs `GameAssembly.dll` decompiled (Cpp2IL).
+the 22 `TextAsset`s in `resources.assets` are dialogue, quests and rig data only; the player build ships
+without type trees, and for an IL2CPP game UnityPy has no managed DLLs to rebuild them from, so reading a
+`MonoBehaviour` fails (it raises a short-read byte-count error); `env.container` is empty; and the saves
+under `GameData\*.game` are binary. Next steps, untried: generate type trees from Il2CppDumper's or Cpp2IL's
+dummy assemblies (or open the game in AssetRipper, which reads IL2CPP builds through Cpp2IL) to read
+`MonoBehaviour`/`ScriptableObject` data; if the values turn out to be hard-coded, read them from Cpp2IL's
+output for `GameAssembly.dll`.
 
 **Other useful facts.** The mod manager's own config is
 `%USERPROFILE%\AppData\LocalLow\LevenLiu\ZEDZONE\mod_manager_config.json`, `{"disabledGuids": []}`.
-The game keeps a mod *workspace* at the same place under `Mods\Workspace\<guid>\` — an unpacked copy of
+The game keeps a mod *workspace* in that same folder, under `Mods\Workspace\<guid>\` — an unpacked copy of
 each loaded mod, which is a handy confirmation that a mod was processed. The game has its own safety nets:
 missing mod items are shown as grey blocks, and obviously wrong mod values trigger an "abnormal MOD item
-values" warning. Multiplayer co-op syncs mods from the host automatically.
+values" warning. Co-op reportedly syncs mods from the host automatically; that wasn't tested here, and the
+Steam page lists the game as single-player.
 
 ## Build steps
 
-```bash
+```text
 # 1. Back up saves first (the save folder holds everything: worlds, characters, mod workspace)
 um backup create "%USERPROFILE%\AppData\LocalLow\LevenLiu\ZEDZONE" --name zedzone-saves
 
@@ -126,14 +131,15 @@ um backup create "%USERPROFILE%\AppData\LocalLow\LevenLiu\ZEDZONE" --name zedzon
 #    -> item id 232
 
 # 3. Zip a mod.json + a 32x32 sprite.png (+ optional preview.jpg) into <uuid>.zedmod
-#    mod.json: modType "Food", publishMode 1, targetNativeItemId 232, runtimeId 232, hunger 200
+#    mod.json: modType "Food", publishMode 1, targetNativeItemId <id>, runtimeId <id>, hunger 200
+#    (the tested mod used item 211, Canned Fruit)
 
 # 4. Install it — the per-type folder is required
 #    copy <uuid>.zedmod to  "<install>\Mods\Food\<uuid>.zedmod"
 
 # 5. Launch, then verify in two places
 #    %USERPROFILE%\AppData\LocalLow\LevenLiu\ZEDZONE\Player.log
-#    in game: pause menu -> MOD管理器
+#    in game: pause menu -> MOD管理器 (MOD manager)
 ```
 
 ## Verification
@@ -148,12 +154,14 @@ Two oracles were used.
 [ModLoader] Workshop 订阅加载完成，117 个 Mod 加载成功。
 ```
 
-No `异常` / `配置问题` / `无法加载` warnings. The game also unpacked the mod into
-`Mods\Workspace\<guid>\`, confirming it was processed rather than merely scanned.
+The lines read "loaded: Canned Fruit", "local loading done, 1 mod loaded" and "Workshop subscriptions loaded,
+117 mods loaded". No `异常` (abnormal) / `配置问题` (config problem) / `无法加载` (can't load) warnings. The game
+also unpacked the mod into `Mods\Workspace\<guid>\`, confirming it was processed rather than merely scanned.
 
-**The game's own MOD manager** (pause menu → `MOD管理器`) is the visual one. Its table has a `模式` column
-that prints the publish mode directly, and local mods are distinguishable because they carry **no**
-`(创意工坊)` suffix:
+**The game's own MOD manager** (pause menu → `MOD管理器`) is the visual one. Its columns are name, type,
+mode (`模式`) and state. The mode column prints the publish mode directly (`新物品` new item, `替换211`
+replaces 211; `激活` is active), and local mods are distinguishable because they carry **no** `(创意工坊)`
+(Workshop) suffix:
 
 ```
 名称             类型    模式      状态
@@ -176,8 +184,9 @@ replacement — and therefore the value — is live.
    (the folder name must match `modType`). Diagnosed by installing two probes with different target items
    in one launch — flat vs. sub-folder — and seeing which one the log named.
 2. **`um win shot` times out on a Unity game that is not focused.** Symptom:
-   `subprocess.TimeoutExpired ... gfxcapture=window_exe=...` and no PNG. **Cause:** Unity throttles
-   rendering when unfocused, so Windows.Graphics.Capture never delivers a frame — this is *not* a crash.
+   `subprocess.TimeoutExpired ... gfxcapture=window_exe=...` and no PNG. **Cause:** the game stops
+   redrawing while unfocused (most likely Unity's Run In Background is off), and gfxcapture only delivers a
+   frame when the window redraws — this is *not* a crash.
    **Fix:** `um win drive --proc ZEDZONE "focus"` first, then capture.
 3. **The driver's client rect disagrees with the screenshot's size.** Symptom: `um win drive ... "rect"`
    reports `1536x864` while `um win shot` writes `1920x1080`. **Cause:** display scaling of 125%; the
@@ -221,5 +230,6 @@ final artifact). The delivered mod is 2.3 KB. No paid API calls.
 - The exact `locale` and `audio` pack formats.
 - How `runtimeId` is allocated for *new* items — observed 6-digit ids (e.g. `633939`, `704059`) against
   vanilla's small ids (2xx, 1xxx).
-- The vanilla item value table, which needs a Cpp2IL pass over `GameAssembly.dll`. That would turn
+- The vanilla item value table (type trees from Il2CppDumper/Cpp2IL dummy assemblies, AssetRipper, or
+  Cpp2IL output for `GameAssembly.dll`; see How the game works). That would turn
   "hunger → 200" into a real before/after.
