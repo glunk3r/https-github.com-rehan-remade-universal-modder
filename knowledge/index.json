@@ -4873,6 +4873,51 @@
   ]
  },
  {
+  "path": "games/second-life/rigged-wedge-ballet-boots-for-ebody-reborn-feet-with-a-pbr-c.md",
+  "kind": "game",
+  "title": "Rigged wedge ballet boots for eBody Reborn feet with a PBR color HUD (PRIM_GLTF_BASE_COLOR)",
+  "game": "Second Life",
+  "games_also": [],
+  "game_version": "Firestorm 7.2.4.80712 (Windows x64); main grid, October 2026",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "asset-only",
+  "tools": [
+   "Blender 4.5 (headless, Python; Cycles bakes, Workbench for the HUD art)",
+   "eBody Reborn Dev Kit 2.0 (Blender 3.6.7 / Avastar .blend; private, by application)",
+   "Firestorm 7.2.4 (mesh, material and texture uploaders)",
+   "LSL"
+  ],
+  "anti_cheat": "none (online world; content goes through the official mesh / material / texture uploaders and LSL, the viewer is not modified)",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [],
+  "date": "2026-10-15",
+  "links": [
+   "rigged-mesh-hobble-dress-for-ebody-reborn-waifus-headless-bl.md",
+   "https://wiki.secondlife.com/wiki/PRIM_GLTF_BASE_COLOR",
+   "https://wiki.secondlife.com/wiki/LlRegionSayTo",
+   "https://wiki.secondlife.com/wiki/LlDetectedTouchST"
+  ],
+  "tags": [
+   "second-life",
+   "firestorm",
+   "rigged-mesh",
+   "collada",
+   "blender",
+   "pbr",
+   "gltf",
+   "lsl",
+   "hud",
+   "color-change",
+   "face-numbers",
+   "procedural-texture",
+   "baking"
+  ]
+ },
+ {
   "path": "games/sid-meier-s-civilization-v/new-civ-animated-3d-leader-scene.md",
   "kind": "game",
   "title": "A new civilization with an animated 3D leader scene on a stock leader rig in Civilization V",
