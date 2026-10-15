@@ -1470,6 +1470,43 @@
   ]
  },
  {
+  "path": "games/dark-souls-remastered/ai-party-companions-solaire-tarkus-beatrice-for-the-whole-ga.md",
+  "kind": "game",
+  "title": "AI party companions (Solaire, Tarkus, Beatrice) for the whole game, plus Andre's boxing moveset on fists",
+  "game": "DARK SOULS: REMASTERED",
+  "games_also": [],
+  "game_version": "App ver 1.03.1, Steam 570940, DarkSoulsRemastered.exe 50,286,344 bytes (same build as the portal-gun note)",
+  "platform": "windows",
+  "engine": "fromsoft",
+  "route": "data",
+  "tools": [
+   "UXM Selective Unpack 2.4.2.0",
+   "SoulsFormats + Paramdex (from DS Map Studio's folder), .NET 8",
+   "Seamless Co-op for DSR (only for its separate save, played offline)",
+   "Python 3.8 (own Lua 5.0 and Havok 2015 tagfile tools)"
+  ],
+  "anti_cheat": "none client-side; FromSoftware servers are live, so offline only through Seamless Co-op (separate .co2 save)",
+  "status": "released",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [],
+  "date": "2026-10-15",
+  "links": [],
+  "tags": [
+   "companions",
+   "npc-summons",
+   "emevd",
+   "lua-bytecode",
+   "params",
+   "msb",
+   "havok-tagfile",
+   "animation-retarget",
+   "moveset",
+   "tae"
+  ]
+ },
+ {
   "path": "games/dark-souls-remastered/portal-gun-prototype-via-dinput8-proxy-dll-player-camera-and.md",
   "kind": "game",
   "title": "Portal gun prototype via dinput8 proxy DLL: player, camera and angle offsets",
