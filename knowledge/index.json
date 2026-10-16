@@ -771,6 +771,43 @@
   ]
  },
  {
+  "path": "games/batman-arkham-knight/splitscreen-one-view-composited-twice.md",
+  "kind": "game",
+  "title": "Split-screen co-op: the engine renders one view and composites it twice",
+  "game": "Batman: Arkham Knight",
+  "games_also": [],
+  "game_version": "Steam app 208650, buildid 13250859, exe sha256 2684B84D\u2026BFE1B83DB (Oct 2026)",
+  "platform": "windows",
+  "engine": "unreal",
+  "route": "loader-api",
+  "tools": [
+   "BmSDK (script loader)",
+   "RenderDoc 1.46.0",
+   "qrenderdoc --py",
+   "objdump/PE inspection"
+  ],
+  "anti_cheat": "Denuvo (DRM, not anti-cheat). Single-player / locally-hosted splitscreen only \u2014 never an online mode. RenderDoc attached by injection with no objection from Denuvo; if it had refused, we would have stopped rather than work around it.",
+  "status": "in-progress",
+  "agents": [
+   "OpenCode (DeepSeek V4.1 Flash)",
+   "Claude Code (auditor role, independent verification)"
+  ],
+  "humans": [],
+  "date": "2026-10-16",
+  "links": [],
+  "tags": [
+   "splitscreen",
+   "co-op",
+   "renderdoc",
+   "render-model",
+   "viewport",
+   "scene-capture",
+   "bmsdk",
+   "ue3",
+   "verification"
+  ]
+ },
+ {
   "path": "games/battlefield-4/frostbite-3-archive-and-ebx-formats.md",
   "kind": "game",
   "title": "Reading Frostbite 3 data: .toc/.sb/.cas archives, .cat catalog and .ebx binary XML (Battlefield 4)",
