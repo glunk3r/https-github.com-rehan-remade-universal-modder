@@ -5647,6 +5647,42 @@
   ]
  },
  {
+  "path": "games/the-binding-of-isaac-rebirth/isaac-bot-vanilla-lua-autopilot-any-character.md",
+  "kind": "game",
+  "title": "Isaac Bot: a vanilla-Lua autopilot that plays Repentance+ runs with any character",
+  "game": "The Binding of Isaac: Rebirth",
+  "games_also": [],
+  "game_version": "Repentance+ v1.9.7.17.J460 (Steam 250900)",
+  "platform": "windows",
+  "engine": "native",
+  "route": "loader-api",
+  "tools": [
+   "um win shot",
+   "um win drive",
+   "um backup"
+  ],
+  "anti_cheat": "none (single-player; the bot is offline only)",
+  "status": "working",
+  "agents": [
+   "Claude Code (claude-opus-5-5)"
+  ],
+  "humans": [
+   "netlesha"
+  ],
+  "date": "2026-10-15",
+  "links": [
+   "https://github.com/netlesha/isaac-bot"
+  ],
+  "tags": [
+   "bot",
+   "autopilot",
+   "ai-player",
+   "lua",
+   "input-injection",
+   "pathfinding"
+  ]
+ },
+ {
   "path": "games/the-dark-legions/reloaded-single-dll-fix.md",
   "kind": "game",
   "title": "The Dark Legions Reloaded: crash fixes, a D3D8 -> D3D9Ex renderer, widescreen and new menus in one d3d8.dll",
