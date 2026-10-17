@@ -38,8 +38,9 @@ The other SM2 notes build on this one, and each fact lives in one of them:
   Converter and Map Converter references, uploading, playing with mods).
 - **Saber's mod rules (the docs' Legal Notice):** mods must not contain AI-generated or AI-assisted content, must
   not be sold, and may only use Warhammer 40,000 IP; uploading to Steam Workshop or saber.games means accepting the
-  EULA's Mods section. Several of these notes used AI-generated meshes, textures and TTS voices, so keep builds
-  that contain them private, and use hand-made art and recorded voices for anything you release.
+  EULA's Mods section. Several of these notes used AI-generated meshes and textures, so keep builds that contain
+  them private, and use hand-made art and recorded voices for anything you release. Their TTS voices were cloned
+  from a real voice actor, a route the voices note now drops (see its Assets).
 - Saber's Mod Tools (Steam app "Warhammer 40,000: Space Marine 2 - Mod Tools"). Prefer the standalone tool folder
   over the older copy inside the game. Docs ship in `ModEditor/documentation/` (`CLS_File_Guide.pdf`,
   `Enum_Extension_Tutorial.pdf`, `whitelisted_enums.txt`, `Map_Converter_Guide.pdf`, samples) and a modding how-to

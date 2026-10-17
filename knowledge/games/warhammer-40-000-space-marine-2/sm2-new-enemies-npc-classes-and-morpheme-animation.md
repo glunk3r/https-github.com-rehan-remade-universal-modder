@@ -206,7 +206,7 @@ donor creature: everything is cloned, because the engine keys animations by name
   override was ignored and the execution crashed (`interplaySequence` null). There is no unused retail xseq to borrow.
 
 ### Spawning in the testing arena
-- The testing-menu mod's copy of `xscenes/test_scene_mod/test_scene_mod_scenario_server.sso` sets
+- Testing Menu's copy of `xscenes/test_scene_mod/test_scene_mod_scenario_server.sso` sets
   `useDefaultArchetypesPoolsLibrary = False` with an explicit pool: add your `LevelArchetype` + `linksDescWeak` there.
 - Level actors: usable buttons tagged `usable_button_1..5`, spawn domains `dom_spawn_1..4`. Wiring:
   `GetFirstTaggedActor(tag)` -> `SubscribeToUsableActor` (`subscribeOnInitRef True`) `OnUsed` ->
