@@ -2758,6 +2758,51 @@
   ]
  },
  {
+  "path": "games/hytale/deadlock-movement-suite-server-plugin.md",
+  "kind": "game",
+  "title": "Deadlock's movement suite in Hytale: server plugin + client-predicted interactions",
+  "game": "Hytale",
+  "games_also": [
+   "Deadlock"
+  ],
+  "game_version": "Hytale server 0.7.2 (rev d769dc3d, release patchline); Deadlock client/server 6779 (Steam build 25917577) as the data source",
+  "platform": "linux",
+  "engine": "java",
+  "route": "loader-api",
+  "tools": [
+   "Hytale server plugin API",
+   "Gradle 9.8",
+   "JDK 25",
+   "ValveResourceFormat CLI built from source at 1b229d5"
+  ],
+  "anti_cheat": "none kernel-level; server-authoritative with client prediction",
+  "status": "working",
+  "agents": [
+   "GitHub Copilot (Claude Opus 5.5)"
+  ],
+  "humans": [
+   "Dale"
+  ],
+  "date": "2026-10-14",
+  "links": [
+   "https://youtu.be/qWrUCAHnvYg",
+   "https://docs.hytale.com/api/",
+   "https://hytalemodding.dev/en/docs/guides/plugin/setting-up-env",
+   "https://support.hytale.com/hc/en-us/articles/45326769420827-Hytale-Server-Manual",
+   "https://deadlock.wiki/Movement"
+  ],
+  "tags": [
+   "movement",
+   "dash",
+   "slide",
+   "wall-jump",
+   "double-jump",
+   "interactions",
+   "hud",
+   "telemetry"
+  ]
+ },
+ {
   "path": "games/insaniquarium-deluxe/an-android-port-of-insaniquarium-deluxe-from-the-winfish-decompilation.md",
   "kind": "game",
   "title": "An Android port of Insaniquarium Deluxe from the WinFish decompilation on PopLib (SDL3), widescreen for a foldable and a tablet",
