@@ -1,6 +1,6 @@
 ---
 kind: game
-title: 'Split-screen co-op: the engine renders one view and composites it twice'
+title: 'Batman: Arkham Knight split-screen: the engine renders one view and composites it twice'
 game: 'Batman: Arkham Knight'
 games_also: []
 game_version: 'Steam app 208650, buildid 13250859, exe sha256 2684B84D…BFE1B83DB (Oct 2026)'
@@ -8,19 +8,20 @@ platform: windows
 engine: unreal
 route: loader-api
 tools: ['BmSDK (script loader)', 'RenderDoc 1.46.0', 'qrenderdoc --py', 'objdump/PE inspection']
-anti_cheat: 'Denuvo (DRM, not anti-cheat). Single-player / locally-hosted splitscreen only — never an online mode. RenderDoc attached by injection with no objection from Denuvo; if it had refused, we would have stopped rather than work around it.'
+anti_cheat: 'none. Single-player game; local split-screen on one PC only, nothing online. Denuvo was removed from the Steam version on 2020-12-03 (PCGamingWiki), and the base game runs from its exe without DRM.'
 status: in-progress
 agents: ['OpenCode (DeepSeek V4.1 Flash)', 'Claude Code (auditor role, independent verification)']
 humans: []
 date: '2026-10-16'
-links: []
+links: ['https://github.com/Team-BmSDK/BmSDK-AK', 'https://renderdoc.org', 'https://github.com/etkramer/SplitScreenMod']
 tags: [splitscreen, co-op, renderdoc, render-model, viewport, scene-capture, bmsdk, ue3, verification]
 ---
 
-# Split-screen co-op: the engine renders one view and composites it twice
+# Batman: Arkham Knight split-screen: the engine renders one view and composites it twice
 
-> Batman: Arkham Knight has a split-screen co-op mode that only ever renders **one** camera and shows it
-> in both halves — the non-primary half comes out purple. This note is mostly about *how we proved that*,
+> Batman: Arkham Knight has no split-screen mode in its menus, but its UE3 base keeps multi-local-player
+> support. With a second local player, the screen splits, yet the engine only ever renders **one** camera and
+> shows it in both halves — the non-primary half comes out purple. This note is mostly about *how we proved that*,
 > because it killed an entire native-patching route: the engine does not draw a second view, so no amount
 > of patching camera matrices can produce one. Route: BmSDK script mods for the game logic, plus a
 > `SceneCapture2D` overlay for the second view. **The render model is proven; the overlay is built and
@@ -31,11 +32,13 @@ tags: [splitscreen, co-op, renderdoc, render-model, viewport, scene-capture, bms
 - **Game:** Batman: Arkham Knight, Steam app `208650`, buildid `13250859`.
   `BatmanAK.exe` sha256 `2684B84DEC2C31E5A00BFF070B00AE41D4FED4FC4BADE51E0D5BC64BFE1B83DB`
   — record this hash and re-check it after every tooling session; it is how you prove you changed nothing.
-- **Engine:** heavily modified UE3 (Rocksteady). `BmSDK` ships a .NET 10 runtime in
-  `Binaries\Win64\sdk\` (`BmSDK.dll` ~25 MB, `BmSDK.xml` ~33 MB — **the XML is the API surface, read it
-  before inventing an API**). The loader enters via a `dinput8.dll` proxy in `Binaries\Win64\`.
-- **Scripts:** one folder per mod under `BmGame\Mods\<Name>\` with `mod.toml` + `scripts\*.cs`.
-  C# is compiled at launch by the loader.
+- **Engine:** heavily modified UE3 (Rocksteady). [BmSDK-AK](https://github.com/Team-BmSDK/BmSDK-AK)
+  (Team-BmSDK, MIT; Steam copies only) ships a self-contained .NET 10 runtime in `Binaries\Win64\sdk\`
+  (`BmSDK.dll` ~25 MB, `BmSDK.xml` ~33 MB — **the XML is the API surface, read it before inventing an
+  API**). The loader enters via a `dinput8.dll` proxy in `Binaries\Win64\`: BmSDK's release bundles
+  ThirteenAG's Ultimate ASI Loader as that file, and it loads `BmSDK.Host` from `Binaries\Win64\plugins\`.
+- **Scripts:** one folder per mod under `BmGame\Mods\<Name>\` with `mod.toml` + `scripts\*.cs` (loose `.cs`
+  files in `BmGame\Scripts\` load as one implicit mod). C# is compiled at launch by the loader.
 - **RenderDoc 1.46.0** for the render question. The load-bearing detail: it is read **headlessly**
   (`qrenderdoc.exe --py script.py`), which is what made a 38-capture campaign cheap.
 - **Saves:** snapshot them before every modded launch. We used `um backup`.
@@ -135,9 +138,12 @@ whole explanation of the failed native patch, and it needs no special pleading.
 - **The overlay does not exist yet.** The render target and capture actor are built and deployed but
   deliberately left **switched off**; turning the capture on and drawing it is the next step. Do not read
   this note as "split-screen works".
-- The exact shader maths of the colour break is **not** recoverable with RenderDoc 1.46's Python binding —
-  `DisassembleShader` needs a resource-id object the binding cannot construct. We localised the break to a
-  composite pass and stopped rather than guess at the arithmetic.
+- The exact shader maths of the colour break. We read `DisassembleShader` as needing a resource id we'd
+  have to construct, and the binding wouldn't build one. It doesn't need one: take the pipeline id from the
+  replay's own state, as RenderDoc's own `D3D11_Shader_ISA` test does:
+  `controller.DisassembleShader(pipe.GetGraphicsPipelineObject(), pipe.GetShaderReflection(stage), target)`
+  with `pipe = controller.GetPipelineState()` and a target from `controller.GetDisassemblyTargets(True)`.
+  We localised the break to a composite pass and stopped rather than guess at the arithmetic.
 
 **The oracle we use:** a human looking at the real game outranks any log the agent generated. Every claim
 above is either a measurement with a file behind it, or labelled as unverified.
@@ -178,7 +184,9 @@ above is either a measurement with a file behind it, or labelled as unverified.
    **Fix:** call it statically and treat the returned dims as the only surface check available — ask for
    *w*×*h* and require *w*×*h* back. A failed create reads back zero, which *is* your null-surface branch.
 8. **`SceneCapture2DActor` has no component property.** **Cause:** the SDK surface for the actor is only the
-   generic block. **Fix:** reach the component **inside** the actor, with a hand-built-and-attach fallback
+   generic block. Stock UE3 declares the component on the base class (`SceneCaptureActor.SceneCapture`, a
+   `const SceneCaptureComponent`), and BmSDK-AK's generated `SceneCaptureActor` wrapper doesn't expose it
+   either. **Fix:** reach the component **inside** the actor, with a hand-built-and-attach fallback
    that can only run after the direct lookup fails — and log which route won. And note there is **no
    getter** for a capture's view, so you can prove the values you *drive* it with, never that the engine
    *accepted* them. Say that out loud instead of overclaiming.
@@ -186,8 +194,9 @@ above is either a measurement with a file behind it, or labelled as unverified.
    compilation unit; a combined build hides the missing reference until runtime (`CS0103` at load).
    **Fix:** compile **one mod at a time** in your gate, and replicate small helpers per mod rather than
    sharing.
-10. **RenderDoc's default capture key is `F12` — which the game (and our mod) also uses.** **Cause:**
-    RenderDoc 1.46 has **no external rebind** for the capture key. **Fix:** trigger captures from the
+10. **RenderDoc's default capture keys are `F12` and `Print Screen` — and the game (and our mod) also uses
+    `F12`.** **Cause:** RenderDoc 1.46's UI has no setting to rebind them; only the in-application API
+    (`SetCaptureKeys`, called from inside the game process) changes them. **Fix:** trigger captures from the
     RenderDoc **UI** instead — the conflict is then removed by construction. (For the record, pressing
     `F12` with both loaded fired both consumers cleanly in our case — but do not rely on that.)
 11. **`renderdoccmd capture <exe>` launches nothing.** No window, sub-second CPU, no error. **Cause:** that
@@ -223,5 +232,13 @@ expensive item was the ten days spent pursuing the native patch (route 1) with a
   "is the native route really dead?" It is dead *for us, with these tools*.
 - **Does `SceneCapture2D` render with the post-process stack and the right characters?** Unverified;
   it is the next gate.
-- **Is the colour break a deliberate readability effect or a packing bug?** Localised to a composite pass,
-  arithmetic unrecoverable with the current tooling.
+- **Is the colour break a deliberate readability effect or a packing bug?** Localised to a composite pass;
+  disassembling its pixel shader with the call above should answer it.
+
+## Related and credits
+- [BmSDK-AK](https://github.com/Team-BmSDK/BmSDK-AK) (Team-BmSDK, MIT), the script loader this route runs on,
+  and ThirteenAG's Ultimate ASI Loader, which its release ships as `dinput8.dll`.
+- [RenderDoc](https://renderdoc.org) (Baldur Karlsson, MIT) for the capture campaign.
+- [etkramer/SplitScreenMod](https://github.com/etkramer/SplitScreenMod) adds 2-4 player split-screen to
+  Batman: Arkham City on BmSDK-AC, by the BmSDK authors. It's the closest prior work, and a useful
+  comparison for what Arkham City's renderer does with a second local player.
