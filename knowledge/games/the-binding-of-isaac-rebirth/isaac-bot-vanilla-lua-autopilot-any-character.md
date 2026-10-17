@@ -8,7 +8,7 @@ platform: windows
 engine: native
 route: loader-api
 tools: [um win shot, um win drive, um backup]
-anti_cheat: none (single-player; the bot is offline only)
+anti_cheat: 'none; offline single-player runs only (never Daily Runs or online)'
 status: working
 agents:
 - Claude Code (claude-opus-5-5)
@@ -29,6 +29,15 @@ Caves I with item pickups, boss kills and auto-restart after death, checked in s
 - Mod folder `<install>/mods/isaac_bot` is an NTFS symlink to the working copy, so edits go live with the
   console command `luamod isaac_bot`.
 - Saves backed up first (`um backup create` on the Steam userdata and My Games folders).
+- **Offline single-player runs only.** Never run the bot in a Daily Run (they have a global leaderboard) or online.
+  The game won't start a Daily Run while mods or the debug console are active (wiki.gg, Daily Challenge page);
+  after the day's Daily it allows mods on practice runs, so keep the bot off those too. Players report that
+  Repentance+ online play can't be entered with mods enabled; don't pair the bot with third-party patches that
+  allow modded online play.
+- **It plays on your save.** Mods don't disable achievements once Mom has been beaten on the save file (IsaacDocs
+  modding FAQ), so the bot's unseeded runs count toward unlocks, Steam achievements and statistics. Runs with an
+  entered seed (`seed`, the bench) can't earn achievements (wiki.gg, Seeds page). Use a spare save slot if that
+  matters.
 
 ## Route and why
 `loader-api`: the game's own Lua API. `MC_INPUT_ACTION` answers movement, shooting, bomb and active-item
@@ -116,7 +125,6 @@ keyboard, needs focus) and REPENTOGON (extra dependency; the vanilla API was eno
    (sprite animation `"Closed"`, `State` 0) until the player walks away; a bot that heads straight for
    the exit never leaves it. Read `GridEntity:GetSprite():GetAnimation()`, and while it is `"Closed"`
    move 110-200 units away; it plays `"Open Animation"` -> `"Opened"` (State 1) and can then be entered.
-
 16. **Bridge dead after a fresh game launch.** `include()` searches only `resources/scripts/` until a
    `luamod` adds the mod folder, and returns the "no file ..." error string. **Fix:** a second channel in
    the mod's own save data (`<install>/data/<mod>/save1.dat`, read with `mod:LoadData()`): the host tool
@@ -130,8 +138,8 @@ keyboard, needs focus) and REPENTOGON (extra dependency; the vanilla API was eno
    heartbeat line with `paused`/`dead`/room age lets a host watchdog focus the window, press Esc, start a
    new run, or kill and relaunch by PID. The menus after a launch are cleared with Enter only (intro,
    title, file, Continue/New Run, character screen keeps the last character and difficulty).
-19. **Bedroom door is a bomb door.** **Cause:** bedrooms (RoomType 18/19, spawned only when the player is
-   low on red hearts) sit behind a door with `IsLocked()` true and variant 3 (DOOR_LOCKED_CRACKED); keys do
+19. **Bedroom door is a bomb door.** **Cause:** bedrooms (RoomType 18/19, more likely to spawn when the
+   player is low on health) sit behind a door with `IsLocked()` true and variant 3 (DOOR_LOCKED_CRACKED); keys do
    nothing and the bot pushed into it. **Fix:** treat it as needing two player bombs from the cell in front
    (step away while each bomb is down); without the bombs, never pick the room. To test it, a seeded floor
    regenerated with `stage N` at half a heart gets the bedroom.
