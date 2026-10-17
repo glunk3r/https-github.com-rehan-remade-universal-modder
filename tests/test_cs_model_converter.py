@@ -42,6 +42,19 @@ def test_extract_mesh_primitives(butterfly_knife_paths):
             norm_len = (v.normal[0]**2 + v.normal[1]**2 + v.normal[2]**2)**0.5
             assert abs(norm_len - 1.0) < 0.05, f"Normal not normalized: len={norm_len}"
 
+    xs = [v.pos[0] for prim in knife_prims for v in prim.vertices]
+    ys = [v.pos[1] for prim in knife_prims for v in prim.vertices]
+    zs = [v.pos[2] for prim in knife_prims for v in prim.vertices]
+    print(f"\n[BOUNDS] Knife: X=[{min(xs):.3f}, {max(xs):.3f}], Y=[{min(ys):.3f}, {max(ys):.3f}], Z=[{min(zs):.3f}, {max(zs):.3f}]")
+
+    # Verify arms mesh extraction
+    arms_prims = extract_mesh_primitives(butterfly_knife_paths["arms_glb"])
+    assert len(arms_prims) > 0
+    arm_xs = [v.pos[0] for prim in arms_prims for v in prim.vertices]
+    arm_ys = [v.pos[1] for prim in arms_prims for v in prim.vertices]
+    arm_zs = [v.pos[2] for prim in arms_prims for v in prim.vertices]
+    print(f"[BOUNDS] Arms: X=[{min(arm_xs):.3f}, {max(arm_xs):.3f}], Y=[{min(arm_ys):.3f}, {max(arm_ys):.3f}], Z=[{min(arm_zs):.3f}, {max(arm_zs):.3f}]")
+
 
 def test_build_cs_viewmodel_package(butterfly_knife_paths):
     """Verify that viewmodel package is generated with CSVM binary header, submeshes, and bone map."""
@@ -64,11 +77,13 @@ def test_build_cs_viewmodel_package(butterfly_knife_paths):
         assert vertex_count > 0
         assert index_count > 0
 
-    # Verify bone mapping contains key butterfly parts
+    # Verify bone mapping contains key butterfly parts AND arms
     bone_names = [sub.bone_name.lower() for sub in pkg.submeshes]
     assert any("blade" in b for b in bone_names)
     assert any("front" in b for b in bone_names)
     assert any("rear" in b for b in bone_names)
+    assert any("arm" in b or "glove" in b for b in bone_names), f"Arms missing from submeshes: {bone_names}"
+
 
 
 def test_cpp_binary_unpack_fidelity(butterfly_knife_paths):

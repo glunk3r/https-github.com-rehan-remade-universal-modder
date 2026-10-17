@@ -233,6 +233,36 @@ def build_cs_viewmodel_package(
         all_vertices = prim.vertices
         all_indices = prim.indices
 
+    # Append arms geometry if provided
+    if arms_glb and Path(arms_glb).is_file():
+        arms_prims = extract_mesh_primitives(arms_glb)
+        for arm_prim in arms_prims:
+            if not arm_prim.vertices or not arm_prim.indices:
+                continue
+            base_v = len(all_vertices)
+            first_idx = len(all_indices)
+            submeshes.append(
+                SubmeshRange(
+                    bone_name="arms_glove",
+                    bone_index=len(submeshes),
+                    first_index=first_idx,
+                    index_count=len(arm_prim.indices),
+                    base_vertex=base_v,
+                )
+            )
+            # Arm vertices in glTF are in character bind space (Y: 0.9 ~ 1.5).
+            # Transform to origin-centered viewmodel space aligned with knife.
+            transformed_arm_verts = []
+            for v in arm_prim.vertices:
+                # Center around wrist/knuckles and align forward/back
+                ax = v.pos[0] * 0.25
+                ay = (v.pos[1] - 1.25) * 0.25
+                az = (v.pos[2] + 0.05) * 0.25
+                transformed_arm_verts.append(Vertex(pos=(ax, ay, az), uv=v.uv, normal=v.normal, joints=v.joints, weights=v.weights))
+
+            all_vertices.extend(transformed_arm_verts)
+            all_indices.extend(arm_prim.indices)
+
     pkg = CSViewModelPackage(
         submeshes=submeshes,
         total_vertices=len(all_vertices),
@@ -265,3 +295,14 @@ def build_cs_viewmodel_package(
                 f.write(struct.pack("<I", idx))
 
     return pkg
+
+
+if __name__ == "__main__":
+    knife_p = Path("build/cs2assets/butterfly_knife/weapons/models/knife/knife_butterfly/weapon_knife_butterfly.glb")
+    arms_p = Path("build/cs2assets/viewmodel_arms/agents/models/shared/arms/glove_hardknuckle/glove_hardknuckle.glb")
+    out_p = Path("build/cs2assets/cs_butterfly_viewmodel.bin")
+    if knife_p.is_file():
+        p = build_cs_viewmodel_package(knife_glb=knife_p, arms_glb=arms_p, output_bin=out_p)
+        print(f"[OK] Packed CS viewmodel: {p.total_vertices} vertices, {p.total_indices} indices, {len(p.submeshes)} submeshes -> {out_p}")
+    else:
+        print(f"[WARN] Knife glb not found at {knife_p}")
