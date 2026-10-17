@@ -3,7 +3,7 @@ kind: game
 title: 'Data mods without FCS: generated .mod files, Blender weapons, a race, custom weapon grades'
 game: Kenshi
 games_also: []
-game_version: '1.0.65 x64 (Newland), Steam public branch (buildid 13871665)'
+game_version: '1.0.65 x64 (Newland) as the game reported it; Steam public branch buildid 13871665, which is 1.0.68 (see Setup)'
 platform: windows
 engine: native
 route: data
@@ -18,20 +18,26 @@ links:
 - https://github.com/lmaydev/OpenConstructionSet
 - https://codeberg.org/Kindrad/Kenshi_IO_Continued
 - https://github.com/BFrizzleFoShizzle/RE_Kenshi
-tags: [kenshi, ogre, physx, fcs, mod-file-format, ogre, blender, weapons, races, kep, data-mod]
+tags: [kenshi, ogre, physx, fcs, mod-file-format, blender, weapons, races, kep, data-mod]
 ---
 # Data mods without FCS: generated .mod files, Blender weapons, a race, custom weapon grades
 
-> In Kenshi 1.0.65 (Steam) we built three data mods without opening FCS. All records were written as v17 `.mod`
-> files from Python. The mods add: new melee weapons (low-poly rebuilds of AI-generated `.glb` models, exported
-> with a patched Kenshi IO addon), unique NPCs and characters that always spawn with them, a hand-wrap armour
-> for martial arts, a custom weapon grade with its own forge, and a new playable race cloned from Greenlander.
+> In Kenshi on Steam (reported as 1.0.65; see Setup) we built three data mods without opening FCS. All records
+> were written as v17 `.mod` files from Python. The mods add: new melee weapons (low-poly rebuilds of
+> AI-generated `.glb` models, exported with a patched Kenshi IO addon), unique NPCs and characters that always
+> spawn with them, a hand-wrap armour for martial arts, a custom weapon grade with its own forge, and a new
+> playable race cloned from Greenlander.
 > The human tested everything in the real game: grips, scabbards, damage, spawns, race, appearance.
 > The game logs were used to confirm assets load without errors.
 
 ## Setup
-- Kenshi 1.0.65 x64, Steam public branch, Windows 11. RE_Kenshi 0.3.5 with KenshiLib 0.5.0 was installed, but
-  nothing here needs it.
+- Kenshi 1.0.65 x64 as reported, Steam public branch, Windows 11. RE_Kenshi 0.3.5 with KenshiLib 0.5.0 was
+  installed, but nothing here needs it. Steam's public build 13871665 is 1.0.68 (Lo-Fi's 1.0.68 patch notes and
+  the branch update are both 2024-04-01). The 1.0.65 is most likely the 1.0.65-compatible executable that
+  RE_Kenshi's installer creates for 1.0.68 installs (RE_Kenshi README). Data mods don't depend on the exe build.
+- Other Kenshi notes: the [1.0.65 recon](kenshi-1-0-65-native-ogre-recon.md) (engine, FCS, load order,
+  RE_Kenshi) and the [first-person camera plugin](first-person-camera-and-wasd-on-vanilla-kenshi-1-0-68-an-ogr.md)
+  (native code on vanilla 1.0.68).
 - The install was heavily modded: 26 mods, including a 10 GB Russian overhaul (Second Life of Kenshi) that
   bundles KEP (Kenshi Extension Plugin). The overhaul changes vanilla records, for example the quality-grade
   textures and the Greenlander limb HP. Always read records merged in load order, never just the base files.
@@ -56,13 +62,14 @@ tags: [kenshi, ogre, physx, fcs, mod-file-format, ogre, blender, weapons, races,
     save count, last-merge, and byte-sized counts of merge and delete entries.
   - Then last id, record count, records.
   - Record: an int that is the whole record's byte length including itself; type id; id; name; stringId; change
-    word `(saveCount << 4) | kind`, where kind 0 = new, 1 = changed. Then dictionaries of bool, float, int, vec3,
-    vec4, string and **file** (file paths are a separate dictionary from plain strings), reference categories
-    `(sid, v0, v1, v2)`, and instances.
+    word `(saveCount << 4) | kind`, where kind 0 = new, 1 = changed, 2 = renamed (OCS's `ItemChangeType`).
+    Then dictionaries of bool, float, int, vec3, vec4, string and **file** (file paths are a separate
+    dictionary from plain strings), reference categories `(sid, v0, v1, v2)`, and instances.
   - A ref whose three values are all `2147483647` removes that ref when merged.
   - Kenshi merges per field and per ref, so a "changed" record only needs the fields and refs you touch.
 - **Type-15 data files** (saves, `.platoon`, `.bod2` body presets): type 15, last id, count, then records like
-  above, except the leading int of each record is 0, not a length.
+  above, except the leading int of each record is not a length: it's 0, or the instance count for an
+  `InstanceCollection` record (as OCS's writer does it).
   - A `.bod2` is a single `CharacterAppearance` record (sex, about 50 sliders, head, hair, beard, race ref).
   - Copy a character's `CharacterAppearance` from their `.platoon` in a save. Pair it with the `Stats` record
     whose numeric id is one higher. Write it as a `.bod2` and point the Character's `body` file field at it.
@@ -123,7 +130,8 @@ tags: [kenshi, ogre, physx, fcs, mod-file-format, ogre, blender, weapons, races,
      heavy weapons are 316–329);
    - give every face an explicit outward direction;
    - UV it to the vanilla atlas regions;
-   - export with Kenshi IO (MeshSerializer v1.40) through an ASCII temp folder;
+   - export with Kenshi IO through an ASCII temp folder. Its bundled converter writes
+     `[MeshSerializer_v1.40]`; the game's own meshes are v1.100 (recon note), and it loads both;
    - check winding in the exported XML before shipping.
 4. Physics: copy a vanilla item XML as the template, replace the hull and mass properties.
 5. Textures: DDS DXT5 diffuse with gloss in alpha, DXT1 normal (green flipped, DirectX), full mip chain.
@@ -195,6 +203,7 @@ About two long sessions, including recon. Most of the time went into the Blender
 orientation and backface issues found in game, and learning the quality-grade system.
 
 ## Open questions
+- Which executable ran: Steam's 1.0.68 build or RE_Kenshi's 1.0.65-compatible one (see Setup).
 - Exact damage formula: how the level, the manufacturer mods and the KEP model mods combine.
 - Whether `damage multiplier` affects crossbows.
 - A true "smithing skill ≥ 100" crafting gate needs a RE_Kenshi/KenshiLib plugin that hooks crafting.
