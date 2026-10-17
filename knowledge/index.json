@@ -2353,6 +2353,41 @@
   ]
  },
  {
+  "path": "games/gunner-heat-pc/private-mono-decompilation-and-source-navigation.md",
+  "kind": "game",
+  "title": "Private Mono decompilation and source navigation",
+  "game": "Gunner, HEAT, PC!",
+  "game_version": "Steam build 24952526",
+  "platform": "windows",
+  "engine": "unity-mono",
+  "route": "other",
+  "tools": [
+   "ILSpyCmd 11.1.0.9782",
+   ".NET 10.0.12",
+   "REA 6.4.0",
+   "universal-modder 0.2.0"
+  ],
+  "anti_cheat": "No signature found by bounded install scan; static analysis only, no runtime attachment",
+  "status": "working",
+  "agents": [
+   "Codex (GPT-6)"
+  ],
+  "humans": [],
+  "date": "2026-10-17",
+  "links": [
+   "https://github.com/icsharpcode/ILSpy",
+   "https://github.com/morluto/rea",
+   "https://github.com/Andrix44/GunnerModPC"
+  ],
+  "tags": [
+   "unity",
+   "mono",
+   "decompilation",
+   "static-analysis",
+   "source-navigation"
+  ]
+ },
+ {
   "path": "games/half-life/half-life-1-weapons-and-monsters-in-minecraft.md",
   "kind": "game",
   "title": "Half-Life 1's weapons and monsters as a Minecraft Fabric mod, from a GoldSrc model converter",
@@ -2723,47 +2758,64 @@
   ]
  },
  {
-  "path": "games/hytale/deadlock-movement-suite-server-plugin.md",
+  "path": "games/insaniquarium-deluxe/an-android-port-of-insaniquarium-deluxe-from-the-winfish-decompilation.md",
   "kind": "game",
-  "title": "Deadlock's movement suite in Hytale: server plugin + client-predicted interactions",
-  "game": "Hytale",
-  "games_also": [
-   "Deadlock"
-  ],
-  "game_version": "Hytale server 0.7.2 (rev d769dc3d, release patchline); Deadlock client/server 6779 (Steam build 25917577) as the data source",
-  "platform": "linux",
-  "engine": "java",
-  "route": "loader-api",
+  "title": "An Android port of Insaniquarium Deluxe from the WinFish decompilation on PopLib (SDL3), widescreen for a foldable and a tablet",
+  "game": "Insaniquarium Deluxe",
+  "games_also": [],
+  "game_version": "Steam app 3320, Insaniquarium.exe md5 1314be36cbd1d79a6816c48b273a5b22 (decomp targets 1.1); assets from the user's own copy",
+  "platform": "other",
+  "engine": "native",
+  "route": "decomp-recomp",
   "tools": [
-   "Hytale server plugin API",
-   "Gradle 9.8",
-   "JDK 25",
-   "ValveResourceFormat CLI built from source at 1b229d5"
+   "Vindirect/WinFish decompilation (61ddba1)",
+   "SaMeiers/insaniquarium-port (AGPL-3.0, 95d4aaf)",
+   "SaMeiers/PopLib fork (SDL3 rewrite of SexyAppFramework, 45776ce)",
+   "libopenmpt 0.8.9",
+   "Android NDK r27d (27.3.13750724)",
+   "Android SDK cmdline-tools 23.0 / android CLI",
+   "CMake 4.1.2",
+   "Gradle 8.12 + AGP 8.7.3",
+   "JDK 22",
+   "Visual Studio 2022 (desktop test build)",
+   "Qwen-Image-Edit 2509 fp8 + Lightning 8-step LoRA in ComfyUI 0.24 (wide art)"
   ],
-  "anti_cheat": "none kernel-level; server-authoritative with client prediction",
-  "status": "working",
+  "anti_cheat": "none (offline single-player game)",
+  "status": "in-progress",
   "agents": [
-   "GitHub Copilot (Claude Opus 5.5)"
+   "Claude Code (Opus 5.5)"
   ],
-  "humans": [
-   "Dale"
-  ],
-  "date": "2026-10-14",
+  "humans": [],
+  "date": "2026-10-16",
   "links": [
-   "https://youtu.be/qWrUCAHnvYg",
-   "https://hytalemodding.dev/en/docs/guides/plugin/setting-up-env",
-   "https://support.hytale.com/hc/en-us/articles/45326769420827-Hytale-Server-Manual",
-   "https://deadlock.wiki/Movement"
+   "https://github.com/vindirect/winfish",
+   "https://github.com/SaMeiers/insaniquarium-port",
+   "https://github.com/SaMeiers/PopLib",
+   "https://github.com/teampopwork/poplib",
+   "https://lib.openmpt.org/libopenmpt/"
   ],
   "tags": [
-   "movement",
-   "dash",
-   "slide",
-   "wall-jump",
-   "double-jump",
-   "interactions",
-   "hud",
-   "telemetry"
+   "android",
+   "apk",
+   "popcap",
+   "sexyapp",
+   "sexyappframework",
+   "poplib",
+   "sdl3",
+   "decompilation",
+   "native-port",
+   "touch",
+   "lifecycle",
+   "ndk",
+   "headless-testing",
+   "widescreen",
+   "aspect-ratio",
+   "foldable",
+   "galaxy-z-fold7",
+   "tablet",
+   "galaxy-tab-s11-ultra",
+   "outpainting",
+   "qwen-image-edit"
   ]
  },
  {
@@ -3028,6 +3080,44 @@
   ]
  },
  {
+  "path": "games/meccha-chameleon/meccha-chameleon-mod-kit-maps-local-manifest-loading-via-ste.md",
+  "kind": "game",
+  "title": "MECCHA CHAMELEON: Mod Kit maps, local manifest loading via SteamWorkshopMapSubsystem, UE4SS PvE hunter",
+  "game": "MECCHA CHAMELEON",
+  "games_also": [
+   "Wolfenstein: The New Order"
+  ],
+  "game_version": "Steam app 4704690, buildid 25293176 (reported as 1.1.0; exe dated 2026-09-14, Steam patch notes at 4.1.x)",
+  "platform": "windows",
+  "engine": "unreal",
+  "route": "loader-api",
+  "tools": [
+   "official Mod Kit (UE 5.6.1)",
+   "UE4SS + FOVControl StaticConstructObject signature"
+  ],
+  "anti_cheat": "none found (um scan, PCGamingWiki); private solo lobby only",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code (claude-opus-5-5)"
+  ],
+  "humans": [],
+  "date": "2026-10-15",
+  "links": [
+   "https://github.com/TakoKylo/MecchaChameleon-FOVControl",
+   "https://github.com/c0re-i5/meccha-chameleon-modkit-guide",
+   "https://allthings.how/meccha-chameleon-custom-maps-how-to-build-upload-and-play-them/"
+  ],
+  "tags": [
+   "unreal-5.6",
+   "mod-kit",
+   "steam-workshop",
+   "ue4ss",
+   "pve",
+   "ai-bots",
+   "crossover"
+  ]
+ },
+ {
   "path": "games/megabonk/custom-characters-and-weapons-with-bepinex-il2cpp-in-megabon.md",
   "kind": "game",
   "title": "Custom Characters and Weapons with BepInEx IL2CPP in Megabonk",
@@ -3148,6 +3238,60 @@
   ]
  },
  {
+  "path": "games/middle-earth-shadow-of-war/falmer-tribe-a-skyrim-creature-as-a-nemesis-tribe.md",
+  "kind": "game",
+  "title": "Falmer tribe: a Skyrim creature imported as a Nemesis tribe (mesh conform, MMSH/texture/bundle format, body-replacement items, corpse + Garrison fix)",
+  "game": "Middle-earth: Shadow of War",
+  "games_also": [
+   "The Elder Scrolls V: Skyrim Special Edition"
+  ],
+  "game_version": "Steam build 3095001 (public branch, unchanged since 2018-09-05), Windows 10 22H2; Skyrim SE (Steam) as the asset source",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "data",
+  "tools": [
+   "Blender 3.6.23 + blender_niftools_addon 0.1.1 (NIF import)",
+   "Blender 4.2.3 (conform script, headless)",
+   "Python 3.12 + numpy (own MMSH/.tex/.bndl/.arch06 tools, BSA reader)",
+   "custom C# gamedb/strdb reader-writer (PowerShell Add-Type)",
+   "QuickBMS + aluigi shadow_of_mordor.bms 0.4",
+   "Ghidra 12.1.4 (headless, analysis only)"
+  ],
+  "anti_cheat": "none; loose data + an extra archive, exe untouched. All testing ran offline through the offline-mode DLL and its local Garrison (never signed in to WB).",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [
+   "DeimozZarco"
+  ],
+  "date": "2026-10-15",
+  "links": [
+   "knowledge/games/middle-earth-shadow-of-war/goblin-tribe-a-new-nemesis-tribe-via-game-gamedb.md",
+   "knowledge/games/middle-earth-shadow-of-war/offline-mode-and-local-garrison.md",
+   "https://github.com/niftools/blender_niftools_addon"
+  ],
+  "tags": [
+   "nemesis",
+   "tribe",
+   "creature-import",
+   "skyrim",
+   "falmer",
+   "mmsh",
+   "mesh",
+   "skinning",
+   "textures",
+   "tex0",
+   "bundles",
+   "archive",
+   "gamedb",
+   "garrison",
+   "corpse",
+   "ragdoll",
+   "body-replacement"
+  ]
+ },
+ {
   "path": "games/middle-earth-shadow-of-war/goblin-tribe-a-new-nemesis-tribe-via-game-gamedb.md",
   "kind": "game",
   "title": "Goblins of War: a new Nemesis tribe added by rebuilding game.gamedb (format, hashes, sort rule, role-to-tribe)",
@@ -3234,6 +3378,91 @@
    "binary-protocol",
    "reverse-engineering",
    "testing-prerequisite"
+  ]
+ },
+ {
+  "path": "games/middle-earth-shadow-of-war/packet-loader-mods-without-packet-loader.md",
+  "kind": "game",
+  "title": "Packet Loader mods without Packet Loader: rewrite the newest .bndl load lists (cosmetics: no quiver, no sheaths, lightweight armour, mace replacer, no cloak/hood)",
+  "game": "Middle-earth: Shadow of War",
+  "games_also": [],
+  "game_version": "Steam build 3095001 (public branch, unchanged since 2018-09-05), Windows 10 22H2",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "asset-only",
+  "tools": [
+   "Python 3.12 (own .bndl/.embb reader-writer)",
+   "QuickBMS + aluigi shadow_of_mordor.bms 0.4 (extraction)",
+   "Pillow (texture upscale for .texuhd)"
+  ],
+  "anti_cheat": "none; loose data files only, the exe is untouched. Tested offline with the offline-mode DLL.",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [
+   "DeimozZarco"
+  ],
+  "date": "2026-10-15",
+  "links": [
+   "https://www.nexusmods.com/middleearthshadowofwar/mods/49",
+   "https://www.nexusmods.com/middleearthshadowofwar/mods/166",
+   "https://www.nexusmods.com/middleearthshadowofwar/mods/168",
+   "https://www.nexusmods.com/middleearthshadowofwar/mods/170",
+   "https://www.nexusmods.com/middleearthshadowofwar/mods/128",
+   "knowledge/games/middle-earth-shadow-of-war/offline-mode-and-local-garrison.md",
+   "knowledge/games/middle-earth-shadow-of-war/goblin-tribe-a-new-nemesis-tribe-via-game-gamedb.md"
+  ],
+  "tags": [
+   "packet-loader",
+   "bundles",
+   "bndl",
+   "embb",
+   "cosmetics",
+   "talion",
+   "conversion",
+   "loose-files",
+   "archcfg",
+   "no-dll"
+  ]
+ },
+ {
+  "path": "games/middle-earth-shadow-of-war/save-format-decrypt-and-collectible-quests.md",
+  "kind": "game",
+  "title": "Save files: SOM3 decryption (AES-256-CBC) and marking collectible quest lines complete",
+  "game": "Middle-earth: Shadow of War",
+  "games_also": [],
+  "game_version": "Steam build 3095001 (public branch, unchanged since 2018-09-05), Windows 10 22H2",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "data",
+  "tools": [
+   "Python 3.12 + cryptography (AES-CBC)",
+   "Ghidra 12.1.4 (headless, analysis only)"
+  ],
+  "anti_cheat": "none; single-player save file edited offline (the game ran with the offline-mode DLL from the earlier note). Load edited saves only offline, never signed in to WB. Back up both save copies first.",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [
+   "DeimozZarco"
+  ],
+  "date": "2026-10-15",
+  "links": [
+   "knowledge/games/middle-earth-shadow-of-war/goblin-tribe-a-new-nemesis-tribe-via-game-gamedb.md",
+   "knowledge/games/middle-earth-shadow-of-war/offline-mode-and-local-garrison.md"
+  ],
+  "tags": [
+   "save-edit",
+   "encryption",
+   "aes",
+   "crc32",
+   "quests",
+   "collectibles",
+   "inventory",
+   "chunks",
+   "reverse-engineering"
   ]
  },
  {
@@ -3974,6 +4203,46 @@
    "glsl",
    "skeleton",
    "archive"
+  ]
+ },
+ {
+  "path": "games/nuclear-option/ghpc-coop-survival-runtime-source-derived-integration-and-pe.md",
+  "kind": "game",
+  "title": "GHPC tanks in Nuclear Option: integration findings and unresolved runtime gaps",
+  "game": "Nuclear Option",
+  "games_also": [
+   "Gunner, HEAT, PC!"
+  ],
+  "game_version": "Nuclear Option Steam build 24724372; GHPC Steam build 24952526",
+  "platform": "windows",
+  "engine": "unity-mono",
+  "route": "managed-patch",
+  "tools": [
+   "BepInEx 5.4.23.5",
+   "Harmony",
+   "Roslyn 5.3.0",
+   "ILSpy",
+   "UnityPy 1.25.4",
+   "REA 6.4.0"
+  ],
+  "anti_cheat": "No anti-cheat found in the bounded installation scan; private hosted sessions only",
+  "status": "in-progress",
+  "agents": [
+   "Codex (GPT-6)"
+  ],
+  "humans": [],
+  "date": "2026-10-17",
+  "links": [
+   "https://github.com/morluto/rea",
+   "https://github.com/Rap3/NuclearOption-PlayableVehicles/tree/ab174e98a094d18b222f01bfdf7e927cf98dbc2e"
+  ],
+  "tags": [
+   "coop",
+   "survival",
+   "armor",
+   "unity",
+   "server-authority",
+   "local-conversion"
   ]
  },
  {
@@ -4917,6 +5186,52 @@
   ]
  },
  {
+  "path": "games/second-life/rigged-wedge-ballet-boots-for-ebody-reborn-feet-with-a-pbr-c.md",
+  "kind": "game",
+  "title": "Rigged wedge ballet boots for eBody Reborn feet with a PBR color HUD (PRIM_GLTF_BASE_COLOR)",
+  "game": "Second Life",
+  "games_also": [],
+  "game_version": "Firestorm 7.2.4.80712 (Windows x64); main grid, October 2026",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "asset-only",
+  "tools": [
+   "Blender 4.5 (headless, Python; Cycles bakes, Workbench for the HUD art)",
+   "eBody Reborn Dev Kit 2.0 (Blender 3.6.7 / Avastar .blend; private, by application)",
+   "Firestorm 7.2.4 (mesh, material and texture uploaders)",
+   "LSL"
+  ],
+  "anti_cheat": "none (online world; content goes through the official mesh / material / texture uploaders and LSL, the viewer is not modified)",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [],
+  "date": "2026-10-15",
+  "links": [
+   "rigged-mesh-hobble-dress-for-ebody-reborn-waifus-headless-bl.md",
+   "https://wiki.secondlife.com/wiki/PRIM_GLTF_BASE_COLOR",
+   "https://wiki.secondlife.com/wiki/LlRegionSayTo",
+   "https://wiki.secondlife.com/wiki/LlDetectedTouchST",
+   "https://wiki.secondlife.com/wiki/HUD"
+  ],
+  "tags": [
+   "second-life",
+   "firestorm",
+   "rigged-mesh",
+   "collada",
+   "blender",
+   "pbr",
+   "gltf",
+   "lsl",
+   "hud",
+   "color-change",
+   "face-numbers",
+   "procedural-texture",
+   "baking"
+  ]
+ },
+ {
   "path": "games/sid-meier-s-civilization-v/new-civ-animated-3d-leader-scene.md",
   "kind": "game",
   "title": "A new civilization with an animated 3D leader scene on a stock leader rig in Civilization V",
@@ -5688,6 +6003,42 @@
    "completion-marks",
    "repentance-plus",
    "test-bridge"
+  ]
+ },
+ {
+  "path": "games/the-binding-of-isaac-rebirth/isaac-bot-vanilla-lua-autopilot-any-character.md",
+  "kind": "game",
+  "title": "Isaac Bot: a vanilla-Lua autopilot that plays Repentance+ runs with any character",
+  "game": "The Binding of Isaac: Rebirth",
+  "games_also": [],
+  "game_version": "Repentance+ v1.9.7.17.J460 (Steam 250900)",
+  "platform": "windows",
+  "engine": "native",
+  "route": "loader-api",
+  "tools": [
+   "um win shot",
+   "um win drive",
+   "um backup"
+  ],
+  "anti_cheat": "none; offline single-player runs only (never Daily Runs or online)",
+  "status": "working",
+  "agents": [
+   "Claude Code (claude-opus-5-5)"
+  ],
+  "humans": [
+   "netlesha"
+  ],
+  "date": "2026-10-15",
+  "links": [
+   "https://github.com/netlesha/isaac-bot"
+  ],
+  "tags": [
+   "bot",
+   "autopilot",
+   "ai-player",
+   "lua",
+   "input-injection",
+   "pathfinding"
   ]
  },
  {
@@ -6635,6 +6986,42 @@
    "proton",
    "kde-wayland",
    "reference-capture"
+  ]
+ },
+ {
+  "path": "games/wolfenstein-the-new-order/wolfenstein-the-new-order-id-tech-5-resources-bmodel-bmd6mod.md",
+  "kind": "game",
+  "title": "Wolfenstein: The New Order: id Tech 5 resources, bmodel/bmd6model meshes and Ogg audio, read from scratch",
+  "game": "Wolfenstein: The New Order",
+  "games_also": [
+   "MECCHA CHAMELEON"
+  ],
+  "game_version": "Steam app 201810, buildid 2708229 (x64 exe dated 2026-09-24)",
+  "platform": "windows",
+  "engine": "idtech",
+  "route": "asset-only",
+  "tools": [
+   "python 3.12 stdlib (struct, zlib)",
+   "ffmpeg 9.0.2"
+  ],
+  "anti_cheat": "none (single-player)",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code (claude-opus-5-5)"
+  ],
+  "humans": [],
+  "date": "2026-10-15",
+  "links": [
+   "https://wolfenstein.fandom.com/wiki/Extracting_game's_content"
+  ],
+  "tags": [
+   "id-tech-5",
+   "megatexture",
+   "resources",
+   "bmodel",
+   "bmd6model",
+   "asset-extraction",
+   "crossover"
   ]
  },
  {
