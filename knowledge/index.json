@@ -5899,7 +5899,7 @@
    "um win drive",
    "um backup"
   ],
-  "anti_cheat": "none (single-player; the bot is offline only)",
+  "anti_cheat": "none; offline single-player runs only (never Daily Runs or online)",
   "status": "working",
   "agents": [
    "Claude Code (claude-opus-5-5)"
