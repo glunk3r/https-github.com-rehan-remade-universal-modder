@@ -23,6 +23,7 @@ links:
 - https://wiki.secondlife.com/wiki/PRIM_GLTF_BASE_COLOR
 - https://wiki.secondlife.com/wiki/LlRegionSayTo
 - https://wiki.secondlife.com/wiki/LlDetectedTouchST
+- https://wiki.secondlife.com/wiki/HUD
 tags: [second-life, firestorm, rigged-mesh, collada, blender, pbr, gltf, lsl, hud, color-change, face-numbers, procedural-texture, baking]
 ---
 # Rigged wedge ballet boots for eBody Reborn feet with a PBR color HUD (PRIM_GLTF_BASE_COLOR)
@@ -36,8 +37,9 @@ tags: [second-life, firestorm, rigged-mesh, collada, blender, pbr, gltf, lsl, hu
 > world on the main grid over ~34 mesh versions and 4 HUD versions.
 
 ## Setup
-- Viewer: Firestorm 7.2.4.80712 on Windows 11. Main grid: the account has Premium, which includes free
-  uploads, so we skipped the Aditi beta grid.
+- Viewer: Firestorm 7.2.4.80712 on Windows 11. Main grid: uploads were free on the user's account, so we
+  skipped the Aditi beta grid. Free uploads (mesh included) are a Premium Plus benefit; Basic, Plus and Premium
+  accounts pay per upload ([secondlife.com/premium](https://secondlife.com/premium)).
 - Blender 4.5 headless: `blender -b <kit.blend> --python build.py`. No Avastar.
 - eBody Reborn Dev Kit 2.0, Blender 3.6.7 kit. It has five foot meshes, RebornFeet_1 (flat) to RebornFeet_5
   (ballet/pointe, the toe tip is the lowest point). The boots fit RebornFeet_5 only, so the wearer sets the
@@ -57,10 +59,12 @@ and the protocol are not touched.
   single generator writes both the art and the click boxes.
 
 ## How the game works (what we had to learn)
-- **Face numbers follow the Collada material *name*, sorted alphabetically.** The order of the `<triangles>`
-  blocks in the file doesn't matter. Our materials eyelets, laces, overlay, sole, upper and zipper became faces
-  0 to 5 in that order (checked in world with Select Face). Renaming a material therefore renumbers faces and
-  breaks the HUD. Prefix names deliberately if you want a particular order.
+- **Face numbers follow the Collada material *name*, sorted alphabetically.** Before upload the viewer sorts a
+  model's faces by the `material` symbol of each `<triangles>` block, case-insensitively
+  (`LLModel::sortVolumeFacesByMaterialName` in secondlife/viewer), so the order of the blocks in the file
+  doesn't matter. Our materials eyelets, laces, overlay, sole, upper and zipper became faces 0 to 5 in that
+  order (checked in world with Select Face). Renaming a material therefore renumbers faces and breaks the HUD.
+  Prefix names deliberately if you want a particular order.
 - **One `.dae` with two meshes uploads as one linked object.** `LINK_SET` in a script in the root reaches both
   boots, and the faces have the same numbers on both, because the right boot is a mirror with the same
   materials.
@@ -77,18 +81,22 @@ and the protocol are not touched.
 - **HUD → worn object messaging.** `llRegionSayTo(avatarKey, nonZeroChannel, msg)` is delivered to every
   attachment of that avatar (wiki: "can be heard by any attachment"). The boots listen on a channel derived from
   the owner key and drop anything where `llGetOwnerKey(id) != llGetOwner()`. That keeps other people's HUDs from
-  recoloring your boots and costs nothing in chat throttles.
+  recoloring your boots. Messages on a non-zero channel don't trigger `llRegionSayTo`'s throttle (the wiki's
+  caveats: it counts channel 0, although once tripped it blocks every channel).
 - **`llDetectedTouchST` is surface space**, (0,0) bottom-left of the face, and doesn't depend on the
   texture's repeats or offsets or on *which* texture is applied (`llDetectedTouchUV` is texture space). So a
-  HUD can swap whole textures to show state, and the click boxes stay valid.
-- **HUD geometry.** HUD attachments have x as depth, so a box's ±X side faces face the screen, and a side face
-  shows its texture upright. `llSetLocalRot(ZERO_ROTATION)` in `attach()` (HUD points are ≥
-  `ATTACH_HUD_CENTER_2`) turns it to face the viewer. HUD units are about one screen height per metre: a 0.22 m
-  panel was unreadable and 0.42 m was right on the user's screen.
+  HUD can swap whole textures to show state, and the click boxes stay valid. The wiki notes that the vertical
+  coordinate is flipped on a glTF mesh; a box prim, as here, isn't one.
+- **HUD geometry.** HUD attachments have x as depth (a larger x is farther from the viewer), so at
+  `ZERO_ROTATION` a box's −X side (face 4) faces the screen and shows its texture upright.
+  `llSetLocalRot(ZERO_ROTATION)` in `attach()` turns it to face the viewer. HUD points are 31 to 38
+  (`ATTACH_HUD_CENTER_2` to `ATTACH_HUD_BOTTOM_RIGHT`); 39 and up are body points again (neck, avatar centre,
+  Bento). One metre of HUD space is the height of the viewer window (wiki: HUD): a 0.22 m panel was unreadable
+  and 0.42 m was right on the user's screen.
 - **Hover text is a stored prim property.** Removing the `llSetText` call from a script leaves the old text
   floating; clear it explicitly with `llSetText("", ZERO_VECTOR, 0.0)`.
-- **SL culls back faces.** Open surfaces (a strip, a ring, a tube, a stitch quad) show from one side only, so
-  every open part needs its faces oriented deliberately (Gotcha 3).
+- **SL culls back faces**, unless a glTF material is set double-sided. Open surfaces (a strip, a ring, a tube,
+  a stitch quad) show from one side only, so every open part needs its faces oriented deliberately (Gotcha 3).
 
 ## Build steps
 1. **Shell** (`build_boots.py`, on the kit blend, 17 s):
@@ -186,9 +194,6 @@ and the protocol are not touched.
     checked offline, so we didn't use it.
 13. **Windows: Blender seemed to fail with exit 255 after a successful bake.** **Cause:** piping its output
     into PowerShell `Select-Object -First N` closes the pipe early. **Fix:** capture all output, then filter.
-14. **The KB clone's `.bat` files stayed "modified" after `git checkout --`.** **Cause:** `core.autocrlf=true`
-    conflicting with the repository's attributes (line endings only). **Fix:** write the note in a
-    `git worktree add --detach <dir> origin/main` instead of fighting the clone.
 
 ## Assets
 - No AI-generated assets, and no kit geometry is shipped.
@@ -200,7 +205,7 @@ and the protocol are not touched.
 
 ## Cost and time
 Two days of sessions. About 34 mesh iterations (shell 19, trim 6, then in-world rounds for the zipper,
-laces, opening, tongue, sole and bow) and 4 HUD iterations. Uploads were free (Premium).
+laces, opening, tongue, sole and bow) and 4 HUD iterations. Uploads were free on the account (see Setup).
 
 ## Open questions
 - Which way SL's texture offset shifts the sampled window. This would allow a one-texture state atlas for HUDs.
