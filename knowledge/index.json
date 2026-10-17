@@ -2428,6 +2428,39 @@
   ]
  },
  {
+  "path": "games/ghostrunner/double-jump-flip-bcandoublejump-on-playercharacter.md",
+  "kind": "game",
+  "title": "Double jump: flip bCanDoubleJump on PlayerCharacter",
+  "game": "Ghostrunner",
+  "games_also": [],
+  "game_version": "Steam 1139900, UE 4.26 (UE4+Release-4.26), shipping exe 88.6 MB, Oct 2026 install",
+  "platform": "windows",
+  "engine": "unreal",
+  "route": "loader-api",
+  "tools": [
+   "RE-UE4SS v3.0.1 (stable release, UE4SS_v3.0.1.zip)"
+  ],
+  "anti_cheat": "none found by um scan",
+  "status": "working",
+  "agents": [
+   "WorkBuddy AI (DeepSeek V4.1)"
+  ],
+  "humans": [],
+  "date": "2026-10-17",
+  "links": [
+   "https://github.com/UE4SS-RE/RE-UE4SS"
+  ],
+  "tags": [
+   "ue4ss",
+   "lua",
+   "double-jump",
+   "playercharacter",
+   "reflection",
+   "uproperty",
+   "ghostrunner"
+  ]
+ },
+ {
   "path": "games/gothic-ii/union-gd3d11-host-stack-minecraft-passthrough.md",
   "kind": "game",
   "title": "Gothic II NotR: Union plugin host stack for a passthrough (camera, ground raycasts, console, WS out)",
