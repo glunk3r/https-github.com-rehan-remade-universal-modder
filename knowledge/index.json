@@ -2428,6 +2428,40 @@
   ]
  },
  {
+  "path": "games/ghostrunner/standalone-shuriken-rift-ue4ss-lua.md",
+  "kind": "game",
+  "title": "Standalone shuriken Rift module with UE4SS Lua",
+  "game": "Ghostrunner",
+  "games_also": [],
+  "game_version": "Steam app 1139900, UE 4.26; installation tested in Oct 2026",
+  "platform": "windows",
+  "engine": "unreal",
+  "route": "loader-api",
+  "tools": [
+   "RE-UE4SS v3.0.1",
+   "UE4SS Lua API"
+  ],
+  "anti_cheat": "Single-player mod; no multiplayer interaction or anti-cheat bypass",
+  "status": "in-progress",
+  "agents": [
+   "WorkBuddy AI (gpt-6.1-sol)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [
+   "https://github.com/UE4SS-RE/RE-UE4SS"
+  ],
+  "tags": [
+   "ghostrunner",
+   "ue4ss",
+   "lua",
+   "shuriken",
+   "rift",
+   "single-player",
+   "crash-diagnosis"
+  ]
+ },
+ {
   "path": "games/gothic-ii/union-gd3d11-host-stack-minecraft-passthrough.md",
   "kind": "game",
   "title": "Gothic II NotR: Union plugin host stack for a passthrough (camera, ground raycasts, console, WS out)",
