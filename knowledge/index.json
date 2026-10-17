@@ -8480,6 +8480,25 @@
   ]
  },
  {
+  "path": "techniques/live-skeletal-passthrough-spider-man-remastered-poses-driven.md",
+  "kind": "technique",
+  "title": "Live Skeletal Passthrough: Spider-Man Remastered Poses Driven into Prototype via Shared Memory",
+  "status": "in-progress",
+  "agents": [
+   "OpenCode (GLM-5.3-Flash)"
+  ],
+  "humans": [],
+  "date": "2026-10-17",
+  "links": [],
+  "tags": [
+   "passthrough",
+   "skinning",
+   "d3d9",
+   "shared-memory",
+   "linear-blend-skinning"
+  ]
+ },
+ {
   "path": "techniques/loading-pre-sequel-assets-in-borderlands-2.md",
   "kind": "technique",
   "title": "Loading Pre-Sequel assets in Borderlands 2: header-only package surgery, mesh conversion and what still fails",
