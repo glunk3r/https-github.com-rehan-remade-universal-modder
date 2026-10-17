@@ -76,9 +76,13 @@ def _read_json(p: Path, default=None):
 
 def _write_json(p: Path, obj):
     p.parent.mkdir(parents=True, exist_ok=True)
-    tmp = p.with_name(p.name + ".tmp")
+    tmp = p.with_name(f"{p.name}.{os.getpid()}.tmp")  # per process: concurrent writers must not share a temp
     tmp.write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
-    os.replace(tmp, p)
+    try:
+        os.replace(tmp, p)
+    except OSError:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 def _files(root: Path, skip=frozenset()) -> list[tuple[str, Path]]:
@@ -1340,7 +1344,10 @@ class _LeakCache:
 
     def __init__(self, path: Path):
         self.path = path
-        old = _read_json(path, {}) if path.exists() else {}
+        try:  # an optimisation only: a cache another scan is rewriting reads as empty
+            old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+        except (OSError, ValueError):
+            old = {}
         self.files = old.get("files", {}) if old.get("version") == CACHE_VERSION else {}
         self.changed = False
 
@@ -1364,7 +1371,10 @@ class _LeakCache:
         for rel in stale:
             del self.files[rel]
         if self.changed or stale:
-            _write_json(self.path, {"version": CACHE_VERSION, "files": self.files})
+            try:  # concurrent scans of one dirty dir race on the cache; losing a write only costs a rehash
+                _write_json(self.path, {"version": CACHE_VERSION, "files": self.files})
+            except OSError as e:
+                print(f"leak cache not saved ({e}); the scan result is unaffected", file=sys.stderr)
 
 
 def _path_needles(dirty: Path) -> list[bytes]:
