@@ -93,6 +93,25 @@ def deploy_cs_assets(game_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
                         if not any(m["dest"] == str(dest_p.resolve()) for m in manifest):
                             manifest.append(deploy_file_atomic(src_p, dest_p))
 
+    # 3.1 Update sounds_manifest.txt with CS audio event entries
+    manifest_txt = target_sounds_dir / "sounds_manifest.txt"
+    cs_sound_entries = [
+        "cs.knife.deploy|knife_deploy1.wav|1.000|1.000|1.000\n",
+        "cs.knife.slash|knife_slash1.wav|1.000|1.000|1.000\n",
+        "cs.knife.slash|knife_slash2.wav|1.000|1.000|1.000\n",
+        "cs.knife.inspect|bknife_look03_a.wav|1.000|1.000|1.000\n",
+        "cs.knife.inspect|bknife_look03_b.wav|1.000|1.000|1.000\n",
+        "cs.knife.inspect|bknife_look03_c.wav|1.000|1.000|1.000\n",
+        "cs.knife.clack|bknife_n_clacks_02.wav|1.000|1.000|1.000\n",
+        "cs.knife.clack|bknife_n_clacks_05.wav|1.000|1.000|1.000\n",
+        "cs.knife.hit|bknife_n_knucklehit_02.wav|1.000|1.000|1.000\n",
+    ]
+    existing_lines = manifest_txt.read_text(encoding="utf-8").splitlines(keepends=True) if manifest_txt.is_file() else []
+    for entry in cs_sound_entries:
+        if entry not in existing_lines:
+            existing_lines.append(entry)
+    manifest_txt.write_text("".join(existing_lines), encoding="utf-8")
+
     # 4. Deploy dinput8.dll
     dll_candidates = [
         workspace_root / "mc-core" / "build" / "bin" / "eldenring" / "dinput8.dll",
