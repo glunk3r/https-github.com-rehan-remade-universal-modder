@@ -20,7 +20,7 @@
   <img src="docs/media/mods-teaser.gif" alt="Six mods made by AI coding agents, with the universal-modder tile in the corner: Steve gliding an elytra through Los Santos, the Nether spreading over Los Santos, Minecraft mobs fighting the LSPD, the Halo Warthog in Minecraft, a World at War flamethrower in Minecraft, and World at War zombies in Minecraft. It ends on the universal-modder logo and &quot;mod any game.&quot;" width="560">
 </p>
 
-<p align="center"><b>Coming next: the mod hub.</b> Publish your mods, remix other people's, and make new ones.<br>
+<p align="center"><b>Coming next: the mod hub at <a href="https://universalmodder.com">universalmodder.com</a>.</b> Publish your mods, remix other people's, and make new ones.<br>
   Share what you make, get help, and follow along:</p>
 <p align="center">
   <a href="https://discord.com/invite/sEZWaf7vV"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/media/discord-dark.svg"><img src="docs/media/discord-light.svg" height="32" alt="join the discord"></picture></a>
