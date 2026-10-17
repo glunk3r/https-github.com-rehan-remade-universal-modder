@@ -759,7 +759,7 @@ def test_secret_patterns_catch_current_key_formats(label, key):
 
 
 def test_secret_patterns_ignore_ordinary_text():
-    text = "sk-learn-style-kebab-case-identifiers-are-not-keys and github_pat_ alone"
+    text = "sk-" + "learn-style-kebab-case-identifiers-are-not-keys and github_pat_ alone"
     assert not [label for label, rx in publish.SECRET_PATTERNS if rx.search(text)]
 
 
