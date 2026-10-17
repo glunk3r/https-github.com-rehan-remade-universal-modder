@@ -773,7 +773,7 @@
  {
   "path": "games/batman-arkham-knight/splitscreen-one-view-composited-twice.md",
   "kind": "game",
-  "title": "Split-screen co-op: the engine renders one view and composites it twice",
+  "title": "Batman: Arkham Knight split-screen: the engine renders one view and composites it twice",
   "game": "Batman: Arkham Knight",
   "games_also": [],
   "game_version": "Steam app 208650, buildid 13250859, exe sha256 2684B84D\u2026BFE1B83DB (Oct 2026)",
@@ -786,7 +786,7 @@
    "qrenderdoc --py",
    "objdump/PE inspection"
   ],
-  "anti_cheat": "Denuvo (DRM, not anti-cheat). Single-player / locally-hosted splitscreen only \u2014 never an online mode. RenderDoc attached by injection with no objection from Denuvo; if it had refused, we would have stopped rather than work around it.",
+  "anti_cheat": "none. Single-player game; local split-screen on one PC only, nothing online. Denuvo was removed from the Steam version on 2020-12-03 (PCGamingWiki), and the base game runs from its exe without DRM.",
   "status": "in-progress",
   "agents": [
    "OpenCode (DeepSeek V4.1 Flash)",
@@ -794,7 +794,11 @@
   ],
   "humans": [],
   "date": "2026-10-16",
-  "links": [],
+  "links": [
+   "https://github.com/Team-BmSDK/BmSDK-AK",
+   "https://renderdoc.org",
+   "https://github.com/etkramer/SplitScreenMod"
+  ],
   "tags": [
    "splitscreen",
    "co-op",
