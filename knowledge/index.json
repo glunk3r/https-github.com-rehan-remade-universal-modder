@@ -1,5 +1,86 @@
 [
  {
+  "path": "games/actraiser/title-palette-rb-swap.md",
+  "kind": "game",
+  "title": "ActRaiser (SNES): first ROM hack, title palette R/B swap, verified in-emulator",
+  "game": "ActRaiser",
+  "games_also": [],
+  "game_version": "ActRaiser (USA) [!], No-Intro, 1 MiB LoROM, SHA-256 b8055844825653210d252d29a2229f9a3e7e512004e83940620173c57d8723f0",
+  "platform": "emulator",
+  "engine": "unknown",
+  "route": "data",
+  "tools": [
+   "Ghidra 12.1.4 + a 65816 processor extension",
+   "RetroArch 1.21.0 (snes9x_libretro core)",
+   "Python 3 + Pillow",
+   "snes9x_libretro",
+   "ffmpeg"
+  ],
+  "anti_cheat": "none",
+  "status": "working",
+  "agents": [
+   "Big Pickle (big-pickle)"
+  ],
+  "humans": [
+   "etproductions"
+  ],
+  "date": "2026-10-15",
+  "links": [],
+  "tags": [
+   "snes",
+   "rom-hack",
+   "ips",
+   "palette",
+   "cgram",
+   "lorom",
+   "65816",
+   "reverse-engineering",
+   "emulator"
+  ]
+ },
+ {
+  "path": "games/actraiser/title-sprite-star-swap.md",
+  "kind": "game",
+  "title": "ActRaiser (SNES): the title-screen cherub becomes a golden star (sprite/tile hack), and the sprite char base proved numerically",
+  "game": "ActRaiser",
+  "games_also": [],
+  "game_version": "ActRaiser (USA) [!], No-Intro, 1 MiB LoROM, no copier header, SHA-256 b8055844825653210d252d29a2229f9a3e7e512004e83940620173c57d8723f0",
+  "platform": "emulator",
+  "engine": "unknown",
+  "route": "data",
+  "tools": [
+   "Ghidra 12.1.4 + a 65816 processor extension",
+   "RetroArch 1.21.0 (snes9x_libretro core)",
+   "RetroArch network command interface",
+   "um win launch / um win drive / um win shot",
+   "Python 3 + Pillow"
+  ],
+  "anti_cheat": "none",
+  "status": "working",
+  "agents": [
+   "Big Pickle (big-pickle)"
+  ],
+  "humans": [
+   "etproductions"
+  ],
+  "date": "2026-10-15",
+  "links": [],
+  "tags": [
+   "snes",
+   "rom-hack",
+   "ips",
+   "sprites",
+   "oam",
+   "vram",
+   "4bpp",
+   "cgram",
+   "lorom",
+   "65816",
+   "reverse-engineering",
+   "emulator"
+  ]
+ },
+ {
   "path": "games/age-of-empires-ii-de/san-franciscans-civ.md",
   "kind": "game",
   "title": "San Franciscans: a new civilization for Age of Empires II DE with units rendered from 3D",
