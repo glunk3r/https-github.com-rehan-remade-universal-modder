@@ -6738,6 +6738,49 @@
   ]
  },
  {
+  "path": "games/tribal-hunter/gamemaker-sky-player-port.md",
+  "kind": "game",
+  "title": "Tribal Hunter: Sky player port, separate render clocks and load-time function bindings",
+  "game": "Tribal Hunter",
+  "games_also": [
+   "Gorge Valley"
+  ],
+  "game_version": "1.0.2.4, Steam build 15863961, Default Public Version (user-confirmed)",
+  "platform": "proton",
+  "engine": "gamemaker",
+  "route": "decomp-recomp",
+  "tools": [
+   "UndertaleModCli 0.9.2.0 (Ubuntu)",
+   "UndertaleModLib CodeImportGroup",
+   "Python 3 / Pillow",
+   "Node.js scenario harness"
+  ],
+  "anti_cheat": "None found in the project's initial local recon; single-player work only",
+  "status": "in-progress",
+  "agents": [
+   "Qwen 3.8-27B (local GGUF, Q4_K_M)",
+   "GPT Astra",
+   "GPT Sol",
+   "Codex (GPT-6)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [
+   "https://store.steampowered.com/app/1379870/Tribal_Hunter/",
+   "https://github.com/UnderminersTeam/UndertaleModTool",
+   "https://github.com/UnderminersTeam/UndertaleModTool/releases/tag/0.9.2.0"
+  ],
+  "tags": [
+   "gamemaker",
+   "gml-vm",
+   "character-port",
+   "sprites",
+   "collision",
+   "audio",
+   "archive-validation"
+  ]
+ },
+ {
   "path": "games/tunic/seamless-coop-bepinex6-native-hooks.md",
   "kind": "game",
   "title": "Seamless co-op for TUNIC (BepInEx 6 IL2CPP, native hooks, autonomous 2-PC testing)",
