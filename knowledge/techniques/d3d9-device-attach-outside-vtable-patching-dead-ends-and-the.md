@@ -163,6 +163,39 @@ Frida `Interceptor.attach` on NV stub code likewise remains a valid probe (code
 patch, not the defended tables) for ground truth about dispatch, but is not
 needed for the working architecture.
 
+## The deterministic chain (REA/Ghidra-pinned, boot-3 live-verified)
+
+Static analysis of `prototypeenginef.dll` (loads at its preferred base
+0x10000000, so static VAs == runtime VAs) located the engine's D3D9 wrapper
+singletons and the real device stash - the answer the earlier "walk the
+wrapper object DFS" pass was groping for:
+
+- `0x11276D40` `g_wrapper` - written once by the D3D9 factory init
+  (`if (g_wrapper == 0)` guard = single-creation proof; calls
+  `Direct3DCreate9(0x20)`); `0x11276D30` `g_ctx` is the second write of the
+  SAME object from inside the wrapper constructor.
+- Wrapper layout: `{+0x00 IDirect3D9* (real d3d9.dll image vtable),
+  +0x04 pddi context object, +0x08 (zeroed at init, later alias window at
+  ctx+0x20), +0x0C holder object with a static .rdata vtable}`.
+- **The device stash: `*(*(*(0x11276D40)) + 4) + 0x15C`** - i.e.
+  wrapper -> ctx(+4) -> [+0x15C] = live `IDirect3DDevice9*` (the
+  heap-vtable device the ASI slot-patches). Verified live: chain output
+  matched the histogram-sweep-discovered device exactly.
+- Two redundant copies exist (useful as validity checks from another boot):
+  `ctx +0x150 -> Q -> [Q+0x84]` and `wrapper +0x0C -> [+0x08] -> +0x13C`
+  (the latter resolves to the identical ctx+0x15C window).
+- The earlier guessed chain `wrapper -> +8 -> +0x164` is disproven:
+  `+0x08` is zeroed at construction; `+0x164` was reading the wrong class.
+
+Tooling: `tools/engine_device_chain.py PID [--expect 0x...]` resolves the
+chain in milliseconds, cross-checks all three paths agree, and (with
+`--expect`) compares against a device found independently (histogram sweep).
+Keep the full histogram discovery as the cold-start fallback; the chain is
+the fast validation path for every subsequent boot. TODO next boot: confirm
+the static addresses and `+4/+0x15C` offsets on a fresh boot (engine loads
+at the same base, so they should transfer), then seed this into the ASI flow
+ahead of any sweep.
+
 ## Seen in
 
 - Prototype (RAD engine, D3D9 fixed-function), v1.0, NVIDIA user stack:
