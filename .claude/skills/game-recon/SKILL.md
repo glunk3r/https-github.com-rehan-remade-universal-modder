@@ -15,7 +15,8 @@ working versions, the route, and the gotchas before you touch anything. See the 
 ## 1. Find it and fingerprint it
 ```bash
 um scan --list                 # Steam, Epic and Xbox installs (Windows, WSL, Linux, macOS)
-um scan "<name or folder>"     # engine, version, exes (.NET?), anti-cheat, loaders, mod folders, saves, routes
+um scan "<name or folder>"     # host, engine, version, exes (.NET?), anti-cheat, loaders,
+                               # mod folders, saves, routes
 um scan "<game>" --json        # the same, machine-readable
 ```
 `um` lives at `bin/um` in the universal-modder repo (plugins and clones put it on PATH). Anywhere else:
@@ -35,8 +36,9 @@ The scan can't see everything, so check these by hand:
 
 ## 1b. Can this machine run it?
 Skip this when the game is native to the host: a Windows game on Windows or from WSL, a macOS or Linux build
-on its own OS. Otherwise (a Windows-only game on macOS or Linux, an x64 game on an ARM CPU), or when a game
-that should run here won't start, search the notes by situation and exact error text first
+on its own OS (`um scan` prints the `host:` and each exe's CPU, and warns when a Windows build meets another
+OS). Otherwise (a Windows-only game on macOS or Linux, an x64 game on an ARM CPU), or when a game that should
+run here won't start, search the notes by situation and exact error text first
 (`um kb search "windows game on mac"`, `um kb search "proton"`, `um kb search "<error text>"`), then follow
 `references/compatibility.md`: host checks, per-game reports, the layers, anti-cheat, probes.
 
