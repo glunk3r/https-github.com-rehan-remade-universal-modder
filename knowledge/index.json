@@ -5716,6 +5716,43 @@
   ]
  },
  {
+  "path": "games/skyrim-special-edition/rebuilding-a-cut-gatekeeper-with-generated-plugin-records-di.md",
+  "kind": "game",
+  "title": "Rebuilding a cut gatekeeper with generated plugin records: dialogue branches, shared voice lines, force-greets",
+  "game": "Skyrim Special Edition",
+  "games_also": [],
+  "game_version": "1.7.104 (Steam), Creation Kit 1.7.99, SKSE 2.2.3 installed but not required",
+  "platform": "windows",
+  "engine": "creation",
+  "route": "data",
+  "tools": [
+   "Python plugin writer (own, ~600 lines)",
+   "Creation Kit PapyrusCompiler",
+   "SSEEdit (read-only checks)",
+   "LipGenerator + FonixData.cdf",
+   "MO2 2.5.2"
+  ],
+  "anti_cheat": "none (single-player)",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [],
+  "tags": [
+   "dialogue",
+   "quests",
+   "papyrus",
+   "force-greet",
+   "shared-info",
+   "voice-files",
+   "esl",
+   "cut-content",
+   "packages"
+  ]
+ },
+ {
   "path": "games/star-wars-battlefront-ii-2005/porting-a-skinned-starcraft-ii-character-onto-the-swbf2-2005.md",
   "kind": "game",
   "title": "Porting a skinned StarCraft II character onto the SWBF2 (2005) infantry skeleton",
