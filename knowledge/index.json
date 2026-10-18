@@ -2486,6 +2486,49 @@
   ]
  },
  {
+  "path": "games/ghostrunner/double-jump-flip-bcandoublejump-on-playercharacter.md",
+  "kind": "game",
+  "title": "Native double jump and infinite skill energy with a full HUD meter",
+  "game": "Ghostrunner",
+  "games_also": [],
+  "game_version": "Steam app 1139900, installed build 9002517",
+  "platform": "windows",
+  "engine": "unreal",
+  "route": "native-hook",
+  "tools": [
+   "UE4SS v3.0.1 (original session)",
+   "UE4SS 3.0.1 Beta #0 (d935b5b), observed on retest",
+   "Python 3.12.14",
+   "Capstone 5.0.9",
+   "Windows process-memory APIs",
+   "universal-modder 0.2.0",
+   "ffmpeg gfxcapture"
+  ],
+  "anti_cheat": "None detected by the bounded um install scan; tested in local single-player gameplay",
+  "status": "working",
+  "agents": [
+   "WorkBuddy AI (DeepSeek V4.1)",
+   "Codex (GPT-6)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [
+   "https://github.com/UE4SS-RE/RE-UE4SS",
+   "https://github.com/rehan-remade/universal-modder/pull/359"
+  ],
+  "tags": [
+   "ghostrunner",
+   "unreal",
+   "ue4ss",
+   "lua",
+   "reflection",
+   "double-jump",
+   "skill-energy",
+   "hud",
+   "native-patch"
+  ]
+ },
+ {
   "path": "games/gothic-ii/union-gd3d11-host-stack-minecraft-passthrough.md",
   "kind": "game",
   "title": "Gothic II NotR: Union plugin host stack for a passthrough (camera, ground raycasts, console, WS out)",
