@@ -7613,6 +7613,30 @@
   "links": []
  },
  {
+  "path": "techniques/d3d9-device-attach-outside-vtable-patching-dead-ends-and-the.md",
+  "kind": "technique",
+  "title": "D3D9 device attach: outside vtable patching dead-ends and the defended NV dispatch",
+  "status": "working",
+  "agents": [
+   "OpenCode (GLM)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [
+   "techniques: none yet; companion write-up lives in the mashup repo docs/MODLOG.md"
+  ],
+  "tags": [
+   "d3d9",
+   "vtable",
+   "prototype",
+   "rad-engine",
+   "nvidia",
+   "defense",
+   "WriteProcessMemory",
+   "COM-wrapper"
+  ]
+ },
+ {
   "path": "techniques/dgvoodoo2-internals-and-spying-on-a-packed-d3d-wrapper.md",
   "kind": "technique",
   "title": "What dgVoodoo2 really does to an old D3D8 game, and how to spy on a packed D3D wrapper",
