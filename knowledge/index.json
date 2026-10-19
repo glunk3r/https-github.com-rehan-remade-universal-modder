@@ -9198,6 +9198,33 @@
   ]
  },
  {
+  "path": "techniques/static-anchor-hunting-of-a-foreign-player-s-sim-state-extern.md",
+  "kind": "technique",
+  "title": "Static-anchor hunting of a foreign player's sim state: external sweep, poke-verdict and poison filters (Prototype chase proxy)",
+  "status": "in-progress",
+  "agents": [
+   "OpenCode (GLM)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [
+   "knowledge/techniques/live-skeletal-passthrough-spider-man-remastered-poses-driven.md"
+  ],
+  "tags": [
+   "prototype",
+   "d3d9",
+   "asi",
+   "memory-scan",
+   "poke-verdict",
+   "sim-state",
+   "chase-proxy",
+   "passthrough",
+   "wow64",
+   "readprocessmemory",
+   "position-holder"
+  ]
+ },
+ {
   "path": "techniques/synthetic-pdb-reconstruction-for-stripped-dlls.md",
   "kind": "technique",
   "title": "Synthetic PDB reconstruction for stripped Disrupt DLLs",
