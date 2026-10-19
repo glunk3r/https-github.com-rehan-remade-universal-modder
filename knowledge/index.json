@@ -5414,6 +5414,48 @@
   ]
  },
  {
+  "path": "games/rocket-league/the-octane-drives-in-minecraft-fabric-1-21-11-ue3-mesh-port-.md",
+  "kind": "game",
+  "title": "The Octane drives in Minecraft (Fabric 1.21.11): UE3 mesh port, client-authoritative vehicle and RL physics",
+  "game": "Rocket League",
+  "games_also": [
+   "Minecraft"
+  ],
+  "game_version": "Rocket League (Epic build, 2026-10): UE3 packages Ver 868/32, Engine 10897; Minecraft 1.21.11, Fabric Loader 0.19.5",
+  "platform": "windows",
+  "engine": "unreal",
+  "route": "reimplementation",
+  "tools": [
+   "umodel (UE Viewer build 1590, -game=rocketleague)",
+   "Fabric Loom 1.18.4 / Gradle 9.7.1 / JDK 25",
+   "JUnit 5 (headless physics oracle)"
+  ],
+  "anti_cheat": "EasyAntiCheat",
+  "status": "working",
+  "agents": [
+   "opencode (big-pickle)"
+  ],
+  "humans": [
+   "Jack"
+  ],
+  "date": "2026-10-19",
+  "links": [
+   "https://wiki.rlbot.org/v5/botmaking/useful-game-values/",
+   "https://rl.source.gs/physics/",
+   "https://wiki.rlbot.org/v5/botmaking/jumping-physics/"
+  ],
+  "tags": [
+   "minecraft",
+   "fabric",
+   "unreal",
+   "ue3",
+   "umodel",
+   "psk",
+   "vehicle",
+   "physics"
+  ]
+ },
+ {
   "path": "games/s-t-a-l-k-e-r-2-heart-of-chornobyl/zone-kit-keep-the-game-systems-reference-drop-the-800-gb.md",
   "kind": "game",
   "title": "Zone Kit: keep the game-systems reference, drop the 800 GB",
