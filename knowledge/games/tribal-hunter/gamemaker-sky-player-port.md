@@ -20,7 +20,7 @@ links:
 tags: [gamemaker, gml-vm, character-port, sprites, collision, audio, archive-validation]
 ---
 
-# Tribal Hunter: Sky player port and archive validation
+# Tribal Hunter: Sky player port, separate render clocks and load-time function bindings
 
 **This mod is an unpublished work in progress.** Missing assets are a primary
 release blocker: Gorge Valley does not provide the attack sprites needed for
@@ -34,6 +34,8 @@ movement, visual size/bloat states, custom collision, imported audio and a typed
 bloat/digestion HUD. The agent separately checked compiled archives and source
 parity. This note shares findings from that ongoing work; it is not a mod release,
 a complete character conversion, or a bundle of either game's content.
+Before and after: [the stock player](media/original.png) and
+[Sky as the player](media/modified.jpg), both in Tribal Hunter.
 
 ## Setup
 
@@ -44,7 +46,10 @@ a complete character conversion, or a bundle of either game's content.
   build screenshot and human confirmation establish the tested installation.
 - **Donor:** a locally owned Gorge Valley copy recorded as **0.1.2.10** in the
   project journal. That donor version label was not independently rechecked
-  against its executable during this write-up.
+  against its executable during this write-up. Gorge Valley is Dandy's Chest's
+  game, with Sky as its protagonist: a free demo on
+  [itch.io](https://dandychest.itch.io/gorgevalleydemo) and newer builds for the
+  developer's Patreon supporters.
 - **Runtime/platform:** Steam through Proton is the documented project launch
   route; archive builds ran with the native Linux/Ubuntu CLI. Final runtime
   acceptance was human-reported, not an agent-recorded platform trace. A local
@@ -272,7 +277,8 @@ and the built-in audio-group assignment.
 
 All donor art/audio came from the user's local game files; this note includes
 none of it and grants no redistribution rights. It includes only descriptions,
-the short original validation snippet and the user's Steam version screenshots.
+the short original validation snippet, the user's Steam version screenshots and
+two gameplay screenshots (before and after).
 Credit the game creators for their respective content and the Underminers team
 for UndertaleModTool. No new AI-generated art was needed for this port.
 
@@ -303,6 +309,9 @@ is asserted.
   cutscenes, save migration and difficult collision transitions. Current human
   playtesting is limited; further tuning is planned.
 - Package author-owned patch/import tooling separately if the mod is released.
+  A release can't ship Gorge Valley's sprites or sounds, or a patched
+  `data.win` that contains them: the importer has to read them from the
+  player's own Gorge Valley copy, unless Dandy's Chest gives permission.
   There is no public reproducible mod-source bundle or showcase video yet.
 
 ## Evidence and research provenance
@@ -321,5 +330,4 @@ were the [game's Steam page](https://store.steampowered.com/app/1379870/Tribal_H
 [UMT README](https://github.com/UnderminersTeam/UndertaleModTool) and
 [0.9.2.0 release](https://github.com/UnderminersTeam/UndertaleModTool/releases/tag/0.9.2.0).
 These establish project identity and tool provenance, not an independent replay
-of this mod. No dead-link archive lookup was needed. Publication is pending
-human review; nothing in this note has been pushed or released.
+of this mod.
