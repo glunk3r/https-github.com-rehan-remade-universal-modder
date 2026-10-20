@@ -13,8 +13,3 @@ dist/
 .pytest_cache/
 # the parent repo ignores bin/ (build output); the CLI launcher lives here
 !bin/
-# Godot self-test fixture: the addon is copied in from um/godot; import output is regenerated
-tests/godot_fixture/.godot/
-tests/godot_fixture/addons/
-tests/godot_fixture/**/*.import
-tests/godot_fixture/**/*.uid

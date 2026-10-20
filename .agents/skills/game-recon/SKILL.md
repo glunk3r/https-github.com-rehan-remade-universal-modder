@@ -31,9 +31,7 @@ The scan can't see everything, so check these by hand:
   "also" line.
 - **Anti-cheat installed elsewhere:** kernel drivers (Vanguard's `vgk.sys`) and launcher-level protection
   don't live in the game folder. Search "<game> anti-cheat".
-- **Online-only or live-service games:** treat them as protected even if nothing was detected: no running,
-  injecting or instrumenting the client. For a remake, offline static analysis of their files is still
-  open (`skills/multiplayer-remake`).
+- **Online-only or live-service games:** treat them as protected even if nothing was detected.
 
 ## 2. Research the living community (always; versions move)
 Search, in order:

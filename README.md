@@ -120,7 +120,6 @@ A few notes from the community:
     <tr><td><a href="skills/showcase-video"><code>showcase-video</code></a></td><td>Record the window with only the game's audio, pick moments, cut a styled video from an EDL</td></tr>
     <tr><td><a href="skills/mashup-mods"><code>mashup-mods</code></a></td><td>Game inside a game: content ports, passthrough mods (worked example: Minecraft × GTA V), decomps as libraries, reimplementations</td></tr>
     <tr><td><a href="skills/publish-mod"><code>publish-mod</code></a></td><td>Lint, package per platform, credits, the post</td></tr>
-    <tr><td><a href="skills/godot-remake"><code>godot-remake</code></a></td><td>Rebuild a game in Godot from a spec and prove each slice by running it: acceptance checks, edge-case scenarios and contact sheets, a live bridge into the running game, asset variants with an in-game picker, measured matching, clean-room leak scan, browser playtests</td></tr>
     <tr><td><a href="skills/share-field-notes"><code>share-field-notes</code></a></td><td>Search the knowledge base, write your own note, open the PR</td></tr>
   </tbody>
 </table>
@@ -141,7 +140,6 @@ A few notes from the community:
     <tr><td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/media/icons/backup-dark.svg"><img src="docs/media/icons/backup-light.svg" width="36" height="36" alt=""></picture></td><td><code>um backup</code></td><td>Snapshot, diff and restore save folders</td></tr>
     <tr><td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/media/icons/publish-dark.svg"><img src="docs/media/icons/publish-light.svg" width="36" height="36" alt=""></picture></td><td><code>um publish check</code></td><td>Blocks shipping game files, decompiled code and leaked keys</td></tr>
     <tr><td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/media/icons/kb-dark.svg"><img src="docs/media/icons/kb-light.svg" width="36" height="36" alt=""></picture></td><td><code>um kb</code></td><td>The knowledge base: <code>search</code>, <code>show</code>, <code>new</code>, <code>check</code>, <code>index</code>, <code>sync</code>, <code>pr</code></td></tr>
-    <tr><td align="center"></td><td><code>um remake</code></td><td><code>init</code>, <code>check</code>, <code>status</code>, <code>played</code>, <code>grid</code>, <code>run</code>, <code>bridge</code>, <code>variants</code>, <code>measure</code>, <code>compare</code>, <code>leak</code>, <code>serve</code>: Godot remakes verified by running them</td></tr>
   </tbody>
 </table>
 

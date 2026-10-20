@@ -3,9 +3,9 @@ kind: game
 title: 'Enshrouded: reading the Keen holistic engine statically'
 game: Enshrouded
 games_also: []
-game_version: 'Steam 1203220, package build 1269579 release_1.0 (2026-10-16); dedicated server 2278520 same build'
+game_version: 'Steam 1203620, package build 1269579 release_1.0 (2026-10-16); dedicated server 2278520 same build'
 platform: windows
-engine: keen-holistic
+engine: native
 route: other
 tools: [pefile, capstone 5, Ghidra 12.1 headless, python zstandard]
 anti_cheat: none found; Steam DRM wrapper (.bind section) on the client exe only
@@ -18,7 +18,7 @@ links:
 - https://github.com/Brabb3l/kfc-parser
 - https://graphicsprogrammingconference.com/2025/
 - https://enshrouded.zendesk.com/hc/en-us/articles/16055441447709-Dedicated-Server-Configuration
-tags: [engine-study, reflection, voxel, kfc, static-analysis]
+tags: [keen-holistic, engine-study, reflection, voxel, kfc, static-analysis]
 ---
 # Enshrouded: reading the Keen holistic engine statically
 
@@ -34,6 +34,10 @@ only our own dedicated server, bound to localhost.
 Static reading in this order: strings, the engine's own reflection tables in `.rdata`, package headers, then Ghidra
 for the bytecode VM and the voxel codec. The client carries a Steam DRM stub, so it was never unpacked. The server has
 no stub, so we checked transport there and in a hosted run.
+
+Brabb3l's [kfc-parser](https://github.com/Brabb3l/kfc-parser) (GPL-3) already reads the package index, the hashes
+and the reflection tables; the package and hash facts below agree with its source (`KFC4` magic, FNV-1a32, the 4-lane
+AESDEC content hash). Start there for anything that has to read or write the files.
 
 ## How the game works (what we had to learn)
 - Internal names: the engine is "holistic" and Enshrouded is project "game38". The client is built without RTTI. A
@@ -54,7 +58,7 @@ no stub, so we checked transport there and in a hosted run.
   The server is authoritative. The idle server ticks at about 24 Hz.
 
 ## Build steps
-Nothing to build. The notes and scripts are private, in the dirty room.
+Nothing to build. The analysis notes and scripts are private, kept outside any repo.
 
 ## Verification
 - Each hash was reproduced in Python against every entry in the shipped index.
@@ -64,10 +68,12 @@ Nothing to build. The notes and scripts are private, in the dirty room.
 Not verified: tick and send rates with players connected, and anything about the renderer at runtime.
 
 ## Gotchas
-1. **`steam_games.py download` asks for the owner's login, even for a free server.** **Cause:** it always logs in as
-   the owner. **Fix:** run `steamcmd +@sSteamCmdForcePlatformType windows +login anonymous +app_info_update 1
-   +app_update 2278520 +app_update 2278520 validate +quit`. Without `app_info_update` the update fails with "Missing
-   configuration". `force_install_dir` was ignored: the server landed in `steamcmd/steamapps/common/EnshroudedServer`.
+1. **Our download helper (a private script) asked for the owner's Steam login, even for the free server.**
+   **Cause:** it always logs in as the owner. **Fix:** call SteamCMD directly, anonymously:
+   `steamcmd +@sSteamCmdForcePlatformType windows +login anonymous +app_info_update 1 +app_update 2278520
+   +app_update 2278520 validate +quit`. Without `app_info_update` the update fails with "Missing configuration".
+   `force_install_dir` was ignored and the server landed in `steamcmd/steamapps/common/EnshroudedServer`; SteamCMD
+   only honours `+force_install_dir <dir>` before `+login`, so put it first.
 2. **A loose reflection scan counts 18,713 types.** **Cause:** 6,067 false positives from POP3 tables and help text.
    **Fix:** check each candidate against FNV-1a of its name; 12,646 is the true count.
 3. **One resource's size in the index is 2^25 too small.** **Cause:** the size field keeps only 25 bits. **Fix:** trust

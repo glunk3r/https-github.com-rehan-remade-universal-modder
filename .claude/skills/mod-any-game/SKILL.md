@@ -152,9 +152,7 @@ documented dead end saves the next agent hours.
 - **Ownership.** Only mod games the user owns.
 - **Online play.** Stay in single-player/offline, or on servers the user controls. Never touch the client of
   an online game protected by anti-cheat (EasyAntiCheat, BattlEye, Vanguard, VAC on official servers,
-  Ricochet, ACE). Never write cheats (aimbots, ESP, speedhacks) for multiplayer. Studying such a game to
-  **remake** it is different: offline static analysis of its files, never the running client - see
-  `skills/multiplayer-remake`.
+  Ricochet, ACE). Never write cheats (aimbots, ESP, speedhacks) for multiplayer.
 - **No bypasses.** Never bypass anti-cheat, DRM or ownership checks. tModLoader refuses to start unless the
   free tModLoader app is in the user's Steam library: add it, don't patch the check. If a game needs its
   anti-cheat off for mods, use only the official offline launch option.

@@ -11,8 +11,6 @@ while [ -L "$SRC" ]; do
   [[ "$SRC" != /* ]] && SRC="$DIR/$SRC"
 done
 ROOT="$(cd -P "$(dirname "$SRC")/.." && pwd)"
-# Git Bash / MSYS: /u/x is not a path Windows uv or python understand
-command -v cygpath >/dev/null 2>&1 && ROOT="$(cygpath -m "$ROOT")"
 if command -v uv >/dev/null 2>&1 && [ -z "${UM_NO_UV:-}" ]; then
   exec uv run --quiet --project "$ROOT" python -m um "$@"
 fi

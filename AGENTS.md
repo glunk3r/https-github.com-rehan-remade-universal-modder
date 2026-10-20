@@ -26,8 +26,6 @@ repo, they almost always want to **mod a game**, or to learn how a game was modd
     - `backup`: snapshot and restore saves
     - `publish`: pre-release lint
     - `kb`: the knowledge base
-    - `remake`: Godot remakes: acceptance checks, scenario tests, live bridge, asset variants,
-      dirty-vs-clean measurement, clean-room leak scan, browser playtests
 - **fal MCP server:** `https://mcp.fal.ai/mcp` with header `Authorization: Bearer $FAL_KEY`.
   - It's pre-configured per agent: `.mcp.json` (Claude Code), `.codex/config.toml` (Codex),
     `.cursor/mcp.json` (Cursor), `.vscode/mcp.json` (VS Code / Copilot), `gemini-extension.json`
@@ -42,10 +40,7 @@ repo, they almost always want to **mod a game**, or to learn how a game was modd
 
 ## Rules (full reasoning in `skills/mod-any-game/references/safety.md`)
 - **What you can mod:** any game the user owns: single-player, multiplayer, or servers the user hosts.
-  - Never run, inject into or instrument online clients protected by anti-cheat.
-  - **Remaking a multiplayer game** (study it, rebuild it as original work) is allowed, including
-    anti-cheat-protected and live-service titles, through **offline static analysis** of the files on
-    disk and the user's own servers only: see `skills/multiplayer-remake`.
+  - Never touch online clients protected by anti-cheat.
   - Never write cheats against other players (aimbots, ESP, speed hacks).
   - Never bypass anti-cheat, DRM or ownership checks.
 - **Saves:** `um backup` saves before modded launches.

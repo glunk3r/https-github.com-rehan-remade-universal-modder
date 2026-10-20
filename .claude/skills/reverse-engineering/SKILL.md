@@ -93,48 +93,6 @@ For an **undocumented format**:
    0.9/255 mean error (`examples/aoe2-de-civ/sld.py`).
 5. Only then write new files. Test them in game with one asset before batch-converting.
 
-Make the format work countable (methods from openage, oot, melee, SoulsFormats, UAssetAPI, OpenMW):
-- **One deliverable per format:** `FORMAT.md` (layout, a version-by-game table), an ImHex `.hexpat` for
-  looking at files, a declarative reader, and the round trip.
-- **Account for every byte.** Describe fields by offset; anything not understood is an explicit
-  `unknown`/`skip` field or a gap blob, never silently skipped. "Bytes described / total" per format is
-  the progress number.
-- **Strict reader:** assert every magic, constant, padding and count you believe in, so a wrong
-  hypothesis fails loudly on the next file. Writers reserve offsets and fill them later, and fail if one is
-  left unfilled.
-- **Corpus round trip:** run decode -> encode across *every* stock file and require byte equality;
-  unknown regions are kept as opaque bytes so the round trip still holds. Keep an allowlist of files that
-  are expected to fail, with the reason.
-- **Sweep:** parse every file of that type in the install and report the pass rate per type.
-- **Editions by hash:** record the SHA-256 of the exe and key data files per edition (Steam, GOG,
-  patches). Offsets, formats and measurements only compare within one edition.
-- **Versioned defs plus a names overlay:** keep struct layouts (per version) separate from the meanings
-  you assign them (Paramdex's Defs/Names/Meta split), so renaming never breaks parsing.
-
-## Keep what you understand anchored and countable (native code)
-Methods from matching-decomp projects (melee, Space Rangers, fallout2-ce), minus the byte matching:
-- **Symbol file keyed by address**, per exe SHA-256 (`dirty/<game>/symbols.txt`: `name = addr size
-  status`). Apply it to Ghidra (rename/comment tools) and cite it from SPEC claims (`fn:0x4A30C0`). A new
-  exe hash makes those claims stale.
-- **Shrink the denominator first.** Identify the compiler (Rich header, RTTI, MSVC/Delphi/Watcom
-  runtime) and match its runtime and third-party libraries (Ghidra FidDb, FLIRT) before measuring
-  progress. Anything with no evidence is `unresolved`, never "game code".
-- **Unknowns stay visible.** Unknown fields are `x<HexOffset>` (`x1C_3` for a bit, `pad_<off>`), types
-  `UNK_T`. Don't name a function you don't understand. Count the raw pointer-plus-offset accesses left:
-  each one is a field still to name.
-- **Progress** = bytes of game-engine functions that are named, specced (an evidenced SPEC claim), and
-  checked (a passing acceptance check), per revision.
-- **Several builds?** Diff them function by function, ignoring addresses and relocations (asm-differ,
-  objdiff). Carry evidence forward to unchanged functions; changed functions are where mechanics changed.
-
-## Observe the original (debugger experiments)
-Static reading guesses; watching the original measures. Only on a copy without anti-cheat, in the lab:
-break in the function, watch the struct frame by frame, put a write-watchpoint on the state variable and
-log every transition with its caller. Write each run up as `dirty/<game>/evidence/experiments/<id>.md`
-with a JSON trace of values over frames. SPEC claims cite `exp:<id>`, and the remake's acceptance check
-replays the same input and asserts the same value sequence (melee's flipper experiments measured a 25->24
-timer and 0.8/0.5 restitution this way).
-
 ## Make it an oracle
 - **Engine logic you port** (for a simulator, a trainer, a reimplementation): record real traces from the
   game (positions, velocities per tick) and replay them against your port. In the Terraria Eye of Cthulhu
