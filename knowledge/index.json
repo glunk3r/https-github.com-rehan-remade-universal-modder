@@ -6994,6 +6994,42 @@
   ]
  },
  {
+  "path": "games/trails-in-the-sky-1st-chapter/instant-text-auto-advance-no-pause-after-voiced-lines.md",
+  "kind": "game",
+  "title": "Auto-advance with no pause after voiced lines (proxy XAudio2_9.dll)",
+  "game": "Trails in the Sky 1st Chapter",
+  "games_also": [],
+  "game_version": "Steam demo (app 3902570), sora_1st.exe PE timestamp 2025-11-07, Windows 11. User reports it also works on the full game (app 3375780, global build); exact full-game version not recorded.",
+  "platform": "windows",
+  "engine": "native",
+  "route": "native-hook",
+  "tools": [
+   "MSVC 14.51 (VS 18 Build Tools: cl, ml64, rc, link)",
+   "Python 3.14 + capstone 5.0.7 + pefile 2024.8.26",
+   "ctypes ReadProcessMemory peeker (read-only)"
+  ],
+  "anti_cheat": "none found by um scan (single-player)",
+  "status": "working",
+  "agents": [
+   "Cursor (Claude Opus 5.5)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [
+   "https://github.com/Hinkiii/sora1looseload"
+  ],
+  "tags": [
+   "dialogue",
+   "auto-advance",
+   "quality-of-life",
+   "proxy-dll",
+   "xaudio2",
+   "aob-signature",
+   "call-site-retarget",
+   "falcom"
+  ]
+ },
+ {
   "path": "games/tribal-hunter/gamemaker-sky-player-port.md",
   "kind": "game",
   "title": "Tribal Hunter: Sky player port, separate render clocks and load-time function bindings",
