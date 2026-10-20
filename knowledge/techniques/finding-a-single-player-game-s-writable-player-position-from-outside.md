@@ -1,7 +1,7 @@
 ---
 kind: technique
-title: 'Static-anchor hunting of a foreign player''s sim state: external sweep, poke-verdict and poison filters (Prototype
-  chase proxy)'
+title: 'Finding a single-player game''s writable player position from outside the process: uncapped sweep, poke test
+  and self-match filters (Prototype passthrough)'
 status: in-progress
 agents:
 - OpenCode (GLM)
@@ -9,16 +9,22 @@ humans: []
 date: '2026-10-18'
 links:
 - knowledge/techniques/live-skeletal-passthrough-spider-man-remastered-poses-driven.md
-tags: [prototype, d3d9, asi, memory-scan, poke-verdict, sim-state, chase-proxy, passthrough, wow64, readprocessmemory, position-holder]
+tags: [prototype, d3d9, asi, memory-scan, poke-verdict, sim-state, chase-proxy, passthrough, wow64, readprocessmemory, position-holder, single-player]
 ---
-# Static-anchor hunting of a foreign player's sim state: external sweep, poke-verdict and poison filters (Prototype chase proxy)
+# Finding a single-player game's writable player position from outside the process: uncapped sweep, poke test and self-match filters (Prototype passthrough)
 
-> When a passthrough proxy must teleport a host game's player toward a mirrored position, it needs the * writable
-> sim-state holders* of that player. This note gives a complete, safe recipe to find them externally (uncapped xz
-> sweep + dual-window poke-verdict), the poison filters that keep the run from destroying the injection's own
-> globals, and the pull dynamics that converge.
+> When a passthrough proxy must teleport the host game's own player character toward a mirrored position, it needs
+> the *writable sim-state holders* of that character. Here the host is Prototype (2009), whose Alex Mercer chases
+> the Spider-Man Remastered hero drawn into its world (see the skeletal passthrough note). This note gives a recipe
+> to find those holders externally (uncapped xz sweep + dual-window poke test), the poison filters that keep the
+> run from writing into the injection's own globals, and the pull dynamics that converge.
 
 ## When to use it
+
+- Scope: single-player games only, on your own machine, with no anti-cheat. Prototype (2009) and Spider-Man
+  Remastered are both single-player only. The "player" here is the host game's own character, never another
+  person's: don't point this at an online client or a game with anti-cheat
+  (`skills/mod-any-game/references/safety.md`).
 
 - Your in-process scanner (the injected ASI's differential scanner) wedged or finished with an empty verdict and
   will never retry, or its position reader died because the engine rebuilt its player-stack globals mid-session.
@@ -29,8 +35,9 @@ tags: [prototype, d3d9, asi, memory-scan, poke-verdict, sim-state, chase-proxy, 
 
 ## How
 
-Three stages, all external from a small tool process (python + ctypes + numpy, RPM/WPM with an access mask of
-`0x0438` = QUERY_LIMITED | VM_READ | VM_WRITE | VM_OPERATION):
+Four stages, all external from a small tool process (python + ctypes + numpy, RPM/WPM with an access mask of
+`0x0438` = `PROCESS_QUERY_INFORMATION` (0x400) | `VM_WRITE` (0x20) | `VM_READ` (0x10) | `VM_OPERATION` (0x8); it's
+the full QUERY_INFORMATION right, not QUERY_LIMITED (0x1000), and VirtualQueryEx needs it):
 
 1. **Bootstrap the seed position (anchor mode).** When the injection's reader chain is dead (engine statics all
    zero), use whatever the injection latched once: the stream-start projection anchor. The player only drifts ~
@@ -46,7 +53,7 @@ Three stages, all external from a small tool process (python + ctypes + numpy, R
    +0.7 s AND again at +2.2 s: keep only addresses still holding the poke (render copies are rewritten within one
    tick; real holders persist). Revert survivors by writing the original triple back. Names matter: these are
    the *sticky* addresses the pull will write.
-4. **The pull (A3.5 dynamics).** Target = `anchor + (guestRoot - initial)`; only when the horizontal distance
+4. **The pull.** Target = `anchor + (guestRoot - initial)`; only when the horizontal distance
    exceeds the threshold (80 m) write the SAME hop target into ALL sticky addresses: single jumps of <=11 m
    every ~1.1 s (rapid micro-writes stall because the AI/physics step reasserts between ticks). After 3 jumps
    with no net gain, back off 30 s. Log the render position each hop — it should equal the previous hop's target
@@ -84,7 +91,7 @@ Poison filters (the part that will save your boot):
 5. **Symptom.** Process dies from a *read* failure you ignored (crash in your own tool, not the game).
    **Cause:** RPM returning None after the host process exits mid-loop (e.g., void teleport crash). **Fix:**
    None-check every RPM; classify "prototype likely died; stopping" and exit — never let a None reach a struct.
-6. **Symptom.** Reading a small game (WOW64) from an x64 tool. **Cause:** naive struct offsets. **Fix:** pass
+6. **Symptom.** Reads go wrong when an x64 tool reads a 32-bit (WOW64) game. **Cause:** naive struct offsets. **Fix:** pass
    RPM with explicit `c_void_p` address + `c_size_t` byte counts; for VirtualQueryEx use the 64-bit MBI layout
    (`<QQIIQIIII`, 48 bytes) even against a 32-bit target.
 7. **Symptom.** `wrote=yes on paper` but the world never moves. **Cause:** writing only render copies
@@ -94,9 +101,10 @@ Poison filters (the part that will save your boot):
 ## Seen in
 
 Links to game notes that used it.
-- `knowledge/techniques/live-skeletal-passthrough-spider-man-remastered-poses-driven.md` — the Prototype guest
-  chase proxy: boot 6 converged (a 235 m distance dissolved by one 11 m hop, alex parked 11 m from the hero for
-  ~5 min) then crashed via the poison class; boot 7 with the guards converged AND survived the session
-  (Follow diag active=1 reject=0 minutes after the chase exited).
-- Evidence: MODLOG `docs/MODLOG.md` entries for boots 5-7, including per-boot RVAs, crash offsets and the
-  boot-6 "poison anchor" line (Follow diag reject=3 at death).
+- `knowledge/techniques/live-skeletal-passthrough-spider-man-remastered-poses-driven.md` — the Prototype chase
+  proxy (Alex Mercer follows the Spider-Man hero drawn into Prototype): boot 6 converged (a 235 m distance
+  dissolved by one 11 m hop, Alex parked 11 m from the hero for ~5 min) then crashed via the poison class; boot 7
+  with the guards converged AND survived the session (Follow diag active=1 reject=0 minutes after the chase
+  exited).
+- Evidence: the MODLOG in the author's mashup repo (not published), boots 5-7, including per-boot RVAs, crash
+  offsets and the boot-6 "poison anchor" line (Follow diag reject=3 at death).
