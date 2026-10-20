@@ -2626,15 +2626,14 @@
   "engine": "unreal",
   "route": "native-hook",
   "tools": [
-   "UE4SS v3.0.1 (original session)",
-   "UE4SS 3.0.1 Beta #0 (d935b5b), observed on retest",
+   "UE4SS v3.0.1 (log: 3.0.1 Beta #0, Git SHA d935b5b)",
    "Python 3.12.14",
    "Capstone 5.0.9",
    "Windows process-memory APIs",
    "universal-modder 0.2.0",
    "ffmpeg gfxcapture"
   ],
-  "anti_cheat": "None detected by the bounded um install scan; tested in local single-player gameplay",
+  "anti_cheat": "None detected by the bounded um install scan; single-player. Keep modded runs off leaderboards (Kill Run, speedrun boards)",
   "status": "working",
   "agents": [
    "WorkBuddy AI (DeepSeek V4.1)",
