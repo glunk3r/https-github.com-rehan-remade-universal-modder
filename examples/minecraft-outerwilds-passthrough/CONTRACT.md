@@ -38,11 +38,14 @@ an OWML C# mod (host) and a Fabric mod (guest).
   - Yaw: `MC.yaw = 180° - OW.yaw` (heading convention, as in the GTA V example).
   - Pitch: `MC.pitch = -OW.pitch` (OW positive pitch looks up; MC positive pitch looks down).
 
-  These three lines are **confirmed by `tools/oracle.py`**, which builds a four-colour landmark cross
-  in the guest's world at known offsets and reads back where each colour lands in the exported frame.
+  These three lines are **not verified yet**, and by Unity's and Minecraft's conventions the yaw and
+  pitch signs look inverted (a Z mirror gives `MC.yaw = 180 + OW.yaw` and `MC.pitch = OW.pitch`; see the
+  field note). `tools/oracle.py` builds a four-colour landmark cross in the guest's world at known offsets
+  and reads back where each colour lands in the exported frame, but it sends its pose straight to the guest
+  in Minecraft terms, so the run below checks the guest's camera and the frame, not this mapping.
   Holding a camera directly above the cross at `(0,120,0)`, yaw 0, pitch 90 (straight down):
 
-  | landmark | world | contract says | measured centroid |
+  | landmark | world | expected in the raw buffer | measured centroid |
   |---|---|---|---|
   | magenta | `-Z` north | up the screen | (640, 30) |
   | black | `+Z` south | down the screen | (640, 671) |
@@ -50,7 +53,8 @@ an OWML C# mod (host) and a Fabric mod (guest).
   | orange | `-X` west | right | (1120, 360) |
 
   The four centroids sit on a square centred at (631, 350) against a frame centre of (640, 360), so the
-  cross is centred and unmirrored. Verdict from the run: `CONTRACT CONFIRMED by the four-landmark cross`.
+  cross is centred. The rows are bottom-up (flag 2) and the oracle reads row 0 as the top, so "north up" is
+  the raw buffer; on screen, a camera facing `+Z` and looking down has south at the top.
 - **Depth:** Unity's reversed-Z (`1` = near, `0` = far) with `zZeroToOne = true`. The guest declares
   its own convention per frame in the slot `flags` field; the compositor converts.
 - **Time:** all timestamps use a monotonic nanosecond clock. On Linux both sides share
@@ -150,9 +154,9 @@ area to about 1080p, per `knowledge/techniques/frame-compositing-depth-and-pose-
 
 ## Open items to settle against the running games
 
-- [x] Exact Z-mirror and yaw/pitch signs (first-slice alignment oracle). **Settled**: the four-colour
-      landmark cross in `tools/oracle.py` confirms `MC = (OW.x, OW.y, -OW.z)` with `yaw = 180 - OW.yaw`
-      and `pitch = -OW.pitch`. See "Units and axes" above for the measured table.
+- [ ] Exact Z-mirror and yaw/pitch signs. **Not settled**: the landmark cross in `tools/oracle.py`
+      only checked Minecraft-frame poses sent straight to the guest. Run it through
+      `HostBridge.SendCamera`; the yaw and pitch signs look inverted (see "Units and axes").
 - [x] Whether Wine's `CreateFileMappingA` on a `Z:\dev\shm\...` file works in the *game's* prefix
       under Proton 11: **probe passed**, and the host's `FrameReader` does exactly this.
 - [ ] Whether the host should read the frame on the render thread at `Camera.onPreCull`, and how the

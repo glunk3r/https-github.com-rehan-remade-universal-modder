@@ -9,6 +9,8 @@ the java command from that JSON and runs it, so an agent can start the guest gam
     tools/launch-mc.py --print               # show the command instead of running it
 
 The account is offline (a passthrough test never needs the real one); set MC_USERNAME to change it.
+This is for development and tests on your own profile, like Loom's runClient. To play, start the profile
+from your own launcher (the Modrinth App), signed in.
 """
 import argparse
 import json

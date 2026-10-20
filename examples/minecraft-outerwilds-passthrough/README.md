@@ -22,9 +22,11 @@ Working now, verified live:
 
 - The guest's frame reaches the host and is **real imagery** (not a stale or black frame).
 - The picture is drawn on a **depth-tested screen surface in the world** — OW terrain in front occludes it.
-- The camera override works: 5 different host poses produce 5 distinct, fully populated frames.
+- The camera override works: 5 different camera poses, sent straight to the guest, produce 5 distinct, fully
+  populated frames.
 - The guest's player is hidden and its camera follows Outer Wilds'.
-- The axis mapping is **confirmed by a measurement**, not by eye — see "The axis oracle" below.
+- The guest's camera and the frame layout are checked by a measurement, not by eye — see "The axis oracle"
+  below. The host's Outer Wilds → Minecraft conversion is **not verified yet**.
 - The host reconnects, detaches cleanly, and survives a loop reset.
 
 Not done yet:
@@ -110,7 +112,7 @@ MC.yaw   = 180 - OW.yaw
 MC.pitch = -OW.pitch          # OW positive pitch looks up, MC positive looks down
 ```
 
-A wrong sign still renders *a picture*, so this was checked by **measurement**. The oracle builds a
+A wrong sign still renders *a picture*, so this needs a **measurement**. The oracle builds a
 four-colour landmark cross in the guest's world (north magenta, south black, east yellow, west orange — four
 colours pin down a rotation *and* a mirror), holds the guest camera directly above it looking straight down,
 and reads back where each colour lands in the exported frame:
@@ -122,7 +124,12 @@ and reads back where each colour lands in the exported frame:
 | yellow | `+X` east | left | (142, 360) |
 | orange | `-X` west | right | (1120, 360) |
 
-Centred and unmirrored, so the mapping above is confirmed. **This method is the reusable part** — it needs no
+What this run proves is narrower than the mapping above. The oracle sends its pose straight to the guest
+in Minecraft terms (yaw 0, pitch 90), so it checks the guest's camera and the exported frame, whose rows are
+bottom-up (so "north up" is the raw buffer, not the screen); the host's conversion in `HostBridge.SendCamera`
+isn't in the loop. By Unity's and Minecraft's conventions that conversion's yaw and pitch signs look inverted
+(`MC.yaw = 180 + OW.yaw`, `MC.pitch = OW.pitch` for a Z mirror): see the field note before relying on it.
+**This method is the reusable part** — it needs no
 documentation of the other game's axes, and it caught three separate bugs that each produced a confident,
 wrong answer. If you port this to another host, port the oracle with it.
 
