@@ -34,9 +34,6 @@ movement, visual size/bloat states, custom collision, imported audio and a typed
 bloat/digestion HUD. The agent separately checked compiled archives and source
 parity. This note shares findings from that ongoing work; it is not a mod release,
 a complete character conversion, or a bundle of either game's content.
-Before and after: [the stock player](media/original.png) and
-[Sky as the player](media/modified.jpg), both in Tribal Hunter.
-
 ## Setup
 
 - **Host:** Tribal Hunter **1.0.2.4**, Steam app **1379870**, installed build
@@ -277,8 +274,7 @@ and the built-in audio-group assignment.
 
 All donor art/audio came from the user's local game files; this note includes
 none of it and grants no redistribution rights. It includes only descriptions,
-the short original validation snippet, the user's Steam version screenshots and
-two gameplay screenshots (before and after).
+the short original validation snippet, and the user's Steam version screenshots.
 Credit the game creators for their respective content and the Underminers team
 for UndertaleModTool. No new AI-generated art was needed for this port.
 
