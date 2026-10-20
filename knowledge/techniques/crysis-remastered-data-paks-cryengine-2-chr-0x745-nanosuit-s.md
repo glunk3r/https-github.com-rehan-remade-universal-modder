@@ -188,11 +188,12 @@ and every classic-suit value.
 4. **Inverse bind matrices.** The bone→world matrix was used, and its rigid inverse taken; the stored world→bone
    matrix was not relied on. The Warhead note found W2B and B2W are not always exact inverses, so keep the
    donor's matrices unchanged if you write `.chr` files back.
-5. **The exe can't be disassembled for cvar defaults.** **Cause:** it is wrapped in Steam DRM: the entry point
-   sits in `.bind`, `.text` is encrypted on disk (byte frequencies are flat across the first 26 MB, no normal x64
-   prologue patterns, and no references to the 90 suit cvar name strings in `.rdata`). **Fix:** don't touch it.
-   Take the effective values from the shipped cfg/Lua (table above); what only lives in code stays unknown, or
-   read it from the running game's console (Open questions).
+5. **The exe on disk can't be disassembled for cvar defaults.** **Cause:** it is wrapped in Steam DRM: the entry
+   point sits in `.bind`, `.text` is encrypted on disk (byte frequencies are flat across the first 26 MB, no normal
+   x64 prologue patterns, and no references to the 90 suit cvar name strings in `.rdata`). **Fix:** leave the file
+   as installed. Take the effective values from the shipped cfg/Lua (table above), and read what only lives in
+   code from the running game's console (Open questions). The code is readable in the running process, from
+   memory or a private dump kept outside any repo (CONTRIBUTING, DRM-wrapped executables); that wasn't tried here.
 6. **Holes or see-through patches in the converted suit.** **Cause:** diffuse alpha is a gloss/effect mask.
    **Fix:** drop alpha from the diffuse on export, except for the few materials with an `AlphaTest` or `Opacity`
    (teeth, eyeballs, lashes).
@@ -210,8 +211,6 @@ and every classic-suit value.
 - Related CryEngine 2 notes: [Warhead build 711 static analysis and level PAK method 6](../games/crysis-warhead/build-711-static-analysis-and-level-pak-method-6.md)
   and [Black Ops Zombies in Warhead](../games/crysis-warhead/black-ops-zombies-native-animation-and-runtime.md)
   (writing `.chr` files back).
-- Used on 2026-10-17 to port the Remastered nanosuit (Prophet and Nomad models, voice, SFX, icons, mode looks
-  and suit balance) into another game; that game note isn't in the knowledge base.
 
 ## Verification
 - **Reader:** parsed all three nanosuit `.chr`, `Barnes.chr`, `NanoSuit_Helm_neck_Barnes.chr` and
@@ -219,10 +218,9 @@ and every classic-suit value.
   vertex ids are below the vertex count, and the morph chunk parses to exactly its last byte. Counts match the
   table above.
 - **glTF:** imported into Blender 5.1. Mesh, UVs, skeleton and weights looked right, and Prophet's head, helmet
-  neck and eyes landed in place from the `.cdf` transforms. The mesh was then skinned to another engine's
-  biped and animated in that game; a human checked it in play (bone directions agreed within 3.5° on the arms).
-- **Audio and textures:** every WAV was checked for duration, peak and RMS, and heard in play by a human. Joined
-  split DDS files matched their expected size; icons were looked at.
+  neck and eyes landed in place from the `.cdf` transforms.
+- **Audio and textures:** every WAV was checked for duration, peak and RMS. Joined split DDS files matched their
+  expected size; icons were looked at.
 - **Mode bakes:** rendered on the model in Blender and checked by eye by a human.
 - **Not verified:**
   - the suit values in the running Crysis Remastered (nothing was probed live);
@@ -237,4 +235,4 @@ and every classic-suit value.
 - `g_suitCloakEnergyDrainWhenDamaged` = 33 per damage point would empty the bar on almost any hit, so its real
   unit (perhaps a percentage) is unknown.
 - Whether the speed multiplier ×3 replaces or stacks with the base `sprintMultiplier` 1.5 in `player.lua`.
-- A standalone public release of the reader (it currently lives inside a mod repo).
+- A standalone public release of the reader.
