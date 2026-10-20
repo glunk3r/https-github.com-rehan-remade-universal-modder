@@ -64,8 +64,8 @@ def fake_voidless(monkeypatch):
             if path == "/api/generate/multi-animation/presets":
                 return self._send({"presets": [{"key": "platformer-character", "label": "Platformer character",
                                                 "actions": ["idle", "run", "jump"]}]})
-            if path == "/api/assets/a1":
-                return self._send({"id": "a1", "name": "drone", "file": "assets/u1/drone.png",
+            if path == "/api/assets/115918":
+                return self._send({"id": 115918, "name": "drone", "file": "assets/u1/drone.png",
                                    "meta_data": {"frames": [{"id": 0, "name": "rotations - 8-way",
                                                              "images": ["assets/u1/rot_0.png"]}]}})
             self._send({"error": {"message": "Not Found"}}, 404)
@@ -89,15 +89,17 @@ def fake_voidless(monkeypatch):
                             "referenceImage", "styleImage"}
                 if missing := required - set(body):
                     return self._send({"error": {"message": f"missing {sorted(missing)}"}}, 422)
-                return self._send({"assetId": "a1", "file": "assets/u1/drone.png", "seed": 7, "cost": 1})
+                return self._send({"assetId": 115918, "file": "assets/u1/drone.png", "seed": 7, "cost": 1})
             if path == "/api/generate/image-rotations":
+                if not isinstance(body.get("id"), int):                 # asset ids are integers
+                    return self._send({"error": {"message": "The given data is invalid."}}, 422)
                 return self._send({"frames": [{"id": 0, "name": "rotations - 8-way",
                                                "images": ["assets/u1/rot_0.png"]}], "cost": 10})
             if path == "/api/generate/multi-animation":
                 # It animates a list of images; {"id": …} is rejected as "attach at least one image".
                 if not body.get("items"):
                     return self._send({"error": {"message": "Attach at least one image to animate."}}, 400)
-                return self._send({"results": [{"assetId": "a1", "frames": [{"id": 1, "name": "walk",
+                return self._send({"results": [{"assetId": 115918, "frames": [{"id": 1, "name": "walk",
                                                                              "images": ["assets/u1/walk.png"]}],
                                                 "skipped": []}], "quality": "high", "cost": 24})
             self._send({"error": {"message": "Not Found"}}, 404)
@@ -123,21 +125,21 @@ def test_voidless_sprite_rotate_then_animate(fake_voidless, tmp_path):
     assert body["options"]["facing"] == "right"   # forward|right only; left is a mirrored right
     assert Image.open(out / "a_rusty_scrap_drone.png").size == (64, 64)
 
-    cli.main(["voidless", "rotate", "a1", "--url", url, "--out", str(out), "--name", "drone"])
-    assert fake_voidless["posts"][-1] == ("/api/generate/image-rotations", {"id": "a1"})
+    cli.main(["voidless", "rotate", "115918", "--url", url, "--out", str(out), "--name", "drone"])
+    assert fake_voidless["posts"][-1] == ("/api/generate/image-rotations", {"id": 115918, "referenceFile": ""})
 
     cli.main(["voidless", "animate", "115918", "--preset", "platformer-character", "--url", url, "--out", str(out),
               "--name", "drone", "--hold-facing"])
     path, body = fake_voidless["posts"][-1]
     assert path == "/api/generate/multi-animation"
-    assert body["items"] == [{"assetId": 115918}] or body["items"][0]["assetId"]  # a list, never a bare id
+    assert body["items"] == [{"assetId": 115918}] and "quality" not in body   # a list, never a bare id
     # flipFacings defaults on: the left-side clips are mirrored from the right at half the price.
     assert (body["preset"], body["holdFacing"], body["flipFacings"], body["autoFlip"]) == ("platformer-character", True, True, False)
     assert Image.open(out / "drone_walk.png").size == (256, 64)
 
     rec = [json.loads(x) for x in (out / "voidless_manifest.jsonl").read_text().splitlines()]
     assert [r["cmd"] for r in rec] == ["sprite", "rotate", "animate"]
-    assert rec[0]["asset"] == "a1" and rec[0]["seed"] == 7 and rec[0]["size"] == 512
+    assert rec[0]["asset"] == 115918 and rec[0]["seed"] == 7 and rec[0]["size"] == 512
     assert rec[-1]["hold_facing"] is True
     assert fake_voidless["auth"] == {"void_test"}             # the CDN is anonymous, the API is not
 
@@ -151,13 +153,13 @@ def test_voidless_credits_presets_asset_and_errors(fake_voidless, tmp_path, caps
     out = capsys.readouterr().out
     # the key is what `animate --preset` takes; the label and actions are there to choose by
     assert "platformer-character" in out and "idle, run, jump" in out
-    cli.main(["voidless", "asset", "a1", "--url", url, "--urls"])
+    cli.main(["voidless", "asset", "115918", "--url", url, "--urls"])
     out = capsys.readouterr().out
     assert "rotations - 8-way" in out and "/assets/u1/rot_0.png" in out
 
     # animate needs something to animate
     with pytest.raises(SystemExit):
-        cli.main(["voidless", "animate", "a1", "--url", url, "--out", str(tmp_path)])
+        cli.main(["voidless", "animate", "115918", "--url", url, "--out", str(tmp_path)])
     assert "--preset" in capsys.readouterr().err
 
     # 429 is waited out and retried; the call then succeeds
@@ -221,7 +223,7 @@ def test_voidless_fetch_redownloads_without_generating(fake_voidless, tmp_path, 
     them again and posts nothing.
     """
     url = fake_voidless["url"]
-    cli.main(["voidless", "fetch", "a1", "--url", url, "--out", str(tmp_path), "--name", "drone"])
+    cli.main(["voidless", "fetch", "115918", "--url", url, "--out", str(tmp_path), "--name", "drone"])
     out = capsys.readouterr().out
     assert "no credits spent" in out
     assert (tmp_path / "drone.png").exists()                      # the base image
@@ -242,3 +244,29 @@ def test_voidless_tileset_always_uses_the_tileset_model(fake_voidless, tmp_path,
     assert body["model"] == "gpt-image-2.5"
     rec = [json.loads(x) for x in (tmp_path / "voidless_manifest.jsonl").read_text().splitlines()]
     assert rec[-1]["model"] == "gpt-image-2.5"          # the manifest records what was charged for
+
+
+def test_voidless_animate_one_frame_image_and_quality(fake_voidless, tmp_path):
+    """--frame-id/--image-index pick one image of a frame (e.g. a facing of the 8-way rotation), sent as
+    frameIndex/imageIndex like the vendor's MCP server; --quality is sent only when given."""
+    cli.main(["voidless", "animate", "115918", "--preset", "topdown-walk", "--frame-id", "3", "--image-index", "2",
+              "--quality", "ultra", "--url", fake_voidless["url"], "--out", str(tmp_path)])
+    _, body = fake_voidless["posts"][-1]
+    assert body["items"] == [{"assetId": 115918, "frameIndex": 3, "imageIndex": 2}] and body["quality"] == "ultra"
+
+
+def test_voidless_post_is_not_retried_after_a_gateway_error(fake_voidless, tmp_path, capsys):
+    """A 502/503/504 on a generation POST may come from a gateway while the job still finishes and is charged."""
+    fake_voidless["fail_next"] = (504, {"error": {"message": "Gateway Timeout"}})
+    with pytest.raises(SystemExit):
+        cli.main(["voidless", "rotate", "115918", "--url", fake_voidless["url"], "--out", str(tmp_path)])
+    err = capsys.readouterr().err
+    assert "retrying" not in err and "may still finish" in err
+    assert len(fake_voidless["posts"]) == 1
+
+
+def test_voidless_read_only_commands_make_no_folder(fake_voidless, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    cli.main(["voidless", "credits", "--url", fake_voidless["url"]])
+    cli.main(["voidless", "asset", "115918", "--url", fake_voidless["url"]])
+    assert not (tmp_path / "assets").exists()

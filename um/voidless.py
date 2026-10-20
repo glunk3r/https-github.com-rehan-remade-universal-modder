@@ -5,24 +5,22 @@
     um voidless sprite "a rusty scrap drone enemy" --facing right --name drone
     um voidless sprite "a red health potion" --type object --size 64 --style pixel-art
     um voidless rotate <asset_id>                            # one sprite -> 8 facings (10 credits)
-    um voidless animate <asset_id> --preset combat           # a whole set in one call, one size across clips
+    um voidless animate <asset_id> --preset platformer-character   # several clips in one call
     um voidless animate <asset_id> --prompt "walk: walks left; hit: recoils" --hold-facing
     um voidless presets                                      # named animation sets you can ask for
     um voidless asset <asset_id>                             # frames, image keys and download urls
     um voidless fetch <asset_id> --out assets/gen            # download every frame again, free
 
-Voidless generates a character once and then works on that asset, so every later call shares its look: `rotate`
-adds the eight facings, `animate` adds clips. The reason to reach for it over a one-shot image call is the set
-rather than the single sprite -- clips come back scaled to one base size with the feet on the ground, which is
-what a mod needs and what a per-image service leaves you to fix by hand. `--hold-facing` ends each clip on the
-frame it began, so a directional loop does not drift; `--flip-facings` mirrors the left-side clips from the
-right-side ones at half the price.
+Voidless keeps a generated sprite as an asset, and later calls add frames to it: `rotate` adds the eight facings,
+`animate` adds clips at the asset's base size. `--hold-facing` ends each clip on the frame it began with, so a
+directional loop doesn't drift. On an 8-way rotation the left-side clips are mirrored from the right-side ones
+by default (half the price); `--no-flip-facings` animates them too.
 
-Voidless is a paid service: it needs an account, an API key (https://voidless.dev/api-docs) and credits.
-An image costs 1 on the default model and up to 15 on the dearest (`--model` lists them), an 8-way rotation
-10, and an animation set 100 a pass (200 at --quality ultra). `--type tileset` is always drawn by
-gpt-image-2.5 at 5 credits whatever --model says, because it is the only model that generates the type.
-`um voidless credits` shows what is left. The key
+Voidless is a separate paid service: it needs an account on a plan with API access (Voidless+ in October 2026),
+an API key (https://voidless.dev/api-docs) and credits. An image costs 1 credit on the default model and up to
+15 on others (`--model` lists them), an 8-way rotation 10, and an animation set 100 a pass (200 for 1024 px
+sprites). `--type tileset` is always drawn by gpt-image-2.5 at 5 credits whatever --model says, because the
+server uses that model for tilesets. `um voidless credits` shows what is left. The key
 is read from VOIDLESS_API_KEY, else from where `um voidless key set` stored it (the desktop keyring on Linux, an
 owner-only ~/.secrets/voidless-key elsewhere), else from VOIDLESS_API_KEY=... in a .env.
 Files land in --out (default assets/gen), and each call appends a line to <out>/voidless_manifest.jsonl (asset
@@ -202,9 +200,12 @@ def request(base: str, method: str, path: str, body: dict | None = None, retries
     """JSON call to /api<path> with the API key.
 
     The timeout is deliberately long: generation answers when the image is finished, not when the request is
-    accepted, so a short socket timeout would abandon work that has already been charged.
+    accepted, so a short socket timeout would abandon work that has already been charged. For the same reason
+    a POST is retried only on 429 (refused before any work): after a 502/503/504 from a gateway the job may
+    still finish and be charged, so a retry could pay twice.
     """
     data = json.dumps(body).encode() if body is not None else None
+    retry_on = (429,) if method == "POST" else (429, 502, 503, 504)
     for attempt in range(retries + 1):
         req = urllib.request.Request(f"{base}/api{path}", data=data, method=method, headers={
             "x-api-key": api_key(), "Accept": "application/json",
@@ -217,11 +218,14 @@ def request(base: str, method: str, path: str, body: dict | None = None, retries
             die(f"Voidless {method} {path} answered with something that isn't JSON")
         except urllib.error.HTTPError as e:
             line = _error(e.code, e.read())
-            if attempt < retries and e.code in (429, 502, 503, 504):
+            if attempt < retries and e.code in retry_on:
                 wait_s = 15.0 * (attempt + 1)
                 print(f"um: {line}; retrying in {wait_s:.0f} s", file=sys.stderr)
                 time.sleep(wait_s)
                 continue
+            if method == "POST" and e.code in (502, 503, 504):
+                die(f"Voidless {method} {path} -> {line}. The job may still finish and be charged: check "
+                    "`um voidless credits` and your assets on voidless.dev before running it again")
             die(f"Voidless {method} {path} -> {line}")
         except urllib.error.URLError as e:
             die(f"no Voidless API at {base} ({e.reason})")
@@ -344,7 +348,9 @@ def cmd_sprite(a, base, out):
 
 
 def cmd_rotate(a, base, out):
-    data = request(base, "POST", "/generate/image-rotations", {"id": a.asset_id}, timeout=a.timeout)
+    # referenceFile "" = the asset's base image; the vendor's MCP server always sends it rather than leave it out
+    data = request(base, "POST", "/generate/image-rotations", {"id": a.asset_id, "referenceFile": ""},
+                   timeout=a.timeout)
     saved = []
     for f in data.get("frames") or []:
         saved += _save(out, _name(a.name, f"{a.asset_id} rotations"), f.get("images") or [], "rotation")
@@ -355,13 +361,20 @@ def cmd_rotate(a, base, out):
 def cmd_animate(a, base, out):
     if not a.preset and not a.prompt:
         die("give --preset (see `um voidless presets`) or --prompt \"name: what happens; name: what happens\"")
-    # The endpoint animates a LIST of images, not an asset id: `items` is [{assetId, frameId?}] in
-    # placement order. Sending {"id": …} is accepted and then rejected as "attach at least one image".
+    # The endpoint animates a LIST of images, not an asset id: `items` is [{assetId, frameIndex?, imageIndex?}]
+    # in placement order (the field names the vendor's MCP server sends). Sending {"id": …} is accepted and then
+    # rejected as "attach at least one image".
+    item = {"assetId": a.asset_id}
+    if a.frame_id is not None:
+        item["frameIndex"] = a.frame_id
+    if a.image_index is not None:
+        item["imageIndex"] = a.image_index
     body = {
-        "items": [{"assetId": int(a.asset_id)} | ({"frameId": a.frame_id} if a.frame_id is not None else {})],
-        "preset": a.preset or "", "prompt": a.prompt or "", "quality": a.quality,
+        "items": [item], "preset": a.preset or "", "prompt": a.prompt or "",
         "holdFacing": a.hold_facing, "flipFacings": not a.no_flip_facings, "autoFlip": a.auto_flip,
     }
+    if a.quality:                     # otherwise the server picks the tier from the sprite size
+        body["quality"] = a.quality
     data = request(base, "POST", "/generate/multi-animation", body, timeout=a.timeout)
     saved = []
     for r in data.get("results") or []:
@@ -402,7 +415,8 @@ def main(a):
         return cmd_key(a)
     base = base_url(getattr(a, "url", None))
     out = Path(getattr(a, "out", "assets/gen"))
-    out.mkdir(parents=True, exist_ok=True)
+    if hasattr(a, "out"):                     # credits/presets/asset only read: don't create a folder for them
+        out.mkdir(parents=True, exist_ok=True)
     {"credits": cmd_credits, "presets": cmd_presets, "asset": cmd_asset, "fetch": cmd_fetch,
      "sprite": cmd_sprite, "rotate": cmd_rotate, "animate": cmd_animate}[a.cmd](a, base, out)
 
@@ -428,16 +442,16 @@ def register(sub):
     q = cmd("presets", "named animation sets `animate --preset` accepts", out=False)
     q.add_argument("--json", action="store_true")
     q = cmd("asset", "frames, image keys and download urls for one asset", out=False)
-    q.add_argument("asset_id")
+    q.add_argument("asset_id", type=int)
     q.add_argument("--urls", action="store_true", help="print every image url")
     q.add_argument("--json", action="store_true")
 
     q = cmd("fetch", "download an asset's frames again without generating (free)")
-    q.add_argument("asset_id")
+    q.add_argument("asset_id", type=int)
     q.add_argument("--frame-id", type=int, help="only this frame")
     q.add_argument("--frames-only", action="store_true", help="skip the base image")
 
-    q = cmd("sprite", "text -> sprite on a transparent background (5 credits)")
+    q = cmd("sprite", "text -> sprite on a transparent background (1 credit on the default model)")
     q.add_argument("prompt")
     q.add_argument("--type", default="character", choices=TYPES,
                    help="'character' is a full-body sprite; 'object' props and items; 'artwork' scenes")
@@ -461,10 +475,10 @@ def register(sub):
     q.add_argument("--seed", type=int, default=0, help="0 = random")
 
     q = cmd("rotate", "asset id -> the eight facings as one frame (10 credits)")
-    q.add_argument("asset_id")
+    q.add_argument("asset_id", type=int)
 
-    q = cmd("animate", "asset id -> an animation set, every clip scaled to the same base size")
-    q.add_argument("asset_id")
+    q = cmd("animate", "asset id -> an animation set, every clip at the asset's base size (100 credits a pass)")
+    q.add_argument("asset_id", type=int)
     q.add_argument("--preset", help="a named set from `um voidless presets`")
     q.add_argument("--prompt", help="without a preset: 'name: what happens; name: what happens'")
     q.add_argument("--hold-facing", action="store_true",
@@ -473,10 +487,14 @@ def register(sub):
                    help="animate the left-side clips too instead of mirroring them from the right (costs double)")
     q.add_argument("--auto-flip", action="store_true",
                    help="afterwards, mirror every right-side clip that has no left twin (free)")
-    q.add_argument("--quality", default="high", choices=QUALITIES,
-                   help="high (100 credits per pass) or ultra (200)")
+    q.add_argument("--quality", choices=QUALITIES,
+                   help="force a tier: high (100 credits per pass) or ultra (200). Default: the server picks it "
+                        "from the sprite size (200 credits a pass for 1024 px sprites)")
     q.add_argument("--frame-id", type=int,
-                   help="animate one frame of the asset (e.g. a rotation) instead of its base image")
+                   help="animate one frame of the asset (e.g. its 8-way rotation, id from `asset`) instead of "
+                        "its base image")
+    q.add_argument("--image-index", type=int,
+                   help="with --frame-id: which image of that frame (on a rotation, the facing's position)")
 
     kp = cs.add_parser("key", help="store / inspect the Voidless API key (OS keyring first)",
                        description="`um voidless` takes the key from VOIDLESS_API_KEY first, then from a file named "
