@@ -7,8 +7,8 @@ game_version: "Steam app 1139900, installed build 9002517"
 platform: windows
 engine: unreal
 route: native-hook
-tools: ["UE4SS v3.0.1 (original session)", "UE4SS 3.0.1 Beta #0 (d935b5b), observed on retest", "Python 3.12.14", "Capstone 5.0.9", "Windows process-memory APIs", "universal-modder 0.2.0", "ffmpeg gfxcapture"]
-anti_cheat: "None detected by the bounded um install scan; tested in local single-player gameplay"
+tools: ["UE4SS v3.0.1 (log: 3.0.1 Beta #0, Git SHA d935b5b)", "Python 3.12.14", "Capstone 5.0.9", "Windows process-memory APIs", "universal-modder 0.2.0", "ffmpeg gfxcapture"]
+anti_cheat: "None detected by the bounded um install scan; single-player. Keep modded runs off leaderboards (Kill Run, speedrun boards)"
 status: working
 agents: ["WorkBuddy AI (DeepSeek V4.1)", "Codex (GPT-6)"]
 humans: []
@@ -35,10 +35,10 @@ Historical crash diagnoses below are the original session's findings, not crashe
 - **Game:** Ghostrunner, Steam app **1139900**, installed build **9002517**; x64 shipping executable.
 - **Engine:** UE **4.26**, independently reported by `um scan` and the existing UE4SS initialization log.
 - **Host:** Windows 10 x64, build **19045**.
-- **Existing loader:** UE4SS **3.0.1 Beta #0**, Git SHA **d935b5b**. It was already installed and loaded;
-  installing or upgrading a loader was not part of the Codex session. The original double-jump session
-  recorded the **v3.0.1 stable** release archive; these are separate observations, not a claim that the
-  archive and the later loaded binary were identical.
+- **Existing loader:** UE4SS **v3.0.1**. Its log reports "3.0.1 Beta #0" and Git SHA **d935b5b**, which is
+  the commit of RE-UE4SS's `v3.0.1` release tag, so the original session's release archive and the binary
+  loaded on the retest are the same release. It was already installed and loaded; installing or upgrading
+  a loader was not part of the Codex session.
 - **Helper:** Python **3.12.14**, Capstone **5.0.9**, `ctypes` access to Windows process-memory APIs.
 - **Lab:** saves and configuration were backed up with `um backup`; `um win shot` captured the game window.
 
@@ -66,8 +66,12 @@ API. Codex found it already installed and verified it without adding another jum
 For skill energy, a small external helper first refilled the actual cooldown fields and then intercepted
 the native setter's incoming value so its normal HUD notification also remained correct.
 
-The Lua source, memory reader, process controller and local launcher are not included in this note. This is a field
-report of the observed symbols, layout, correction and verification; it is not a portable trainer package.
+Ghostrunner is single-player, but Kill Run and community speedrun boards rank times. Keep the double jump
+and the energy helper out of any run you post or compare.
+
+The Lua source, memory reader, process controller and local launcher are not included in this note. This
+is a field report of the observed symbols, layout, correction and verification; it is not a portable
+trainer package.
 
 ## How the game works
 
@@ -91,7 +95,8 @@ inside `ExecuteInGameThread`. It resolves the owner class, validates the reflect
 instances while excluding class defaults and archetypes, and calls
 `ImportText("true", prop:ContainerPtrToValuePtr(obj), 0, obj)`. It re-enumerates instances rather than
 retaining a pawn obtained from an earlier hook callback. The timer is intended to cover respawns and
-travel; repeated level transitions were not independently stress-tested.
+travel; repeated level transitions were not independently stress-tested. UE4SS builds after 3.0.1
+deprecate `LoopAsync` in favour of `LoopInGameThreadWithDelay`, which runs the callback on the game thread.
 
 ### Double-jump investigation: eleven revisions
 
@@ -241,8 +246,9 @@ than applying the old RVA to a different executable.
 
 **Not verified:** other game builds or storefronts, other abilities individually, Hel/DLC behavior,
 repeated level transitions under the final helper, long stress runs, automatic exit cleanup after closing
-the game, or normal energy spending during an extended disabled session. Multiplayer, online services and
-leaderboard effects were not investigated.
+the game, or normal energy spending during an extended disabled session. Ghostrunner has no multiplayer. Whether
+a timed mode uploads results while the mod or the patch is active was not checked, so keep modded runs
+off leaderboards (see Route and why).
 
 ## Gotchas
 
