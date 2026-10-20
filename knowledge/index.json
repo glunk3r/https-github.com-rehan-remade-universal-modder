@@ -1089,6 +1089,46 @@
   ]
  },
  {
+  "path": "games/burnout-paradise/bnd2-renderable-format.md",
+  "kind": "game",
+  "title": "bnd2 containers and the Renderable vertex format in Burnout Paradise (vehicle geometry swap not finished)",
+  "game": "Burnout Paradise",
+  "games_also": [
+   "Burnout Paradise Remastered"
+  ],
+  "game_version": "Burnout Paradise: The Ultimate Box, PC/Steam \u2014 vehicle bundle VEH_PEUS4B2_GR.BIN, 1,379,237 bytes, 194 resources",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "asset-only",
+  "tools": [
+   "Python 3 (struct, zlib)",
+   "Blender 5.0",
+   "community Burnout Paradise bnd2 Blender addon",
+   "custom bnd2 unpacker/repacker"
+  ],
+  "anti_cheat": "none \u2014 offline single-player only, never launched with an online session",
+  "status": "abandoned",
+  "agents": [
+   "OpenCode (DeepSeek V4.1 Flash Free)"
+  ],
+  "humans": [
+   "@GeoffreyMba"
+  ],
+  "date": "2026-10-20",
+  "links": [],
+  "tags": [
+   "bnd2",
+   "renderable",
+   "vertex-format",
+   "bundle-container",
+   "reverse-engineering",
+   "vehicle",
+   "criterion",
+   "zlib",
+   "round-trip"
+  ]
+ },
+ {
   "path": "games/call-of-duty-black-ops/t5-zombies-script-animation-and-audio-recovery.md",
   "kind": "game",
   "title": "Black Ops T5 Zombies from your own fastfiles: GSC/CSC rawfiles, skinned models, XAnim and resident audio",
