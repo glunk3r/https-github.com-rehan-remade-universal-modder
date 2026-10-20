@@ -3,7 +3,7 @@ kind: game
 title: 'Rebuilding a cut gatekeeper with generated plugin records: dialogue branches, shared voice lines, force-greets'
 game: Skyrim Special Edition
 games_also: []
-game_version: '1.7.104 (Steam), Creation Kit 1.7.99, SKSE 2.2.3 installed but not required'
+game_version: '1.7.104 (Steam), Creation Kit 1.7.99; no SKSE needed'
 platform: windows
 engine: creation
 route: data
@@ -29,6 +29,8 @@ tags: [dialogue, quests, papyrus, force-greet, shared-info, voice-files, esl, cu
 ## Setup
 - Skyrim SE **1.7.104** (Steam), Creation Kit **1.7.99**, its `PapyrusCompiler.exe` with
   `TESV_Papyrus_Flags.flg` and the vanilla sources in `Data\Source\Scripts`.
+- SKSE isn't needed. The install had SKSE 2.2.3, a build for runtime 1.6.640, which can't load on 1.7.104
+  (skse.silverlock.org lists 2.3.1 for 1.7.104).
 - MO2 2.5.2 test profile: USSEP, Cut Content Restoration (incl. its optional Saarthal Miners plugin), College
   of Winterhold - Quest Expansion, Alternate Start, SkyUI. None of them touch the bridge.
 - The plugin: an **ESL-flagged ESP**, master Skyrim.esm only, not localized. A Python builder clones vanilla
@@ -89,6 +91,9 @@ stages, objectives and spell checks, vanilla packages, vanilla dialogue lines. R
 3. Compile Papyrus with the CK compiler: `-all -f=TESV_Papyrus_Flags.flg -i="Data\Source\Scripts;<yours>"`.
 4. For each own-voice line, copy its INFO's TRDT/NAM1 (delocalized) instead of DNAM, and copy the recording
    from `Skyrim - Voices_en0.bsa` under the rule above. Assert quest + topic EDID ≤ 25.
+   These `.fuz` copies are Bethesda's files: fine in your own build, but a published mod must not include them.
+   Give a release an install step that copies them from the player's own `Skyrim - Voices_en0.bsa` (and adds
+   any generated lip data), or reuse the line through shared info where its conditions pass.
 5. Stage **everything** into the mod folder every time (plugin, Seq, Sound replaced, .pex, sources).
 6. Test on a new character.
 
@@ -114,8 +119,8 @@ few times). Nirya's force-greets are still not 100% reliable (accepted).
 4. **Subtitle showed garbage ("xA…").** **Cause:** copied vanilla text fields held string-table IDs. **Fix:**
    delocalize on copy, and sweep the plugin for 4-byte text fields.
 5. **Re-created cut line silent.** **Cause:** the file must sit under *your* plugin's voice folder, with the
-   ESL low-12-bit ID. **Fix:** ship the vanilla `.fuz` there, with generated lip data spliced in (the vanilla
-   one had 0 bytes of lip).
+   ESL low-12-bit ID. **Fix:** put a copy of the vanilla `.fuz` there (from the player's own BSA, see build
+   step 4), with generated lip data spliced in (the vanilla one had 0 bytes of lip).
 6. **Persuasion option vanished at Speech 50+.** **Cause:** the success line borrowed 0006B942, conditioned
    on DGArrestQuest's alias. **Fix:** a copy of the text and recording instead of shared info.
 7. **The whole Dragonborn route missing at MQ205 stage 50.** **Cause:** its lines were shared from
@@ -148,8 +153,10 @@ few times). Nirya's force-greets are still not 100% reliable (accepted).
     plugin's records before believing it.
 
 ## Assets
-None generated. Voice: vanilla recordings copied into the mod (restored audio, credited). One lip file was
-generated with the CK's LipGenerator for a `.fuz` that had none.
+None generated. Voice: vanilla recordings copied from `Skyrim - Voices_en0.bsa` into the local mod folder
+(restored audio, credited). They're game files, so a public release copies them from the player's own install
+at install time instead of shipping them (build step 4). One lip file was generated with the CK's LipGenerator
+for a `.fuz` that had none.
 
 ## Cost and time
 Two long sessions, about 30 test builds for segment 1. Most of the time went on dialogue-engine behaviour
