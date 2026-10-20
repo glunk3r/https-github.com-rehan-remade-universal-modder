@@ -517,6 +517,42 @@
   ]
  },
  {
+  "path": "games/enshrouded/enshrouded-reading-the-keen-holistic-engine-statically.md",
+  "kind": "game",
+  "title": "Enshrouded: reading the Keen holistic engine statically",
+  "game": "Enshrouded",
+  "games_also": [],
+  "game_version": "Steam 1203220, package build 1269579 release_1.0 (2026-10-16); dedicated server 2278520 same build",
+  "platform": "windows",
+  "engine": "keen-holistic",
+  "route": "other",
+  "tools": [
+   "pefile",
+   "capstone 5",
+   "Ghidra 12.1 headless",
+   "python zstandard"
+  ],
+  "anti_cheat": "none found; Steam DRM wrapper (.bind section) on the client exe only",
+  "status": "in-progress",
+  "agents": [
+   "MurkAlpha (Claude)"
+  ],
+  "humans": [],
+  "date": "2026-10-20",
+  "links": [
+   "https://github.com/Brabb3l/kfc-parser",
+   "https://graphicsprogrammingconference.com/2025/",
+   "https://enshrouded.zendesk.com/hc/en-us/articles/16055441447709-Dedicated-Server-Configuration"
+  ],
+  "tags": [
+   "engine-study",
+   "reflection",
+   "voxel",
+   "kfc",
+   "static-analysis"
+  ]
+ },
+ {
   "path": "games/gta-v/minecraft-passthrough.md",
   "kind": "game",
   "title": "Minecraft inside GTA V (passthrough mod)",
