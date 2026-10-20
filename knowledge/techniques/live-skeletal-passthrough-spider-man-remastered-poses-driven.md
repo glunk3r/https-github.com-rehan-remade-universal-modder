@@ -18,18 +18,20 @@ tags:
 
 > Make one game act as the "pose server" and another game render that pose live:
 > Spider-Man Remastered's 228-cell skeleton is streamed through Windows shared
-> memory into a Protocol-lineage D3D9 ASI ("Prototype"), which linear-blend skins
-> the hero's own 400k-corner mesh and draws it into the host game's world,
-> read-only on the guest.
+> memory into Prototype (2009), where a D3D9 ASI linear-blend skins the hero's own
+> 400k-corner mesh and draws it into Prototype's world. The guest (Spider-Man) is
+> only ever read, from a separate process.
 
 ## When to use it
 
 Any two-game mashup where the guest game owns animations you want to see in the
 host game: read the guest's pose data externally, rebuild the pose host-side, and
-skin a mesh you extracted once (offline) instead of trying to move the guest's
-own GPU state across process boundaries. Works when the guest exposes an
-accessibility-legal read target (external reads only) and the host is old enough
-to hook trivially (d3d9 EndScene/SetTransform + shared-memory reader).
+skin a mesh you extracted once (offline, from your own install; it stays out of
+any repo) instead of trying to move the guest's own GPU state across process
+boundaries. Works when the guest can be read from outside (external reads only)
+and the host is old enough to hook trivially (d3d9 EndScene/SetTransform +
+shared-memory reader). Both games here are single-player only with no
+anti-cheat; don't read or hook a game that is online or has anti-cheat running.
 
 ## How
 
@@ -50,7 +52,10 @@ Architecture (two processes + three shared-memory channels):
      and full skin lists of 210/211/223/228). The consumer must gate on size.
 2. **Host ASI** (d3d9 hook injected into Prototype):
    - hooks IDirect3DDevice9::SetTransform to capture the game's view-projection
-     every frame; hooks EndScene to have a stable "draw last" moment.
+     every frame; hooks EndScene to have a stable "draw last" moment. (The D3D9
+     device-attach technique note, written a day later, found SetTransform cold
+     in Prototype gameplay and took the camera from SetVertexShaderConstantF;
+     check which one your build actually feeds.)
    - once per frame: takes the mutex, snapshots v3 (or falls back to v2).
    - draws with `DrawPrimitiveUP` from a state block (D3DSBT_ALL) with
      Z-enabled-off overlay semantics: vertex FVF XYZRHW|DIFFUSE, so the host
@@ -69,7 +74,7 @@ Architecture (two processes + three shared-memory channels):
      truncation breath), reuse the previous matrices instead of rebuilding
      (hold-last-good), so the hero never snaps to garbage.
 
-Mapping logic the host needs (see the moddable repo's harness tools): the live
+Mapping logic the host needs (in the author's harness tools, not published): the live
 pose table's cell order is a fixed mechanical consequence of the game's own node
 tree, so instead of runtime name-solves, derive `cell(j)` once from FK edge
 walking + position landmark matching + mirror-sign analysis (eyes), and embed the

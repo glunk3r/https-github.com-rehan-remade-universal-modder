@@ -1,29 +1,33 @@
 ---
 kind: technique
-title: 'D3D9 device attach: outside vtable patching dead-ends and the defended NV dispatch'
+title: 'D3D9 device attach from outside the process: patching the live device''s own vtable, and the tables that crash
+  (Prototype)'
 status: working
 agents:
 - OpenCode (GLM)
 humans: []
 date: '2026-10-18'
 links:
-- 'techniques: none yet; companion write-up lives in the mashup repo docs/MODLOG.md'
+- knowledge/techniques/live-skeletal-passthrough-spider-man-remastered-poses-driven.md
 tags:
 - d3d9
 - vtable
 - prototype
-- rad-engine
+- radical-entertainment
 - nvidia
-- defense
+- single-player
 - WriteProcessMemory
 - COM-wrapper
 ---
 
-# D3D9 device attach: outside vtable patching dead-ends and the defended NV dispatch
+# D3D9 device attach from outside the process: patching the live device's own vtable, and the tables that crash (Prototype)
 
 > Attaching to a game's live `IDirect3DDevice9` from outside the process
 > (ReadProcessMemory/WriteProcessMemory) when the hook-injection race is lost.
-> Hard-won dead ends + what works instead.
+> Hard-won dead ends + what works instead. Worked out on Prototype (2009), a
+> single-player game with no anti-cheat. Writing into a game's memory like this
+> is only for single-player games or your own offline session: never an online
+> client or a game with anti-cheat running.
 
 ## When to use it
 
@@ -35,7 +39,7 @@ outside.
 
 ## How
 
-1. **Find the composer statically first.** `pefile` the engine DLL: enumerate
+1. **Find the device-creation code statically first.** `pefile` the engine DLL: enumerate
    the d3d9 import (`Direct3DCreate9`), find its IAT entry, then locate the
    call site (`E8` into the `FF 25 <IAT>` import thunk - MSVC emits a thunk;
    zero direct `FF 15 <IAT>` calls). Read the function around the call: the
@@ -50,16 +54,20 @@ outside.
    pointers into the d3d9 module range. This beats full-heap sweeps and gives
    EXACT object addresses instead of candidate lists. (Our walks run in
    milliseconds; sweeps needed 10 s per pass over 3 GB and produced noise.)
-3. **Know your table taxonomy.** In this engine three kinds of dispatch tables
-   exist per boot: (a) pooled per-device d3d9-class vtable copies shaped with
-   the boot-stable signature slots (Present/EndScene/SetTransform/VSCF =
-   d3d9 impl addresses, stable because d3d9 loads at a fixed base) - patchable
-   safely but never invoked by the engine; (b) NVIDIA ICD-wrapped dispatch
-   tables (nv stub slots) - what the engine actually calls, and DEFENDED; (c)
-   static interface vtables inside d3d9.dll's image. Identify by reading slots
-   0/1/2 (QueryInterface/AddRef/Release) AND 17/42/44/94 of each candidate.
+3. **Know your table taxonomy.** In this engine these dispatch tables exist
+   per boot: (a) pooled per-device d3d9-class vtable copies whose signature
+   slots (Present/EndScene/SetTransform/VSCF) hold d3d9 impl addresses -
+   patchable safely but never invoked by the engine; (b) tables whose slots
+   point at NVIDIA driver stub code - writing them crashed (gotcha 1); (c)
+   static interface vtables inside d3d9.dll's image; and the one that matters,
+   (d) the live device object's own heap-copied vtable (see Final
+   architecture). Identify by reading slots 0/1/2
+   (QueryInterface/AddRef/Release) AND 17/42/44/94 (Present, EndScene,
+   SetTransform, SetVertexShaderConstantF) of each candidate. d3d9.dll's base
+   moved between runs here (see below), so resolve it from the module list
+   every time rather than reusing recorded impl addresses.
 
-## Firstboot fallback: histogram discovery of the live device (proven, no static sigs)
+## First-boot fallback: histogram discovery of the live device (proven, no static sigs)
 
 The pointer chain is the fast path, but it requires static analysis of the
 engine DLL. The discovery that works on ANY boot with zero static knowledge
@@ -82,8 +90,8 @@ list and never trust recorded impl addresses):
 
 Slot-level vtable patching of the LIVE DEVICE'S OWN HEAP-COPIED VTABLE is the
 working route - not the COM-wrapper handoff (kept only for the full-duplex
-case). The earlier "dead route" verdict was correct ONLY for (a) the defended
-NV dispatch family and (b) pooled copies the engine never calls. The live
+case). The earlier "dead route" verdict was correct ONLY for (b) the tables
+with NVIDIA stub slots and (a) pooled copies the engine never calls. The live
 device object's [+0] vtable is a normal heap allocation, hot every frame, and
 patches cleanly from outside:
 
@@ -102,16 +110,18 @@ patches cleanly from outside:
 
 1. **Symptom.** Patching nv-stub-slotted dispatch tables (by any method, slot
    patch with correct trampolines, or E9 detour into d3d9 impl functions) is
-   followed within seconds/minutes by a crash. **Cause:** the NVIDIA user-mode
-   driver (nvd3dum) integrity-checks/holds those tables; the crash event
-   surfaces as 0xc0000005, "unknown module", junk offset. **Fix:** never write
-   into the nv-wrapped dispatch family; treat it as defended target territory.
+   followed within seconds/minutes by a crash. **Cause:** not pinned down.
+   Those slots point into NVIDIA's user-mode driver (nvd3dum), which owns the
+   tables; whether it checks them or something else breaks wasn't established.
+   The crash event surfaces as 0xc0000005, "unknown module", junk offset.
+   **Fix:** never write into that table family; patch the live device's own
+   vtable instead (Final architecture).
 2. **Symptom.** Pooled d3d9-COM-shaped vtable copies patch fine and do not
-   crash, but no hook traffic ever appears. **Cause:** the pool copies were
-   created by d3d9 for its own instances (incl. the Bink video device); the
-   engine routes through the NV-wrapped wrapper instead. **Fix:** accept the
-   table patch route is dead here; use a COM-wrapper handoff instead (see
-   below).
+   crash, but no hook traffic ever appears. **Cause:** the engine never calls
+   through them (they look like copies d3d9 made for other instances, possibly
+   including the Bink video path; not confirmed). **Fix:** find the live
+   device object (pointer chain or histogram below) and patch its own vtable;
+   the COM-wrapper handoff (below) is the fallback.
 3. **Symptom.** Stack exhaustion inside d3d9 (faulting module d3d9.dll, low
    RVA) right after mixing patch styles. **Cause:** farm-hook E9 detours at
    d3d9 impl entries plus a vtable slot patch whose trampoline global was
@@ -132,8 +142,8 @@ patches cleanly from outside:
    the tracker chain lives in other wrapper fields). **Fix:** walk the whole
    wrapper object's pointer fields and DFS depth-2/3 through them, looking for
    d3d9-range pointers rather than trusting a single list head.
-6. **Symptom.** VBScript-style WriteProcessMemory access violation inside your
-   scanner (not the game). **Cause:** a fixed 16-byte ctypes buffer while RPM
+6. **Symptom.** An access violation inside your own scanner (not the game)
+   around a ReadProcessMemory call. **Cause:** a fixed 16-byte ctypes buffer while RPM
    copies up to 392 bytes. **Fix:** allocate the read-size buffer (>= read
    length), not a presumed struct size.
 7. **Symptom.** Arm succeeds but the 6 s telemetry delta reads 0-1, tool
@@ -160,7 +170,7 @@ COM-wrapper handoff ONLY if some future case needs full-duplex behavior the
 capture hooks can't provide: replace the engine's stored device POINTER with a
 forwarding `IDirect3DDevice9` object; driver tables never touched. Watch-only
 Frida `Interceptor.attach` on NV stub code likewise remains a valid probe (code
-patch, not the defended tables) for ground truth about dispatch, but is not
+patch, not the tables that crashed) for ground truth about dispatch, but is not
 needed for the working architecture.
 
 ## The deterministic chain (REA/Ghidra-pinned, boot-3 live-verified)
@@ -177,8 +187,8 @@ wrapper object DFS" pass was groping for:
 - Wrapper layout: `{+0x00 IDirect3D9* (real d3d9.dll image vtable),
   +0x04 pddi context object, +0x08 (zeroed at init, later alias window at
   ctx+0x20), +0x0C holder object with a static .rdata vtable}`.
-- **The device stash: `*(*(*(0x11276D40)) + 4) + 0x15C`** - i.e.
-  wrapper -> ctx(+4) -> [+0x15C] = live `IDirect3DDevice9*` (the
+- **The device stash: `[[[0x11276D40] + 0x4] + 0x15C]`** (each `[]` reads a
+  dword) - i.e. wrapper -> ctx(+4) -> [+0x15C] = live `IDirect3DDevice9*` (the
   heap-vtable device the ASI slot-patches). Verified live: chain output
   matched the histogram-sweep-discovered device exactly.
 - Two redundant copies exist (useful as validity checks from another boot):
@@ -187,19 +197,19 @@ wrapper object DFS" pass was groping for:
 - The earlier guessed chain `wrapper -> +8 -> +0x164` is disproven:
   `+0x08` is zeroed at construction; `+0x164` was reading the wrong class.
 
-Tooling: `tools/engine_device_chain.py PID [--expect 0x...]` resolves the
-chain in milliseconds, cross-checks all three paths agree, and (with
-`--expect`) compares against a device found independently (histogram sweep).
-Keep the full histogram discovery as the cold-start fallback; the chain is
-the fast validation path for every subsequent boot. TODO next boot: confirm
-the static addresses and `+4/+0x15C` offsets on a fresh boot (engine loads
-at the same base, so they should transfer), then seed this into the ASI flow
-ahead of any sweep.
+Tooling (the author's, not published): `tools/engine_device_chain.py PID
+[--expect 0x...]` resolves the chain in milliseconds, cross-checks all three
+paths agree, and (with `--expect`) compares against a device found
+independently (histogram sweep). Keep the full histogram discovery as the
+cold-start fallback; the chain is the fast validation path for every
+subsequent boot. Not verified yet: the static addresses and `+4/+0x15C`
+offsets on a fresh boot (the engine DLL loads at the same base, so they
+should transfer), and seeding the chain into the ASI flow ahead of any sweep.
 
 ## Seen in
 
-- Prototype (RAD engine, D3D9 fixed-function), v1.0, NVIDIA user stack:
-  five boots on 2026-10-18 (14 booleans IDs incl. 26960/27196/32532/5656),
-  ending in a fully proven passthrough playtest - hero render + Alex chase.
-  Full crash atlas + recipes in the mashup repo `docs/MODLOG.md`
-  (2026-10-18 entries).
+- Prototype (2009, Radical Entertainment's in-house engine; D3D9 with vertex
+  shaders, the camera arrives through SetVertexShaderConstantF), v1.0,
+  NVIDIA user stack: five boots on 2026-10-18, ending in a passthrough
+  playtest - hero render + Alex chase. The full crash atlas and recipes are
+  in the MODLOG of the author's mashup repo (not published).
