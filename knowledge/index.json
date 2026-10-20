@@ -1085,6 +1085,51 @@
   ]
  },
  {
+  "path": "games/carmageddon-tdr-2000/rust-wreckfest-inspired-damage-bridge.md",
+  "kind": "game",
+  "title": "TDR 2000 with Rust damage hooks: a Wreckfest-inspired merge that loaded but did not arm",
+  "game": "Carmageddon TDR 2000",
+  "games_also": [
+   "Wreckfest"
+  ],
+  "game_version": "Local Windows PE32 TDR2000.exe SHA-256 364e84c340358c5b8da545f6f084a13cfc86f8db7a49eb5455eca1fd9f24fd94; Wreckfest exact executable version not pinned",
+  "platform": "windows",
+  "engine": "native",
+  "route": "native-hook",
+  "tools": [
+   "Rust 1.99.0 i686-pc-windows-msvc",
+   "Frida 17.22.1",
+   "Ultimate ASI Loader",
+   "pefile",
+   "Ghidra",
+   "universal-modder um win"
+  ],
+  "anti_cheat": "Offline single-player lab only; no online/anti-cheat intervention",
+  "status": "in-progress",
+  "agents": [
+   "ChatGPT (GPT-6)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [
+   "https://github.com/neohack2023/universal-modder"
+  ],
+  "tags": [
+   "tdr2000",
+   "carmageddon",
+   "wreckfest",
+   "rust",
+   "x86",
+   "native-hook",
+   "frida",
+   "asi",
+   "physics",
+   "deformation",
+   "observability",
+   "mashup"
+  ]
+ },
+ {
   "path": "games/caves-of-qud/external-game-master-bridge-save-identity-and-native-effects.md",
   "kind": "game",
   "title": "An external game master for Caves of Qud: a scripting-mod bridge, save identity and native effects",
@@ -1341,6 +1386,54 @@
    "skip-intro",
    "visual-script",
    "bink"
+  ]
+ },
+ {
+  "path": "games/crusader-kings-iii/modding-playbook.md",
+  "kind": "game",
+  "title": "CK3 MOD \u5236\u4f5c\u6280\u5de7\uff1a\u811a\u672c\u3001\u89d2\u8272\u3001\u7acb\u7ed8\u3001\u5b58\u6863\u4e0e\u517c\u5bb9\u6392\u9519",
+  "game": "Crusader Kings III",
+  "games_also": [],
+  "game_version": "1.20.0.4 (Crozier), Steam; observations from 2026-10-09 to 2026-10-11",
+  "platform": "windows",
+  "engine": "clausewitz",
+  "route": "data",
+  "tools": [
+   "Linn Modder",
+   "Python",
+   "PowerShell",
+   "rg",
+   "CK3 native scripts and logs"
+  ],
+  "anti_cheat": "Offline single-player modding; no protection changes",
+  "status": "in-progress",
+  "agents": [
+   "Codex"
+  ],
+  "humans": [],
+  "date": "2026-10-11",
+  "links": [
+   "https://forum.paradoxplaza.com/forum/developer-diary/ck3-dev-diary-37-making-mods.1410656/",
+   "https://github.com/amtep/tiger",
+   "https://github.com/cwtools/cwtools-vscode",
+   "https://github.com/skonester/Skonester-Cheat-Menu/blob/main/readme.md"
+  ],
+  "tags": [
+   "CK3",
+   "\u5341\u5b57\u519b\u4e4b\u738b3",
+   "\u840c\u6218",
+   "scripting",
+   "scopes",
+   "events",
+   "localization",
+   "portraits",
+   "culture",
+   "religion",
+   "marriage",
+   "reincarnation",
+   "save-compatibility",
+   "DLC",
+   "debugging"
   ]
  },
  {
@@ -3510,6 +3603,169 @@
   ]
  },
  {
+  "path": "games/metal-gear-rising-revengeance/blade-mode-rea-blender-godot.md",
+  "kind": "game",
+  "title": "Extract and validate MGRR Blade Mode components with REA, Blender and Godot",
+  "game": "Metal Gear Rising: Revengeance",
+  "games_also": [],
+  "game_version": "PC PE32 x86, executable SHA256 7174741f46ab4c222304b0f1b9291a2281d53368016347e65d2ea404ff07ad34",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "reimplementation",
+  "tools": [
+   "REA 6.7.0",
+   "Ghidra 12.1.4",
+   "Capstone",
+   "MGR2Blender2MGR",
+   "Godot 4.7.2",
+   "Node.js 24.13.0",
+   "Universal Modder CLI"
+  ],
+  "anti_cheat": "Isolated offline single-player research and local user-owned copy; no competitive or networked use",
+  "status": "in-progress",
+  "agents": [
+   "ChatGPT (GPT-6)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [
+   "https://github.com/morluto/rea",
+   "https://github.com/rehan-remade/universal-modder"
+  ],
+  "tags": [
+   "blade-mode",
+   "rea",
+   "ghidra",
+   "wmb4",
+   "mot",
+   "blender",
+   "godot",
+   "mesh-slicing",
+   "runtime-parity"
+  ]
+ },
+ {
+  "path": "games/metal-gear-rising-revengeance/cyborg-texture-provenance-cross-archive-v07.md",
+  "kind": "game",
+  "title": "MGRR em0110 cyborg texture provenance, missing WTA IDs and cross-archive search",
+  "game": "Metal Gear Rising: Revengeance",
+  "games_also": [],
+  "game_version": "PC PE32 x86, executable SHA256 7174741f46ab4c222304b0f1b9291a2281d53368016347e65d2ea404ff07ad34 (same build as the sibling Blade Mode note)",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "reimplementation",
+  "tools": [
+   "MGR2Blender2MGR",
+   "WMB4/WTA/WTP read-only Python audit",
+   "CRI CPK TOC indexer",
+   "Godot"
+  ],
+  "anti_cheat": "Isolated offline single-player research and local user-owned copy; no competitive or networked use",
+  "status": "in-progress",
+  "agents": [
+   "ChatGPT (GPT-6)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [],
+  "tags": [
+   "mgrr",
+   "cyborg",
+   "wmb4",
+   "wta",
+   "wtp",
+   "texture-id",
+   "archive-index",
+   "provenance",
+   "material"
+  ]
+ },
+ {
+  "path": "games/metro-2033/recon-steam-2026.md",
+  "kind": "game",
+  "title": "Recon: original Steam release and modding routes",
+  "game": "Metro 2033",
+  "games_also": [],
+  "game_version": "Steam AppID 43110; metro2033.exe file version 1.0.0.1",
+  "platform": "windows",
+  "engine": "native",
+  "route": "other",
+  "tools": [
+   "um scan",
+   "Godot 4.7.2 stable",
+   "um win",
+   "Metro 2033 Config Editor (ModDB listing; not installed)",
+   "Metro-specific QuickBMS scripts (read, not run)"
+  ],
+  "anti_cheat": "none detected; recon only, no game launch",
+  "status": "in-progress",
+  "agents": [
+   "Copilot SDK in VS Code"
+  ],
+  "humans": [],
+  "date": "2026-10-15",
+  "links": [
+   "https://www.moddb.com/games/metro-2033/mods",
+   "https://www.moddb.com/mods/metro-2033-config-editor",
+   "https://store.steampowered.com/app/43110/Metro_2033/",
+   "https://github.com/XeNTaXBackup/XeNTaXBackup.github.io/blob/main/markdown/Metro%202033%20vfs%20file_4229.md",
+   "https://github.com/D13FORME/quickbms-scripts/blob/main/M/metro2033_unpack_upk.bms",
+   "https://www.4a-games.com.mt/",
+   "https://en.wikipedia.org/wiki/4A_Engine",
+   "https://github.com/BlackPhrase/YuRei/blob/master/docs/specs.txt",
+   "https://godotengine.org/download/windows/",
+   "https://docs.godotengine.org/en/stable/tutorials/export/exporting_projects.html",
+   "https://github.com/ixray-team/ixray-1.6-stcop/blob/478899e687b1e5d7eab834120a252ca01b3dca36/gamedata_soc/configs/fonts.ltx",
+   "https://github.com/google/fonts/tree/1d0e46c7933245c8180fe83e47917961c913bbdb/ofl/robotocondensed"
+  ],
+  "tags": [
+   "recon",
+   "original-release",
+   "native-x86",
+   "config"
+  ]
+ },
+ {
+  "path": "games/metro-exodus/recon-enhanced-edition-steam-2026.md",
+  "kind": "game",
+  "title": "Recon: porting a Metro 2033 level into the Exodus SDK",
+  "game": "Metro Exodus Enhanced Edition",
+  "games_also": [
+   "Metro 2033"
+  ],
+  "game_version": "Metro Exodus Enhanced Edition Steam AppID 1449560, build 24973569; MetroExodus.exe file version 2.0.0.1. Source: original Metro 2033 Steam AppID 43110, executable file version 1.0.0.1",
+  "platform": "windows",
+  "engine": "native",
+  "route": "data",
+  "tools": [
+   "um scan",
+   "PowerShell file metadata",
+   "Exodus SDK documentation"
+  ],
+  "anti_cheat": "none found by um scan",
+  "status": "in-progress",
+  "agents": [
+   "Copilot SDK in VS Code"
+  ],
+  "humans": [],
+  "date": "2026-10-15",
+  "links": [
+   "https://www.4a-games.com.mt/4a-dna/studio-update-exodus-sdk",
+   "https://exodus-sdk.atlassian.net/wiki/spaces/ESDK/overview",
+   "https://exodus-sdk.atlassian.net/wiki/spaces/ESDK/pages/1714598145/EULA",
+   "https://www.moddb.com/games/metro-exodus",
+   "https://mod.io/g/exodussdk",
+   "https://github.com/itsloopyo/metro-exodus-enhanced-edition-headtracking"
+  ],
+  "tags": [
+   "recon",
+   "steam",
+   "enhanced-edition",
+   "4a-engine",
+   "exodus-sdk"
+  ]
+ },
+ {
   "path": "games/mewgenics/combat-roster-panel.md",
   "kind": "game",
   "title": "Combat Roster Panel: a native ImGui party panel for Mewgenics, drawn with the game's own art, fonts and text",
@@ -4659,6 +4915,97 @@
   ]
  },
  {
+  "path": "games/payday-2/las-armor-skin-outfit.md",
+  "kind": "game",
+  "title": "LAS armor-skin outfits in PAYDAY 2 from a Source-engine character mod",
+  "game": "PAYDAY 2",
+  "games_also": [
+   "Left 4 Dead 2"
+  ],
+  "game_version": "User build 1.0.0-159028 for the earlier crash logs; no agent-side game runtime",
+  "platform": "windows",
+  "engine": "native",
+  "route": "asset-only",
+  "tools": [
+   "Python 3.11",
+   "SuperBLT",
+   "BeardLib 5.2.0",
+   "Legendary Armour Skins 4.x"
+  ],
+  "anti_cheat": "Offline only; no client, loader or game installation changes",
+  "status": "in-progress",
+  "agents": [
+   "Arena.ai agent"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [
+   "https://github.com/Vladik268/P2/tree/b7c38c1d358fe054df51201788126c25a0da1938/mod/Legendary%20Armour%20Skins",
+   "https://github.com/simon-wh/PAYDAY-2-BeardLib/tree/95eb1c0c84e3f07d36f28a5e69197ec3b5c59046"
+  ],
+  "tags": [
+   "payday-2",
+   "diesel",
+   "las",
+   "armor-skin",
+   "l4d2",
+   "source-engine",
+   "vpk",
+   "mdl",
+   "vtf",
+   "outfit"
+  ]
+ },
+ {
+  "path": "games/payday-2/las-moog-outfit-porting.md",
+  "kind": "game",
+  "title": "Porting a rigged character model into a PAYDAY 2 LAS/MOOG outfit (ModWorkshop guide distilled)",
+  "game": "PAYDAY 2",
+  "games_also": [
+   "Mass Effect 2"
+  ],
+  "game_version": "community guide, ModWorkshop wiki (work in progress); user game build 1.0.0-159028 in earlier sessions",
+  "platform": "windows",
+  "engine": "native",
+  "route": "loader-api",
+  "tools": [
+   "Blender",
+   "PAYDAY 2 Model Tool v2.18",
+   "PAYDAY-2-Hashlist",
+   "Diesel Bundle Viewer",
+   "SuperBLT",
+   "BeardLib",
+   "Legendary Armour Skins"
+  ],
+  "anti_cheat": "offline/asset-only; mod_overrides + loader frameworks, no client tampering",
+  "status": "in-progress",
+  "agents": [
+   "Arena.ai agent"
+  ],
+  "humans": [
+   "Columbus (guide author, credit)"
+  ],
+  "date": "2026-10-18",
+  "links": [
+   "https://wiki.modworkshop.net/books/payday-2-mod-creation/page/legendary-armor-skinslasmoogoutfit-module-guide",
+   "https://modworkshop.net/mod/58492",
+   "https://github.com/kythyria/payday2-model-tool/releases/tag/v2.18",
+   "https://github.com/Luffyyy/PAYDAY-2-Hashlist"
+  ],
+  "tags": [
+   "payday-2",
+   "las",
+   "moog",
+   "outfit",
+   "porting",
+   "rigging",
+   "materials",
+   "render-templates",
+   "textures",
+   "normals"
+  ]
+ },
+ {
   "path": "games/portal-2/portal-2-portal-gun-viewmodel-converted-for-another-engine-v.md",
   "kind": "game",
   "title": "Portal 2 portal gun viewmodel converted for another engine: VPK, MDL v49, VTF, sounds",
@@ -5461,6 +5808,43 @@
    "saves",
    "repak",
    "iostore"
+  ]
+ },
+ {
+  "path": "games/s-t-a-l-k-e-r-call-of-pripyat/recon-call-of-pripyat-steam-1-6-02-for-dialogue-ui-reference.md",
+  "kind": "game",
+  "title": "Recon: Call of Pripyat Steam 1.6.02 for dialogue UI reference",
+  "game": "S.T.A.L.K.E.R.: Call of Pripyat",
+  "games_also": [],
+  "game_version": "Steam AppID 41700, build 11450453; Stalker-COP.exe and xrEngine.exe 1.6.02",
+  "platform": "windows",
+  "engine": "native",
+  "route": "other",
+  "tools": [
+   "um scan",
+   "PowerShell file/version inspection",
+   "ModDB tutorials (read only)"
+  ],
+  "anti_cheat": "none found by um scan; reconnaissance only",
+  "status": "in-progress",
+  "agents": [
+   "Copilot SDK in VS Code"
+  ],
+  "humans": [],
+  "date": "2026-10-15",
+  "links": [
+   "https://store.steampowered.com/app/41700/STALKER_Call_of_Pripyat/",
+   "https://sdk.stalker-game.com/en/index.php?title=Main_Page",
+   "https://www.moddb.com/games/stalker-call-of-pripyat/mods",
+   "https://www.moddb.com/games/stalker-call-of-pripyat/tutorials/basic-stalker-modding-part-2",
+   "https://github.com/ixray-team/ixray-1.6-stcop/blob/478899e687b1e5d7eab834120a252ca01b3dca36/gamedata_soc/configs/fonts.ltx",
+   "https://github.com/google/fonts/tree/1d0e46c7933245c8180fe83e47917961c913bbdb/ofl/robotocondensed"
+  ],
+  "tags": [
+   "recon",
+   "x-ray",
+   "call-of-pripyat",
+   "dialogue-ui"
   ]
  },
  {
@@ -7933,6 +8317,48 @@
    "multiplayer",
    "lockstep",
    "encryption"
+  ]
+ },
+ {
+  "path": "games/wreckfest/deformation-surface-effects-for-tdr2000.md",
+  "kind": "game",
+  "title": "Wreckfest deformation and surface-effects research for a TDR 2000 Rust feature port",
+  "game": "Wreckfest",
+  "games_also": [
+   "Carmageddon TDR 2000"
+  ],
+  "game_version": "Owned local Windows install; exact Wreckfest binary version not yet pinned",
+  "platform": "windows",
+  "engine": "native",
+  "route": "reimplementation",
+  "tools": [
+   "Ghidra",
+   "Rust 1.99.0",
+   "Frida 17.22.1",
+   "pefile",
+   "universal-modder"
+  ],
+  "anti_cheat": "Offline research only; no online client or anti-cheat modifications",
+  "status": "in-progress",
+  "agents": [
+   "ChatGPT (GPT-6)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [
+   "https://github.com/neohack2023/universal-modder"
+  ],
+  "tags": [
+   "wreckfest",
+   "bugbear",
+   "soft-body",
+   "surface-effects",
+   "skidmarks",
+   "mesh-deformation",
+   "rust",
+   "reverse-engineering",
+   "tdr2000",
+   "evidence"
   ]
  },
  {
