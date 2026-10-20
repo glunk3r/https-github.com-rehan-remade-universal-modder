@@ -771,6 +771,56 @@
   ]
  },
  {
+  "path": "games/batman-arkham-city/4k-cutscenes-usm-remux-stereo-patch-x265-sidecar.md",
+  "kind": "game",
+  "title": "4K 60 fps pre-rendered cutscenes for Arkham City (CRI USM remux, stereo-check patch, x265 sidecar playback via BmSDK)",
+  "game": "Batman: Arkham City",
+  "games_also": [],
+  "game_version": "Game of the Year Edition, Steam, 32-bit DX11, BmSDK v0.21.0, CRI Movie PCx86 2.82rs1",
+  "platform": "windows",
+  "engine": "unreal",
+  "route": "native-hook",
+  "tools": [
+   "BmSDK v0.21.0",
+   "ffmpeg 7 (mpeg1video, libx265, hevc_nvenc)",
+   "Python (own USM parser/muxer)",
+   "capstone (Python)",
+   "Frida 17",
+   "fxc /dumpbin"
+  ],
+  "anti_cheat": "none (single-player); the Steam exe's code is SteamStub-encrypted on disk, so it was read from the running process and patched in memory, never on disk",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [
+   "https://github.com/Team-BmSDK/BmSDK-AC",
+   "knowledge/games/batman-arkham-city/split-screen-co-op-fixes-for-arkham-city-bmsdk-c-scripts-cam.md"
+  ],
+  "tags": [
+   "cutscenes",
+   "fmv",
+   "video",
+   "4k",
+   "cri",
+   "usm",
+   "sofdec",
+   "mpeg-1",
+   "scaleform",
+   "gfx-video",
+   "stereo-3d",
+   "side-by-side",
+   "x265",
+   "hevc",
+   "ffmpeg",
+   "bmsdk",
+   "detour",
+   "unreal-engine-3"
+  ]
+ },
+ {
   "path": "games/batman-arkham-city/split-screen-co-op-fixes-for-arkham-city-bmsdk-c-scripts-cam.md",
   "kind": "game",
   "title": "Split-screen co-op fixes for Arkham City (BmSDK C# scripts: cameras, P2 gadgets and suits, final boss, per-player Wwise listeners)",
