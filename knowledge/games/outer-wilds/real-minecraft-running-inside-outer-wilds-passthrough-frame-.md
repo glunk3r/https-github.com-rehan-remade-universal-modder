@@ -15,6 +15,7 @@ agents:
 humans: []
 date: '2026-10-20'
 links:
+- https://github.com/rehan-remade/universal-modder/tree/main/examples/minecraft-outerwilds-passthrough
 - https://github.com/rehan-remade/universal-modder/tree/main/examples/minecraft-gta5-passthrough
 - https://github.com/rehan-remade/universal-modder/tree/main/examples/outer-wilds-portal-gun
 tags: [mashup, passthrough, frame-compositing, shared-memory, seqlock, proton, owml, fabric, blaze3d, glreadpixels, axis-verification, oracle, coordinate-mapping]
@@ -96,10 +97,12 @@ and were relied on here; what follows is what passthrough adds.
   "steam_app_753640"`. Outer Wilds **pauses on focus loss**, which silently freezes any test that depends on it.
 
 ## Build steps
-The code lives in a working folder, not this repo (see "Not verified" for what that means). Layout: `mc/`
-(Fabric), `ow/src/` (OWML), `tools/` (Python), `docs/CONTRACT.md`.
-1. Guest: `cd mc; ./gradlew build --offline`, then deploy the jar into the passthrough profile's `mods/`
-   (`tools/install-guest.py` does this).
+The code ships with this note as `examples/minecraft-outerwilds-passthrough`, a sibling of the GTA V and
+portal-gun examples. Layout: `mc/` (Fabric), `ow/src/` (OWML), `tools/` (Python), `docs/CONTRACT.md` as
+`CONTRACT.md`. Both halves were built from that folder before publishing.
+1. Guest: `cd mc; ./gradlew build`, then deploy the jar into the passthrough profile's `mods/`
+   (`tools/install-guest.py` does this). Gradle needs **JDK 25**; `mc/gradle.properties` points at it via
+   `org.gradle.java.home`.
 2. Host: `cd ow/src; dotnet build -c Release`. Note that this writes **directly into the live OWML mod folder**,
    so a rebuild changes the installed mod — there is no separate deploy step, and no staging to get wrong.
 3. Launch order matters less than it seems: the host retries the WebSocket every second while the guest is
@@ -134,9 +137,8 @@ reusable value.
 - **Not verified:** any surface the screen should really be pinned to (the slice places it by dev command); the
   guest depth layer, which is exported but not yet composited; multiple monitors and non-1280x720 guest sizes;
   Minecraft worlds other than the one used; anything at all beyond the first slice's static picture.
-- **Not verified, and worth saying plainly:** this work happened in a separate folder and **nothing is
-  committed**. The OWML validator passes and both halves build, but a reader cannot yet rerun it from this note
-  alone.
+- **Not verified on other hardware:** this was one machine (Linux/Wayland, AMD RX 6600, Mesa). The readback
+  finding in gotcha 1 was reproduced there and nowhere else.
 
 ## The axis oracle (reusable method)
 `techniques/bridge-contracts-ownership-units-and-lifecycle.md` says to check the axis map and handedness against
@@ -259,6 +261,5 @@ bugs before ground truth (`Screenshot` vs raw `glReadPixels` on the same texture
 - Pin the screen to a real surface (a ship panel, a Nomai wall) instead of a dev-placed quad.
 - Consume the exported **depth** layer for per-pixel compositing, so guest geometry the host does not know about
   is occluded correctly.
-- Publish the working folder, since nothing here is committed yet.
 - Whether the same readback finding applies to other Blaze3D/modern-Minecraft versions, and to non-Mesa drivers —
   the failure was reproduced on Mesa/AMD only.
