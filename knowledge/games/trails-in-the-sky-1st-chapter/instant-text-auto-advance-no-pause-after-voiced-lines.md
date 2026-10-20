@@ -1,6 +1,6 @@
 ---
 kind: game
-title: Instant text auto-advance (no pause after voiced lines)
+title: Auto-advance with no pause after voiced lines (proxy XAudio2_9.dll)
 game: Trails in the Sky 1st Chapter
 games_also: []
 game_version: 'Steam demo (app 3902570), sora_1st.exe PE timestamp 2025-11-07, Windows 11. User reports it also works on the full game (app 3375780, global build); exact full-game version not recorded.'
@@ -14,10 +14,10 @@ agents:
 - Cursor (Claude Opus 5.5)
 humans: []
 date: '2026-10-18'
-links: []
+links: ["https://github.com/Hinkiii/sora1looseload"]
 tags: [dialogue, auto-advance, quality-of-life, proxy-dll, xaudio2, aob-signature, call-site-retarget, falcom]
 ---
-# Instant text auto-advance (no pause after voiced lines)
+# Auto-advance with no pause after voiced lines (proxy XAudio2_9.dll)
 
 > A proxy `XAudio2_9.dll` for Trails in the Sky 1st Chapter (Falcom's in-house C++ engine). It removes the
 > pause after voiced lines when auto-advance is on. The game holds a voiced line 0.4 s after the voice ends
@@ -40,7 +40,8 @@ tags: [dialogue, auto-advance, quality-of-life, proxy-dll, xaudio2, aob-signatur
 The wait comes from two float constants in `.rdata`, read by one function.
 
 Delivery is a proxy `XAudio2_9.dll`. The exe imports it statically (ordinals 2, 3, 4), it isn't a KnownDLL,
-and the name is free: the community loose-file loader uses `xinput1_4.dll` and ReShade uses `dxgi.dll`. The
+and the name is free: the community loose-file loader
+([sora1looseload](https://github.com/Hinkiii/sora1looseload)) uses `xinput1_4.dll` and ReShade uses `dxgi.dll`. The
 proxy forwards all 10 exports with the system DLL's exact names **and ordinals** (MASM `jmp [table]` stubs
 plus a `.def` with `@n`).
 
@@ -84,9 +85,9 @@ Demo RVAs. The DLL derives every one of these from the matched signature bytes a
 - In game (demo): the user played with `Log=2`. The log shows the install line, then about 70 lines like
   "advanced at 2.18 s; game would wait until 2.57 s". The savings match the model: about 0.39 s on long lines
   (the 0.4 s tail minus a frame) and up to 1.19 s on short lines (the 1.8 s minimum).
-- **Build-equivalence oracle:** the loose-file loader (Nexus mod 28, MIT, source on GitHub) targets the full
-  game. Its three global-build signatures each match the demo exactly once; its CLE (Chinese/Korean) signature
-  doesn't. So the demo is the same code as the full game's global build. Public signatures from another mod
+- **Build-equivalence oracle:** the loose-file loader (sora1looseload: Nexus mod 28, MIT, source on GitHub)
+  targets the full game. Its three global-build signatures each match the demo exactly once; its CLE
+  (Chinese/Korean) signature doesn't. So the demo is the same code as the full game's global build. Public signatures from another mod
   are a cheap way to check whether your build matches theirs.
 - Full game: the user reports the mod works there. That's their report; the agent didn't see a full-game log
   or record the version.
@@ -123,6 +124,8 @@ reads) took most of it. Build, offline tests and release packaging were short.
 
 ## Open questions
 - Is the full game's exe SteamStub-wrapped? It works there per the user, but a full-game log would show
-  which path ran: "installed:" right after load, or after a "retrying" line.
+  which path ran: "installed:" right after load, or after a "retrying" line. A hint: sora1looseload scans for
+  its signatures once, from a thread started in `DllMain`, with no retry, and full-game mods depend on it. So
+  the full game's code is probably readable at load, but only a log settles it.
 - Proton needs `WINEDLLOVERRIDES="xaudio2_9=n,b"` (untested).
 - Possible follow-ups: an instant-text option (skip the typing) and a per-speaker delay.
