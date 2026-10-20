@@ -2061,6 +2061,44 @@
   ]
  },
  {
+  "path": "games/dying-light-2/new-katana-with-blueprint-stash-and-localisation.md",
+  "kind": "game",
+  "title": "Dying Light 2: a new katana with its own blueprint, stash delivery, localised name and tuned damage",
+  "game": "Dying Light 2: Reloaded Edition",
+  "games_also": [],
+  "game_version": "Steam build 25208540 (ph_pc_tech_rel-ph-patch29, 2026-08-25)",
+  "platform": "windows",
+  "engine": "unknown",
+  "route": "data",
+  "tools": [
+   "python zipfile",
+   "um scan",
+   "um backup",
+   "um win"
+  ],
+  "anti_cheat": "none found by um scan (online co-op exists; tested single-player only)",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [
+   "Terlaime"
+  ],
+  "date": "2026-10-18",
+  "links": [],
+  "tags": [
+   "c-engine",
+   "techland",
+   "pak",
+   "scr",
+   "binsloc",
+   "localisation",
+   "weapon",
+   "blueprint",
+   "stash"
+  ]
+ },
+ {
   "path": "games/elden-ring/cs2-conversion-of-elden-ring-offline-native-rust-dll-via-me3.md",
   "kind": "game",
   "title": "CS2 conversion of Elden Ring offline: native Rust DLL via me3 (fall death, spirit springs, 3D inspect, params)",
