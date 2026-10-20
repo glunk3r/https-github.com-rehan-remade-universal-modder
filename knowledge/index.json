@@ -5893,7 +5893,7 @@
   "title": "Rebuilding a cut gatekeeper with generated plugin records: dialogue branches, shared voice lines, force-greets",
   "game": "Skyrim Special Edition",
   "games_also": [],
-  "game_version": "1.7.104 (Steam), Creation Kit 1.7.99, SKSE 2.2.3 installed but not required",
+  "game_version": "1.7.104 (Steam), Creation Kit 1.7.99; no SKSE needed",
   "platform": "windows",
   "engine": "creation",
   "route": "data",
