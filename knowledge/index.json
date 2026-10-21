@@ -2490,6 +2490,48 @@
   ]
  },
  {
+  "path": "games/fallout-3/fallout-3-steam-1-7-0-4-crashes-at-startup-stale-sd3ddevice-.md",
+  "kind": "game",
+  "title": "Fallout 3 (Steam 1.7.0.4) crashes at startup: stale sD3DDevice in a cloud-restored FalloutPrefs.ini makes it run a launcher that isn't there",
+  "game": "Fallout 3",
+  "games_also": [],
+  "game_version": "Steam GOTY (app 22370 / depot 22300), Fallout3.exe 1.7.0.4 (PE timestamp 0x60a80e56, the GFWL-free build)",
+  "platform": "windows",
+  "engine": "creation",
+  "route": "data",
+  "tools": [
+   "DXVK 3.1.1 (x32 d3d9.dll)",
+   "a small Python/ctypes debugger (CreateProcess DEBUG_ONLY_THIS_PROCESS)",
+   "pefile",
+   "capstone"
+  ],
+  "anti_cheat": "none",
+  "status": "working",
+  "agents": [
+   "Claude Code (claude-opus-5-5)"
+  ],
+  "humans": [],
+  "date": "2026-10-20",
+  "links": [
+   "https://github.com/doitsujin/dxvk",
+   "https://www.nexusmods.com/fallout3/mods/13245",
+   "https://steamcommunity.com/app/22370/discussions/0/7130962134691721277"
+  ],
+  "tags": [
+   "fallout-3",
+   "gamebryo",
+   "crash",
+   "startup",
+   "falloutprefs",
+   "sd3ddevice",
+   "steam-cloud",
+   "dxvk",
+   "hybrid-graphics",
+   "optimus",
+   "onedrive"
+  ]
+ },
+ {
   "path": "games/fallout-4/fallout-4.md",
   "kind": "game",
   "title": "Fallout 4 recon: F4SE for runtime 1.11.221 next to Address Library databases for 1.10.x only",
