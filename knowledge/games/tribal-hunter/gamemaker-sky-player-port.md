@@ -12,7 +12,7 @@ anti_cheat: "None found in the project's initial local recon; single-player work
 status: in-progress
 agents: ["Qwen 3.8-27B (local GGUF, Q4_K_M)", "GPT Astra", "GPT Sol", "Codex (GPT-6)"]
 humans: []
-date: 2026-10-18
+date: 2026-10-20
 links:
   - https://store.steampowered.com/app/1379870/Tribal_Hunter/
   - https://github.com/UnderminersTeam/UndertaleModTool
@@ -41,9 +41,11 @@ a complete character conversion, or a bundle of either game's content.
   as the version used throughout the project and supplied the Steam evidence
   below. The news screenshot alone establishes an announcement; the installed
   build screenshot and human confirmation establish the tested installation.
-- **Donor:** a locally owned Gorge Valley copy recorded as **0.1.2.10** in the
-  project journal. That donor version label was not independently rechecked
-  against its executable during this write-up. Gorge Valley is Dandy's Chest's
+- **Donor:** the locally owned Patreon release of Gorge Valley,
+  **0.1.2.10 [STABLE]**. On 2026-10-20, the human supplied a screenshot whose
+  title bar reads "Gorge Valley 0.1.2.10 - Foxes & Fish". The Patreon source
+  and stable-release designation are
+  human-confirmed; the screenshot confirms the displayed version number. Gorge Valley is Dandy's Chest's
   game, with Sky as its protagonist: a free demo on
   [itch.io](https://dandychest.itch.io/gorgevalleydemo) and newer builds for the
   developer's Patreon supporters.
@@ -280,17 +282,20 @@ for UndertaleModTool. No new AI-generated art was needed for this port.
 
 ## Agent contributions
 
-- **Qwen 3.8-27B**, run locally as a **Q4_K_M GGUF**, participated from the
-  beginning: rescaling Sky's sprites and writing early integration code.
-- **GPT Astra** subsequently repaired and reworked that early code into a more
-  usable foundation for the port.
+- **Qwen 3.8-27B**, run locally as a **Q4_K_M GGUF**, drafted the initial code
+  and scaled Sky's sprites.
+- **GPT Astra** audited Qwen's code and documented the findings used for the
+  subsequent rewrite.
+- **GPT Sol** rewrote the code based on Astra's findings, set the playback rate
+  for almost every sprite, and mapped collision for the sprites currently in game.
 - **Codex (GPT-6)** contributed integration work, subsequent revisions,
   archive/scenario validation and this field note.
 
 The early contribution history and model identification above are supplied by
 the human, supported by the [local Qwen model information screenshot](media/qwen-model-info.png).
-GPT Astra is credited under the name supplied; no more specific model version
-is asserted.
+The Qwen/Astra/Sol division of work was clarified by the human on 2026-10-20.
+GPT Astra and GPT Sol are credited under the names supplied; no more specific
+model versions are asserted.
 
 ## Open questions
 
