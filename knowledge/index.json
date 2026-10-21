@@ -4994,6 +4994,57 @@
   ]
  },
  {
+  "path": "games/outer-wilds/real-minecraft-running-inside-outer-wilds-passthrough-frame-.md",
+  "kind": "game",
+  "title": "Real Minecraft composited into Outer Wilds (first slice): shared memory under Proton, a raw FBO readback and a four-colour landmark oracle",
+  "game": "Outer Wilds",
+  "games_also": [
+   "Minecraft Java Edition"
+  ],
+  "game_version": "Outer Wilds 1.1.16.1372 (Steam 753640), Unity 2019.4.39f1 Mono, Echoes of the Eye installed; Minecraft Java 26.3, Fabric Loader 0.19.5",
+  "platform": "proton",
+  "engine": "unity-mono",
+  "route": "passthrough",
+  "tools": [
+   "OWML 2.16.3",
+   "Outer Wilds Mod Manager 0.15.7",
+   "HarmonyX",
+   "NuGet OWML 2.16.3 + OuterWildsGameLibs 1.1.16.1372 (net48)",
+   "Fabric Loom + Fabric API, JDK 25",
+   "Java FFM (java.lang.foreign) shared memory",
+   "Java-WebSocket",
+   "Python 3 + Pillow + numpy",
+   "xdotool, grim"
+  ],
+  "anti_cheat": "none (single-player, offline)",
+  "status": "in-progress",
+  "agents": [
+   "OpenCode (Big Pickle)"
+  ],
+  "humans": [],
+  "date": "2026-10-20",
+  "links": [
+   "https://github.com/rehan-remade/universal-modder/tree/main/examples/minecraft-outerwilds-passthrough",
+   "https://github.com/rehan-remade/universal-modder/tree/main/examples/minecraft-gta5-passthrough",
+   "https://github.com/rehan-remade/universal-modder/tree/main/examples/outer-wilds-portal-gun"
+  ],
+  "tags": [
+   "mashup",
+   "passthrough",
+   "frame-compositing",
+   "shared-memory",
+   "seqlock",
+   "proton",
+   "owml",
+   "fabric",
+   "blaze3d",
+   "glreadpixels",
+   "axis-verification",
+   "oracle",
+   "coordinate-mapping"
+  ]
+ },
+ {
   "path": "games/pathfinder-wrath-of-the-righteous/mass-effect-biotics-kinetic-barriers-and-rifles-as-a-wotr-cl.md",
   "kind": "game",
   "title": "Mass Effect biotics, kinetic barriers and rifles as a WotR class (UMM, blueprints in code)",
