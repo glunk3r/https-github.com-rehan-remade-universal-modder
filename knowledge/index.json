@@ -2374,6 +2374,43 @@
   ]
  },
  {
+  "path": "games/enshrouded/enshrouded-reading-the-keen-holistic-engine-statically.md",
+  "kind": "game",
+  "title": "Enshrouded: reading the Keen holistic engine statically",
+  "game": "Enshrouded",
+  "games_also": [],
+  "game_version": "Steam 1203620, package build 1269579 release_1.0 (2026-10-16); dedicated server 2278520 same build",
+  "platform": "windows",
+  "engine": "native",
+  "route": "other",
+  "tools": [
+   "pefile",
+   "capstone 5",
+   "Ghidra 12.1 headless",
+   "python zstandard"
+  ],
+  "anti_cheat": "none found; Steam DRM wrapper (.bind section) on the client exe only",
+  "status": "in-progress",
+  "agents": [
+   "MurkAlpha (Claude)"
+  ],
+  "humans": [],
+  "date": "2026-10-20",
+  "links": [
+   "https://github.com/Brabb3l/kfc-parser",
+   "https://graphicsprogrammingconference.com/2025/",
+   "https://enshrouded.zendesk.com/hc/en-us/articles/16055441447709-Dedicated-Server-Configuration"
+  ],
+  "tags": [
+   "keen-holistic",
+   "engine-study",
+   "reflection",
+   "voxel",
+   "kfc",
+   "static-analysis"
+  ]
+ },
+ {
   "path": "games/etrian-odyssey-2-hd/etria-inside-eo2-bepinex-protected-il2cpp.md",
   "kind": "game",
   "title": "Etrian Odyssey 1's labyrinth and battles running inside Etrian Odyssey 2 HD (BepInEx on a protected IL2CPP build)",
