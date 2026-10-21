@@ -3,7 +3,8 @@
     um publish check ./MyMod --game "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Terraria"
 
 FAIL  files byte-identical to files in the game install (redistributing game files), leaked API keys
-      (FAL_KEY, Anthropic, GitHub, AWS...), .env files
+      (FAL_KEY, Anthropic, GitHub, AWS...), .env files. This mod's own installed copy (Mods/<Id>/,
+      BepInEx/plugins/<name>/, named by Info.json, manifest.json or a .csproj) isn't compared; other mods are.
 WARN  decompiler fingerprints in source (FUN_xxxx / DAT_xxxx / sub_XXXX, "// Decompiled with", ILSpy/dnSpy
       headers) - reimplement or reference instead of shipping decompiled code; big engine archives
       (.pak/.bsa/.ba2/.vpk/.rpf/.utoc...) that may carry original assets; absolute user paths; no README /
@@ -52,6 +53,43 @@ def _sha1(p: Path) -> str:
     return h.hexdigest()
 
 
+def _own_names(files: list[Path]) -> set[str]:
+    """Names a loader would install this mod under, from the mod's own metadata only: Info.json Id and
+    AssemblyName (Unity Mod Manager), manifest.json name (Thunderstore), and the assembly a .csproj builds
+    (<AssemblyName>, else the project's file name; BepInEx plugins). Other DLLs in the mod (game references,
+    other mods it depends on) don't count, so their installed folders are still compared. Lower-cased."""
+    import json
+    names = set()
+    for f in files:
+        n = f.name.lower()
+        try:
+            if n.endswith(".csproj"):
+                m = re.search(r"<AssemblyName>\s*([^<]+?)\s*</AssemblyName>", f.read_text(encoding="utf-8-sig", errors="replace"))
+                names.add((m.group(1) if m and "$(" not in m.group(1) else f.stem).lower())
+            elif n in ("info.json", "manifest.json"):
+                d = json.loads(f.read_text(encoding="utf-8-sig", errors="replace"))
+                for k in ("Id", "AssemblyName") if n == "info.json" else ("name",):
+                    v = d.get(k) if isinstance(d, dict) else None
+                    if isinstance(v, str) and v.strip():
+                        names.add(re.sub(r"\.dll$", "", v.strip(), flags=re.I).lower())
+        except (OSError, ValueError):
+            continue
+    return names
+
+
+def _loader_folder(rel: tuple[str, ...]) -> tuple[str, str] | None:
+    """(game-relative path, mod name) when a game-relative file path is in a loader's mods folder: Mods/<name>/...,
+    BepInEx/plugins/<name>/..., or a plugin DLL directly in BepInEx/plugins/ (named by its stem). Else None."""
+    low = [x.lower() for x in rel]
+    for i in range(len(low) - 1):
+        bep = low[i] == "plugins" and i > 0 and low[i - 1] == "bepinex"
+        if i + 2 < len(low) and (low[i] == "mods" or bep):      # <name>/ and a file below it
+            return "/".join(rel[:i + 2]) + "/", low[i + 1]
+        if bep and i + 2 == len(low) and low[-1].endswith(".dll"):
+            return "/".join(rel), low[-1][:-4]
+    return None
+
+
 def check(mod: str, game: str | None = None) -> int:
     root = Path(to_posix(mod))
     if not root.is_dir():
@@ -73,6 +111,20 @@ def check(mod: str, game: str | None = None) -> int:
                     by_size.setdefault(p.stat().st_size, []).append(p)
                 except OSError:
                     pass
+        # this mod installed into the game (Mods/<Id>/, BepInEx/plugins/<name>/) matches itself: skip that copy,
+        # and say which folders were skipped
+        own, skipped = _own_names(files), set()
+        for sz, ps in list(by_size.items()):
+            keep = []
+            for p in ps:
+                hit = _loader_folder(p.relative_to(g).parts)
+                if hit and hit[1] in own:
+                    skipped.add(hit[0])
+                else:
+                    keep.append(p)
+            by_size[sz] = keep
+        if skipped:
+            print("note: not compared, this mod's own installed copy:", ", ".join(sorted(skipped)))
         for f in files:
             sz = f.stat().st_size
             if sz < 64 or sz not in by_size:
