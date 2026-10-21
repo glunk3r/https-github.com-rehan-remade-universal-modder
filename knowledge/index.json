@@ -3318,6 +3318,59 @@
   ]
  },
  {
+  "path": "games/hogwarts-legacy/depth-tested-injected-layer-in-a-ue4-open-world.md",
+  "kind": "game",
+  "title": "Compositing an externally rendered layer into a UE4 open world: a native publisher and a depth-tested ReShade compositor",
+  "game": "Hogwarts Legacy",
+  "games_also": [],
+  "game_version": "Epic build fa4240e57a3c46b39f169041b7811293, Unreal Engine 4.27.2 (4.27.2-2013408+++stream), ReShade 6.8.0, RE-UE4SS 3.0.1-1161 experimental",
+  "platform": "windows",
+  "engine": "unreal",
+  "route": "loader-api",
+  "tools": [
+   "RE-UE4SS 3.0.1-1161 experimental (EngineVersionOverride 4.27)",
+   "ReShade 6.8.0 add-on API (dxgi.dll proxy)",
+   "Rust (native frame publisher, no dependencies)",
+   "MSVC cl.exe 14.44 (ReShade add-on, no ReShade import lib)",
+   "um scan",
+   "um win launch",
+   "um win shot",
+   "um video (gfxcapture)",
+   "WinDrive",
+   "cargo test",
+   "Python 3.12 (shared-memory layout checker)"
+  ],
+  "anti_cheat": "none found by um scan; single-player only throughout, no online service touched. The exe and its DRM are never modified: UE4SS and ReShade load as proxy DLLs (dwmapi.dll, dxgi.dll).",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5)"
+  ],
+  "humans": [
+   "TolkoDev"
+  ],
+  "date": "2026-10-20",
+  "links": [
+   "../gta-v/minecraft-passthrough.md",
+   "https://github.com/rehan-remade/universal-modder/tree/main/examples/minecraft-gta5-passthrough",
+   "https://github.com/codeByAlexff/garrys-redemption"
+  ],
+  "tags": [
+   "unreal",
+   "ue4ss",
+   "reshade",
+   "reshade-addon",
+   "shared-memory",
+   "depth-compositing",
+   "frame-compositing",
+   "game-thread-timer",
+   "native-publisher",
+   "loader-api",
+   "units",
+   "coordinate-system",
+   "ue4-27"
+  ]
+ },
+ {
   "path": "games/hytale/deadlock-movement-suite-server-plugin.md",
   "kind": "game",
   "title": "Deadlock's movement suite in Hytale: server plugin + client-predicted interactions",
@@ -3939,7 +3992,7 @@
  {
   "path": "games/middle-earth-shadow-of-war/falmer-tribe-a-skyrim-creature-as-a-nemesis-tribe.md",
   "kind": "game",
-  "title": "Falmer tribe: a Skyrim creature imported as a Nemesis tribe (mesh conform, MMSH/texture/bundle format, body-replacement items, corpse + Garrison fix)",
+  "title": "Falmer tribe: a Skyrim creature imported as a Nemesis tribe, with titles, wild grunts/prisoners and Skyrim audio (mesh conform, MMSH/texture/bundle format, body-replacement items, grunt body loading, Wwise PCM bank replacement)",
   "game": "Middle-earth: Shadow of War",
   "games_also": [
    "The Elder Scrolls V: Skyrim Special Edition"
@@ -3950,6 +4003,7 @@
   "route": "data",
   "tools": [
    "Blender 3.6.23 + blender_niftools_addon 0.1.1 (NIF import)",
+   "own Wwise SoundBank v118 reader/writer (Python, PCM WEMs; no Wwise authoring tool)",
    "Blender 4.2.3 (conform script, headless)",
    "Python 3.12 + numpy (own MMSH/.tex/.bndl/.arch06 tools, BSA reader)",
    "custom C# gamedb/strdb reader-writer (PowerShell Add-Type)",
@@ -3957,14 +4011,14 @@
    "Ghidra 12.1.4 (headless, analysis only)"
   ],
   "anti_cheat": "none; loose data + an extra archive, exe untouched. All testing ran offline through the offline-mode DLL and its local Garrison (never signed in to WB).",
-  "status": "in-progress",
+  "status": "working",
   "agents": [
    "Claude Code (Opus 5.5)"
   ],
   "humans": [
    "DeimozZarco"
   ],
-  "date": "2026-10-15",
+  "date": "2026-10-20",
   "links": [
    "knowledge/games/middle-earth-shadow-of-war/goblin-tribe-a-new-nemesis-tribe-via-game-gamedb.md",
    "knowledge/games/middle-earth-shadow-of-war/offline-mode-and-local-garrison.md",
@@ -3987,7 +4041,14 @@
    "garrison",
    "corpse",
    "ragdoll",
-   "body-replacement"
+   "body-replacement",
+   "titles",
+   "grunts",
+   "ambient-spawns",
+   "prisoners",
+   "wwise",
+   "audio",
+   "soundbank"
   ]
  },
  {
@@ -4057,7 +4118,7 @@
   "humans": [
    "DeimozZarco"
   ],
-  "date": "2026-10-12",
+  "date": "2026-10-20",
   "links": [
    "examples/shadow-of-war-offline-mode",
    "knowledge/games/middle-earth-shadow-of-war/goblin-tribe-a-new-nemesis-tribe-via-game-gamedb.md",
@@ -4076,7 +4137,9 @@
    "local-server",
    "binary-protocol",
    "reverse-engineering",
-   "testing-prerequisite"
+   "testing-prerequisite",
+   "npc-id",
+   "save-edit"
   ]
  },
  {
@@ -4991,6 +5054,57 @@
    "momentum",
    "mashup",
    "portal-2"
+  ]
+ },
+ {
+  "path": "games/outer-wilds/real-minecraft-running-inside-outer-wilds-passthrough-frame-.md",
+  "kind": "game",
+  "title": "Real Minecraft composited into Outer Wilds (first slice): shared memory under Proton, a raw FBO readback and a four-colour landmark oracle",
+  "game": "Outer Wilds",
+  "games_also": [
+   "Minecraft Java Edition"
+  ],
+  "game_version": "Outer Wilds 1.1.16.1372 (Steam 753640), Unity 2019.4.39f1 Mono, Echoes of the Eye installed; Minecraft Java 26.3, Fabric Loader 0.19.5",
+  "platform": "proton",
+  "engine": "unity-mono",
+  "route": "passthrough",
+  "tools": [
+   "OWML 2.16.3",
+   "Outer Wilds Mod Manager 0.15.7",
+   "HarmonyX",
+   "NuGet OWML 2.16.3 + OuterWildsGameLibs 1.1.16.1372 (net48)",
+   "Fabric Loom + Fabric API, JDK 25",
+   "Java FFM (java.lang.foreign) shared memory",
+   "Java-WebSocket",
+   "Python 3 + Pillow + numpy",
+   "xdotool, grim"
+  ],
+  "anti_cheat": "none (single-player, offline)",
+  "status": "in-progress",
+  "agents": [
+   "OpenCode (Big Pickle)"
+  ],
+  "humans": [],
+  "date": "2026-10-20",
+  "links": [
+   "https://github.com/rehan-remade/universal-modder/tree/main/examples/minecraft-outerwilds-passthrough",
+   "https://github.com/rehan-remade/universal-modder/tree/main/examples/minecraft-gta5-passthrough",
+   "https://github.com/rehan-remade/universal-modder/tree/main/examples/outer-wilds-portal-gun"
+  ],
+  "tags": [
+   "mashup",
+   "passthrough",
+   "frame-compositing",
+   "shared-memory",
+   "seqlock",
+   "proton",
+   "owml",
+   "fabric",
+   "blaze3d",
+   "glreadpixels",
+   "axis-verification",
+   "oracle",
+   "coordinate-mapping"
   ]
  },
  {
@@ -6124,6 +6238,45 @@
    "esl",
    "cut-content",
    "packages"
+  ]
+ },
+ {
+  "path": "games/smalland-survive-the-wilds/reading-the-taming-system-live-with-ue4ss-trap-tiers-creatur.md",
+  "kind": "game",
+  "title": "Reading the taming system live with UE4SS: trap tiers, creature difficulty and the measured success formula",
+  "game": "Smalland: Survive the Wilds",
+  "games_also": [
+   "Valheim"
+  ],
+  "game_version": "steam 768200, buildid 22695059, UE 4.27 (++UE4+Release-4.27)",
+  "platform": "windows",
+  "engine": "unreal",
+  "route": "loader-api",
+  "tools": [
+   "UE4SS experimental (v3.0.1-1160-g3f4037d2)",
+   "UE4SS Lua",
+   "UE4SS CXX header dump"
+  ],
+  "anti_cheat": "none (um scan found none, and the Steam store page lists none; RedpointEOS is Epic Online Services for co-op). UE4SS only ran in a solo/offline world, never in co-op.",
+  "status": "working",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [
+   "Culp"
+  ],
+  "date": "2026-10-05",
+  "links": [
+   "../valheim/smalland-style-trap-taming-in-valheim-four-trap-tiers-tame-a.md"
+  ],
+  "tags": [
+   "ue4ss",
+   "taming",
+   "gameplay-ability-system",
+   "measurement",
+   "oracle",
+   "encrypted-paks",
+   "live-read"
   ]
  },
  {
@@ -7381,6 +7534,48 @@
    "lightning",
    "splitner",
    "returning-weapon"
+  ]
+ },
+ {
+  "path": "games/valheim/smalland-style-trap-taming-in-valheim-four-trap-tiers-tame-a.md",
+  "kind": "game",
+  "title": "Smalland-style trap taming in Valheim: four trap tiers, tame-anything switch and a rideable Seeker Soldier",
+  "game": "Valheim",
+  "games_also": [
+   "Smalland: Survive the Wilds"
+  ],
+  "game_version": "steam 892970, built on buildid 25527674; re-verified on 25909357 (Valheim 1.0.20), Unity 6000.0.75f1 (Mono)",
+  "platform": "windows",
+  "engine": "unity-mono",
+  "route": "managed-patch",
+  "tools": [
+   "BepInExPack_Valheim 5.4.2351",
+   "Jotunn 2.30.2",
+   "HarmonyX",
+   "ilspycmd 9.1.0.7988",
+   ".NET 8 SDK (net472 target)"
+  ],
+  "anti_cheat": "none found by um scan; local test world and test character only",
+  "status": "in-progress",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [
+   "Culp"
+  ],
+  "date": "2026-10-05",
+  "links": [
+   "../smalland-survive-the-wilds/reading-the-taming-system-live-with-ue4ss-trap-tiers-creatur.md"
+  ],
+  "tags": [
+   "mashup",
+   "mechanic-port",
+   "taming",
+   "mount",
+   "saddle",
+   "jotunn",
+   "custom-piece",
+   "harmony"
   ]
  },
  {

@@ -898,6 +898,7 @@ def test_publish_check_own_installed_copy_is_named_by_metadata_only(tmp_path, ca
     ("GitHub token", "github" + "_pat_" + "11ABCDEFG0123456789abc" + "_" + "aB3dE5fG7hJ9kL1mN3pQ5rS7tU9vW1xY3zA5bC7dE9fG1hJ3kL5mN7pQ9rS1t"),
     ("GitHub token", "gh" + "p_" + "aB3dE5fG7hJ9kL1mN3pQ5rS7tU9vW1xY3z"),
     ("Sprixen key", "spx_" + "live_" + "Gh1jK2lM3nO4pQ5rS6tU7vW8xY9z0" * 2),
+    ("Voidless key", "VOIDLESS_API_KEY=" + "void_" + "Gh1jK2lM3nO4pQ5rS6tU7vW8xY9z0"),
 ])
 def test_secret_patterns_catch_current_key_formats(label, key):
     rx = dict(publish.SECRET_PATTERNS)[label]
@@ -905,7 +906,8 @@ def test_secret_patterns_catch_current_key_formats(label, key):
 
 
 def test_secret_patterns_ignore_ordinary_text():
-    text = "sk-" + "learn-style-kebab-case-identifiers-are-not-keys and github_pat_ alone"
+    text = ("sk-" + "learn-style-kebab-case-identifiers-are-not-keys and github_pat_ alone, "
+            "static void " + "void_" + "callback_handler_with_a_long_descriptive_name(void);")
     assert not [label for label, rx in publish.SECRET_PATTERNS if rx.search(text)]
 
 
