@@ -44,11 +44,19 @@ public sealed class Compositor : MonoBehaviour
 	private Camera _mainCam;
 	private FrameReader.Frame _frame = new();
 
-	/// <summary>Where in the world the picture is shown. Set by the dev bridge / ground placement.</summary>
-	public Vector3 ScreenPosition = new(0f, 0f, 0f);
-	public Vector3 ScreenNormal = Vector3.forward;
-	public float ScreenWidth = 3.2f;
-	public float ScreenHeight = 1.8f;
+	/// <summary>
+	/// Where in the world the picture is shown. Set by the dev bridge / ground placement.
+	///
+	/// <p>Static so a rebuild after a scene unload keeps the placement. Until the screen is pinned to a real
+	/// surface this is the only record of where it went, and having it silently snap back to the origin on
+	/// every loop reset made "the picture is gone" look like a rendering bug when it was just a move.
+	/// </summary>
+	public static Vector3 ScreenPosition = new(0f, 0f, 0f);
+	public static Vector3 ScreenNormal = Vector3.forward;
+	public static float ScreenWidth = 3.2f;
+	public static float ScreenHeight = 1.8f;
+	/** False until something places the screen, so a fresh instance can tell "never placed" from "at origin". */
+	public static bool ScreenPlaced;
 
 	public long FrameReads;
 	public long FrameMisses;
@@ -84,6 +92,12 @@ public sealed class Compositor : MonoBehaviour
 		}
 		BuildScreen();
 		Camera.onPreCull += OnPreCull;
+		if (ScreenPlaced)
+		{
+			// Rebuilt after a scene unload: the placement outlives the component, so put the picture back
+			// where it was instead of leaving it at the origin for the player to hunt for.
+			BlockCraftMod.Log($"compositor rebuilt, screen restored at {ScreenPosition:F2}");
+		}
 	}
 
 	private void OnDestroy()
@@ -290,6 +304,7 @@ public sealed class Compositor : MonoBehaviour
 		if (cam == null) return;
 		ScreenPosition = cam.transform.position + cam.transform.forward * distance;
 		ScreenNormal = -cam.transform.forward;
+		ScreenPlaced = true;
 		BlockCraftMod.Log($"screen placed at {ScreenPosition} facing {ScreenNormal}");
 	}
 

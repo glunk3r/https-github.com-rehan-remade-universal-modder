@@ -27,7 +27,11 @@ Working now, verified live:
 - The guest's player is hidden and its camera follows Outer Wilds'.
 - The guest's camera and the frame layout are checked by a measurement, not by eye — see "The axis oracle"
   below. The host's Outer Wilds → Minecraft conversion is **not verified yet**.
-- The host reconnects, detaches cleanly, and survives a loop reset.
+- The host reconnects and detaches cleanly, and the passthrough **rebuilds itself when the scene reloads**
+  (a loop reset, or a trip back to the title screen). That last one is a fix, not something that worked from
+  the start: `StartPassthrough` used to begin with `if (_link != null) return;`, which made a rebuild
+  impossible, so once Outer Wilds unloaded the solar system the picture was gone for good while the mod kept
+  logging scene loads. See session 7 in `MODLOG.md`.
 
 Not done yet:
 

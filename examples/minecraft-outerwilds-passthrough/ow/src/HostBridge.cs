@@ -86,6 +86,7 @@ public sealed class HostBridge : MonoBehaviour
 	private void OnDestroy()
 	{
 		Camera.onPreCull -= OnPreCullTick;
+		if (Instance == this) Instance = null;
 	}
 
 	private void OnPreCullTick(Camera cam)
@@ -146,7 +147,18 @@ public sealed class HostBridge : MonoBehaviour
 		}
 	}
 
-	/// <summary>Unity pose -> Minecraft coordinates, per docs/CONTRACT.md.</summary>
+	/// <summary>
+	/// Unity pose -> Minecraft coordinates, per docs/CONTRACT.md.
+	///
+	/// <p><b>Unverified, and suspected wrong in the yaw and pitch signs.</b> The axis oracle and the pose
+	/// sweep both send their pose straight to the guest in Minecraft terms and freeze this bridge first, so
+	/// neither of them ever runs this conversion — they check the guest's camera and the frame layout, not
+	/// this. Working the handedness out on paper for a Z mirror suggests the correct pair is
+	/// <c>MC.yaw = 180 + OW.yaw</c> and <c>MC.pitch = OW.pitch</c>: Unity yaw t faces (sin t, 0, cos t),
+	/// which under z -> -z becomes (sin t, 0, -cos t), and Minecraft yaw f faces (-sin f, 0, cos f), giving
+	/// f = 180 + t. The signs below are what the contract asserted before anything measured them. Do not
+	/// trust either pair until a test drives the host and reads the frame back; the field note says the same.
+	/// </summary>
 	private void SendCamera()
 	{
 		var t = _cam.transform;
@@ -154,6 +166,7 @@ public sealed class HostBridge : MonoBehaviour
 		var e = t.eulerAngles; // Unity yaw is degrees, 0..360, counter-clockwise from +Z
 
 		// Contract: MC = (OW.x, OW.y, -OW.z); MC.yaw = 180 - OW.yaw; MC.pitch = -OW.pitch.
+		// See the summary above: the yaw and pitch signs are the parts that were never measured.
 		var x = pos.x;
 		var y = pos.y;
 		var z = -pos.z;

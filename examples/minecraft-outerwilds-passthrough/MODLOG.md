@@ -801,3 +801,83 @@ The run also prints `landmark spread 979x641px, aspect 1.53` and does not fail o
 3 blocks out to the sides, which subtends a wide angle, so those two landmarks run to the frame edges
 and their centroid spread is wider than tall. The centroids are still in the right places, which is what
 the checks use; the aspect line is reported for information rather than asserted.
+
+## Session 7 — the picture survives a scene reload (2026-10-21)
+
+Reported by the user: "i dont see the minecraft stuff anymre". Both games were still running (Minecraft up
+91 minutes, Outer Wilds up 86), so this was not a crash.
+
+### What was actually wrong
+
+Nothing was broken in the transport. Measured live:
+
+- Minecraft was **exporting frames**: all three shm slots advancing (seq 104770 -> 104886 in 3 s, ~39 fps,
+  1280x720, all slots converged on the same sequence).
+- The WebSocket was **connected**: `OuterWilds.exe` <-> `java` on :25599.
+- Outer Wilds was **on the title screen**, and the passthrough only starts on the `SolarSystem` scene.
+
+The mod's own log told the rest of the story. The scene cycled **title -> world -> title** roughly every
+two minutes for six hours:
+
+```
+10:22:14  AfterAwake of PlayerBody -> block tool added to the loop
+10:24:02  AfterStart of TitleScreenManager
+10:24:13  AfterAwake of PlayerBody -> block tool added to the loop
+10:27:01  AfterStart of TitleScreenManager
+...
+```
+
+Each return to the title was preceded by `OWTriggerVolume.OnDisable` and `QuantumMoon.OnDisable` — the whole
+solar system being torn down, i.e. a loop reset or a trip back to the menu.
+
+### Root cause: an early return that looked like a guard
+
+`StartPassthrough` began with:
+
+```csharp
+if (_link != null) return;
+```
+
+This was written to stop the passthrough being built twice. What it actually did was make it **impossible to
+rebuild after a scene unload**. When OW tears down `SolarSystem`, the compositor, the host bridge and the dev
+bridge are destroyed with it. `_link` is a plain field that does not notice, so on the next load the method
+returned immediately and nothing was ever recreated.
+
+The symptom that proved it: `dev_log.txt` stopped at **04:19** while the game kept running until 10:35, and
+`dev_commands.txt` grew without anything reading it. The mod went on logging `block tool added to the loop`
+every cycle — so `OnCompleteSceneLoad` was firing the whole time — while drawing nothing.
+
+### Fix
+
+Split "keep the socket" from "rebuild the scene objects":
+
+- `_link` is created once and kept (the WebSocket must not be re-made per load).
+- `TearDownSceneObjects()` destroys the compositor, bridge, dev bridge and block tool, and runs as the
+  **first** step in `OnCompleteSceneLoad`'s next-update callback.
+- `StartPassthrough()` then builds fresh ones on every `SolarSystem` load.
+
+Ordering matters: teardown must come *before* `BlockTool.Create()`, or it destroys the tool that was just
+made. An earlier draft of this fix did exactly that.
+
+Two supporting changes:
+
+- `Compositor.Instance`, `HostBridge.Instance` and `DevBridge.Instance` are now cleared in `OnDestroy`
+  (`HostBridge` did not clear it at all, and `DevBridge` had no `Instance`). Without this the teardown would
+  dereference a destroyed object.
+- **Screen placement is now static** (`Compositor.ScreenPosition` and friends, plus a `ScreenPlaced` flag).
+  It used to be per-instance, so every rebuild silently snapped the picture back to the world origin, which
+  reads as "rendering is broken" when it is only a move. A rebuilt compositor logs that it restored the
+  placement.
+
+`Destroy()` is deferred to the end of the frame, so the old and new objects briefly coexist; that is safe
+because each `OnDestroy` only clears `Instance` `if (Instance == this)`, which is false for the old one by
+then. Each instance opens and disposes its **own** `FrameReader` mapping, so the old reader's `Dispose()`
+cannot pull the mapping out from under the new one.
+
+Host build: 0 warnings, 0 errors.
+
+### Still open
+
+The screen is not yet pinned to a real surface. The loop was also resetting every ~2 minutes, far faster
+than a normal 22-minute loop; that was not investigated, since it did not affect this bug and the fix is
+independent of why the scene unloads.
