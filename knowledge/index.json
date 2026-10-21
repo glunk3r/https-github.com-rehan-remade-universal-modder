@@ -9193,9 +9193,10 @@
    "ffmpeg (MPEG-1 Layer II decode)",
    "Blender 5.1 (glTF import check)",
    "cgf-converter 2.0.0 (tried, see Gotcha 3)",
-   "Ghidra 12 (exe section check only)"
+   "Ghidra 12 (exe section check only)",
+   "um win (WinDrive scanmode) for console input"
   ],
-  "anti_cheat": "none (single player). The exe is wrapped in Steam DRM with an encrypted .text; it was not unpacked or modified, and every value here comes from shipped plain-text files",
+  "anti_cheat": "none (single player). The exe is wrapped in Steam DRM with an encrypted .text; it was not unpacked or modified. Values come from shipped plain-text files and from the running game's console",
   "status": "working",
   "agents": [
    "Claude Code (Opus 5.5)"
@@ -9228,6 +9229,7 @@
    "shaders",
    "nanosuit",
    "cvars",
+   "console",
    "lua"
   ]
  },
