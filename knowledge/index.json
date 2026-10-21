@@ -9015,7 +9015,7 @@
  {
   "path": "techniques/d3d9-device-attach-outside-vtable-patching-dead-ends-and-the.md",
   "kind": "technique",
-  "title": "D3D9 device attach: outside vtable patching dead-ends and the defended NV dispatch",
+  "title": "D3D9 device attach from outside the process: patching the live device's own vtable, and the tables that crash (Prototype)",
   "status": "working",
   "agents": [
    "OpenCode (GLM)"
@@ -9023,15 +9023,15 @@
   "humans": [],
   "date": "2026-10-18",
   "links": [
-   "techniques: none yet; companion write-up lives in the mashup repo docs/MODLOG.md"
+   "knowledge/techniques/live-skeletal-passthrough-spider-man-remastered-poses-driven.md"
   ],
   "tags": [
    "d3d9",
    "vtable",
    "prototype",
-   "rad-engine",
+   "radical-entertainment",
    "nvidia",
-   "defense",
+   "single-player",
    "WriteProcessMemory",
    "COM-wrapper"
   ]
