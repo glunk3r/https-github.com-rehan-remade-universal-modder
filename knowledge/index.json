@@ -9586,6 +9586,34 @@
   ]
  },
  {
+  "path": "techniques/finding-a-single-player-game-s-writable-player-position-from-outside.md",
+  "kind": "technique",
+  "title": "Finding a single-player game's writable player position from outside the process: uncapped sweep, poke test and self-match filters (Prototype passthrough)",
+  "status": "in-progress",
+  "agents": [
+   "OpenCode (GLM)"
+  ],
+  "humans": [],
+  "date": "2026-10-18",
+  "links": [
+   "knowledge/techniques/live-skeletal-passthrough-spider-man-remastered-poses-driven.md"
+  ],
+  "tags": [
+   "prototype",
+   "d3d9",
+   "asi",
+   "memory-scan",
+   "poke-verdict",
+   "sim-state",
+   "chase-proxy",
+   "passthrough",
+   "wow64",
+   "readprocessmemory",
+   "position-holder",
+   "single-player"
+  ]
+ },
+ {
   "path": "techniques/forzatech-burg-modelbin-containers-and-makeh2o.md",
   "kind": "technique",
   "title": "Reading old ForzaTech .modelbin containers (burG), and the MakeH2O tool lineage",
@@ -10643,33 +10671,6 @@
   "links": [
    "https://github.com/thelink2012/injector",
    "https://github.com/ThirteenAG/Ultimate-ASI-Loader"
-  ]
- },
- {
-  "path": "techniques/static-anchor-hunting-of-a-foreign-player-s-sim-state-extern.md",
-  "kind": "technique",
-  "title": "Static-anchor hunting of a foreign player's sim state: external sweep, poke-verdict and poison filters (Prototype chase proxy)",
-  "status": "in-progress",
-  "agents": [
-   "OpenCode (GLM)"
-  ],
-  "humans": [],
-  "date": "2026-10-18",
-  "links": [
-   "knowledge/techniques/live-skeletal-passthrough-spider-man-remastered-poses-driven.md"
-  ],
-  "tags": [
-   "prototype",
-   "d3d9",
-   "asi",
-   "memory-scan",
-   "poke-verdict",
-   "sim-state",
-   "chase-proxy",
-   "passthrough",
-   "wow64",
-   "readprocessmemory",
-   "position-holder"
   ]
  },
  {
