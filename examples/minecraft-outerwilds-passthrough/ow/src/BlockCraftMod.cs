@@ -56,6 +56,9 @@ public class BlockCraftMod : ModBehaviour
 		// Wait one frame so Locator has the player, camera and tool swapper.
 		ModHelper.Events.Unity.FireOnNextUpdate(() =>
 		{
+			// Clear the previous load's objects before making new ones. This has to happen here, ahead of
+			// BlockTool.Create(), or the teardown would destroy the tool that was just made.
+			TearDownSceneObjects();
 			BlockTool.Create();
 			Log("block tool added to the loop");
 			StartPassthrough();
@@ -65,13 +68,24 @@ public class BlockCraftMod : ModBehaviour
 	/// <summary>
 	/// Bring up the live passthrough: the guest link, the compositor that paints Minecraft's picture, and
 	/// the bridge that keeps the guest's camera on Outer Wilds'.
+	///
+	/// <p>Called on *every* SolarSystem load, not just the first. The socket is created once and kept, but
+	/// the scene-local pieces are rebuilt each time (<see cref="TearDownSceneObjects"/> runs just before
+	/// this, from the same callback). An early `if (_link != null) return;` here looked like a guard against
+	/// double-creation and was in fact the bug that made the picture disappear for good: OW unloads
+	/// SolarSystem on a loop reset (and on the trip back to the title screen), which destroys the
+	/// compositor, the bridge and the dev bridge with it. With the guard in place nothing ever recreated
+	/// them, so the mod went on logging scene loads while drawing nothing and ignoring every dev command —
+	/// `dev_log.txt` sat frozen for six hours next to a running game.
 	/// </summary>
 	private void StartPassthrough()
 	{
-		if (_link != null)
-			return;
-		_link = new HostLink();
-		_link.Start();
+		if (_link == null)
+		{
+			_link = new HostLink();
+			_link.Start();
+		}
+
 		var compositor = Compositor.Create(_link);
 		HostBridge.Create(_link, compositor);
 		// Its own object, marked to survive the load, exactly like the compositor and the bridge above.
@@ -82,6 +96,26 @@ public class BlockCraftMod : ModBehaviour
 		var dev = devGo.AddComponent<DevBridge>();
 		Log($"passthrough up: link on 127.0.0.1:{HostLink.Port}, compositor, bridge, dev {(dev.enabled ? "on" : "off")}",
 			MessageType.Success);
+	}
+
+	/// <summary>
+	/// Destroy the compositor, the bridge and the dev bridge from a previous scene load, if any survived.
+	///
+	/// <p>Unity cannot be asked whether an object is destroyed without going through the `== null` overload,
+	/// which is exactly what these checks use. Destroying during a scene load would be unsafe, so this runs
+	/// from the next-update callback in <see cref="OnCompleteSceneLoad"/> once the new scene is up and the
+	/// old objects are already gone or orphaned.
+	/// </summary>
+	private static void TearDownSceneObjects()
+	{
+		if (Compositor.Instance != null)
+			Destroy(Compositor.Instance.gameObject);
+		if (HostBridge.Instance != null)
+			Destroy(HostBridge.Instance.gameObject);
+		if (DevBridge.Instance != null)
+			Destroy(DevBridge.Instance.gameObject);
+		if (BlockTool.Instance != null)
+			Destroy(BlockTool.Instance.gameObject);
 	}
 
 	private void OnDestroy()

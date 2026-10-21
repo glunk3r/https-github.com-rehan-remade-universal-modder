@@ -17,6 +17,17 @@ namespace BlockCraft;
 /// </summary>
 public class DevBridge : MonoBehaviour
 {
+	/// <summary>The live dev bridge, so <see cref="BlockCraftMod"/> can tear down the previous load's one.</summary>
+	public static DevBridge Instance;
+
+	/// <summary>
+	/// False once a bridge has run in this process, so a rebuild after a scene unload resumes where the
+	/// last one stopped instead of skipping the commands that arrived while it was dead.
+	/// </summary>
+	private static bool s_firstBridge = true;
+	/** Byte offset the last bridge reached, carried across a rebuild. */
+	private static long s_lastOffset;
+
 	private static string s_logPath;
 	private string _cmdPath;
 	private readonly Queue<string> _queue = new();
@@ -31,6 +42,7 @@ public class DevBridge : MonoBehaviour
 
 	private void Start()
 	{
+		Instance = this;
 		var folder = BlockCraftMod.Instance.ModFolder;
 		if (!File.Exists(Path.Combine(folder, "dev.enabled")))
 		{
@@ -46,14 +58,20 @@ public class DevBridge : MonoBehaviour
 		// lines; anything present at startup is stale (left over from a previous session) and replaying
 		// it would fire commands nobody asked for. tools/slice1.sh truncates the file before writing for
 		// the same reason.
+		//
+		// The one exception is a rebuild after a scene unload: the previous bridge may have died with
+		// commands still unread in the file. Those were written by *this* session, so they are replayed
+		// rather than skipped. Only a genuinely fresh process starts at the end.
 		try
 		{
-			_offset = File.Exists(_cmdPath) ? new FileInfo(_cmdPath).Length : 0;
+			var length = File.Exists(_cmdPath) ? new FileInfo(_cmdPath).Length : 0;
+			_offset = s_firstBridge ? length : Math.Min(s_lastOffset, length);
 		}
 		catch (IOException)
 		{
 			_offset = 0;
 		}
+		s_firstBridge = false;
 
 		// Subscribe in Start, which is what demonstrably runs for a component created during a scene load
 		// (the compositor subscribes here and has never gone deaf). OnEnable can be skipped for these.
@@ -67,6 +85,8 @@ public class DevBridge : MonoBehaviour
 		// Camera.onPreCull is static and is not cleared between scenes, so a subscription that outlives its
 		// component would keep ticking a destroyed object. Unsubscribing here keeps the event honest.
 		Camera.onPreCull -= OnPreCull;
+		s_lastOffset = _offset;
+		if (Instance == this) Instance = null;
 	}
 
 	public static void Append(string line)
@@ -239,31 +259,32 @@ public class DevBridge : MonoBehaviour
 			case "place":
 				// place [distance]: put the guest's screen in front of the camera
 				comp?.PlaceInFront(F(a, 1, 6f));
-				Append("place -> " + (comp != null ? comp.ScreenPosition.ToString("F2") : "no compositor"));
+				Append("place -> " + (comp != null ? Compositor.ScreenPosition.ToString("F2") : "no compositor"));
 				break;
 			case "size":
 				comp?.SetSize(F(a, 1, 3.2f), F(a, 2, 1.8f));
-				Append($"size {comp?.ScreenWidth:F2}x{comp?.ScreenHeight:F2}");
+				Append($"size {Compositor.ScreenWidth:F2}x{Compositor.ScreenHeight:F2}");
 				break;
 			case "at":
 				// at x y z [nx ny nz]: place the screen at an explicit world spot and normal
 				if (comp != null && a.Length >= 4)
 				{
-					comp.ScreenPosition = new Vector3(F(a, 1, 0), F(a, 2, 0), F(a, 3, 0));
-					comp.ScreenNormal = a.Length >= 7
+					Compositor.ScreenPosition = new Vector3(F(a, 1, 0), F(a, 2, 0), F(a, 3, 0));
+					Compositor.ScreenNormal = a.Length >= 7
 						? new Vector3(F(a, 4, 0), F(a, 5, 0), F(a, 6, 1)).normalized
 						: Vector3.up;
+					Compositor.ScreenPlaced = true;
 				}
 
-				Append("at -> " + (comp != null ? comp.ScreenPosition.ToString("F2") : "no compositor"));
+				Append("at -> " + (comp != null ? Compositor.ScreenPosition.ToString("F2") : "no compositor"));
 				break;
 			case "pose":
 			case "dump":
 				Append("host: " + (bridge?.Pose() ?? "no bridge"));
 				Append("guest: " + (comp?.Status() ?? "no compositor"));
 				if (comp != null)
-					Append($"screen pos {comp.ScreenPosition:F2} normal {comp.ScreenNormal:F2} " +
-						$"size {comp.ScreenWidth:F2}x{comp.ScreenHeight:F2} frames {comp.FrameReads} misses {comp.FrameMisses}");
+					Append($"screen pos {Compositor.ScreenPosition:F2} normal {Compositor.ScreenNormal:F2} " +
+						$"size {Compositor.ScreenWidth:F2}x{Compositor.ScreenHeight:F2} frames {comp.FrameReads} misses {comp.FrameMisses}");
 				if (bridge?.Link != null)
 					Append($"link: connected {bridge.Link.Connected} sent {bridge.Link.Sent} recv {bridge.Link.Received} " +
 						$"errors {bridge.Link.Errors} shm {bridge.Link.GuestShm} pid {bridge.Link.GuestPid}");
