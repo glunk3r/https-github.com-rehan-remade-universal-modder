@@ -1,0 +1,14 @@
+; Template shipped with examples/metro2033-m2033fix. install.ps1 copies it next to metro2033.exe as m2033fix.ini.
+; m2033fix settings (next to dinput8.dll in the game folder). Missing file or key = default.
+; Set a fix to 0 to roll it back on the next start. Delete dinput8.dll to remove the patch entirely.
+[fix]
+; P1: crash 25-35 s after start (charmap freed during the text-language switch while a worker thread reads it)
+lang_switch_race = 1
+; P2: keep the charmap alive at shutdown. NOT proven to be needed; leave 0 unless an exit crash proves it.
+exit_charmap_free = 0
+; P3: let the game save mouse_inertion (mouse smoothing) to user.cfg like other options
+save_mouse_inertion = 1
+
+[log]
+; m2033fix.log next to the dll, written once at startup
+enabled = 1
