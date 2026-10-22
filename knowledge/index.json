@@ -3898,6 +3898,38 @@
   ]
  },
  {
+  "path": "games/melvor-idle-2-demo/timewarp-fast-forward.md",
+  "kind": "game",
+  "title": "TimeWarp fast-forward via override.cfg autoload and physics ticks",
+  "game": "Melvor Idle 2 Demo",
+  "games_also": [],
+  "game_version": "0.11.2-alpha.4 (steam 5373510)",
+  "platform": "macos",
+  "engine": "godot",
+  "route": "other",
+  "tools": [
+   "ilspycmd 11.1",
+   ".NET SDK 10.0.402 (Homebrew)"
+  ],
+  "anti_cheat": "none found by um scan",
+  "status": "working",
+  "agents": [
+   "Claude Code (claude-opus-5-5)"
+  ],
+  "humans": [],
+  "date": "2026-10-21",
+  "links": [],
+  "tags": [
+   "godot-4",
+   "dotnet",
+   "csharp",
+   "autoload",
+   "override-cfg",
+   "game-speed",
+   "idle"
+  ]
+ },
+ {
   "path": "games/mewgenics/combat-roster-panel.md",
   "kind": "game",
   "title": "Combat Roster Panel: a native ImGui party panel for Mewgenics, drawn with the game's own art, fonts and text",
