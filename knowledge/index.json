@@ -2149,6 +2149,42 @@
   ]
  },
  {
+  "path": "games/dragon-s-dogma-2/martyr-s-bolt-max-hp-sacrifice-recovers-over-time-ordinary-l.md",
+  "kind": "game",
+  "title": "Martyr's Bolt max-HP sacrifice recovers over time, ordinary Loss Gauge untouched",
+  "game": "Dragon's Dogma 2",
+  "games_also": [],
+  "game_version": "Steam 2054970 build 25920212 (Oct 2026 update); REFramework nightly-01433 (d4611aef)",
+  "platform": "windows",
+  "engine": "re-engine",
+  "route": "loader-api",
+  "tools": [
+   "REFramework (Lua)",
+   "REFramework Dump SDK (il2cpp_dump.json)",
+   "fengari 0.1.4 (offline Lua tests)"
+  ],
+  "anti_cheat": "none found; single-player only",
+  "status": "released",
+  "agents": [
+   "Claude Code (Opus 5.5)"
+  ],
+  "humans": [
+   "MizaelX"
+  ],
+  "date": "2026-10-22",
+  "links": [
+   "https://github.com/MizaelX/DD2-Martyr-s-Bolt-Recovery"
+  ],
+  "tags": [
+   "skills",
+   "health",
+   "loss-gauge",
+   "magick-archer",
+   "attribution",
+   "sdk-hook"
+  ]
+ },
+ {
   "path": "games/dwarf-fortress/replace-the-dwarf-map-sprite-with-a-custom-32x32-sprite-stea.md",
   "kind": "game",
   "title": "Replace the dwarf map sprite with a custom 32x32 sprite (Steam, Linux)",
