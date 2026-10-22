@@ -3915,7 +3915,9 @@
    "Ghidra 12.1.4 on a read-only memory image",
    "Frida 17.24.3",
    "capstone + minidump (Python)",
-   "Zig 0.17.0 (x86-windows-gnu, no CRT)"
+   "Zig 0.17.0 (x86-windows-gnu, no CRT)",
+   "PresentMon 2.6 (console)",
+   "GOG 1.01 v5 build (DRM-free reference)"
   ],
   "anti_cheat": "none (single-player). The exe is SteamStub-wrapped; it was not unpacked or patched.",
   "status": "working",
@@ -3942,7 +3944,10 @@
    "crc32",
    "level-bin",
    "cvars",
-   "metrodeveloper"
+   "metrodeveloper",
+   "gog",
+   "dxgi",
+   "vsync"
   ]
  },
  {

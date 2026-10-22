@@ -7,7 +7,7 @@ game_version: 'Original 2010 Steam build (app 43110), metro2033.exe 1.0.0.1, PE 
 platform: windows
 engine: 4A Engine
 route: native-hook
-tools: ["Python 3 + pefile (static PE/RTTI/strings)", "own VFI/UPK lister + pure-Python QuickLZ 1.5 L3 decoder", "MetroTools source (format reference)", "MetroDeveloper 1.2.2 (hangs this build)", "Ghidra 12.1.4 on a read-only memory image", "Frida 17.24.3", "capstone + minidump (Python)", "Zig 0.17.0 (x86-windows-gnu, no CRT)"]
+tools: ["Python 3 + pefile (static PE/RTTI/strings)", "own VFI/UPK lister + pure-Python QuickLZ 1.5 L3 decoder", "MetroTools source (format reference)", "MetroDeveloper 1.2.2 (hangs this build)", "Ghidra 12.1.4 on a read-only memory image", "Frida 17.24.3", "capstone + minidump (Python)", "Zig 0.17.0 (x86-windows-gnu, no CRT)", "PresentMon 2.6 (console)", "GOG 1.01 v5 build (DRM-free reference)"]
 anti_cheat: "none (single-player). The exe is SteamStub-wrapped; it was not unpacked or patched."
 status: working
 agents:
@@ -18,7 +18,7 @@ links:
   - "https://github.com/tsnest/MetroTools"
   - "https://github.com/tsnest/MetroDeveloper"
   - "https://github.com/tsnest/MetroDeveloper/releases"
-tags: [steamstub, rtti, vfi, vfs0, upk, quicklz, scripts-bin, crc32, level-bin, cvars, metrodeveloper]
+tags: [steamstub, rtti, vfi, vfs0, upk, quicklz, scripts-bin, crc32, level-bin, cvars, metrodeveloper, gog, dxgi, vsync]
 ---
 # Original Metro 2033: SteamStub exe, VFI/UPK archives, QuickLZ and the crc32-keyed scripts.bin
 
@@ -234,6 +234,39 @@ most option changes need only `user.cfg` (Gotchas 9–13).
 16. **A proxy that does work in `DllMain` hangs this build** (see 8). A `dinput8.dll` proxy is reliable if it
     defers everything to the game's first `DirectInput8Create` call: on the main thread, about 2–4 s
     after start, with `.text` already decrypted by SteamStub.
+17. **The GOG release (1.01 GOG v5) is the same exe build, without SteamStub.** Same PE timestamp
+    `0x4C7775B7`, version 1.0.0.1, PDB path and section sizes. `.rdata`, `.data` and `.rsrc` are
+    byte-identical to the Steam file.
+    - Its `.text` is plain on disk, so it is a clean static reference for the Steam build's addresses.
+      No memory dump is needed.
+    - It also ships a Galaxy `steam_api.dll` wrapper (it implements `SteamRemoteStorage` and
+      `GetCurrentGameLanguage`) and a gamepad-remapping `xinput1_3.dll` (`goginput.ini`).
+    - GOG patched 11 places in `.text` (132 bytes) plus two stubs in the section's alignment padding
+      (`0x94E555`–`0x94F000`):
+
+      | Where | Steam build | GOG build |
+      |---|---|---|
+      | `0x7A1733`, `0x7A1D71` (stubs) | `swapchain->Present(0, 0)` | `Present(1, 0)`: vsync forced on |
+      | `0x7A1F1B`, `0x7A1F41`, `0x7A1F53`, `0x7A1F79` | `GetDisplayModeList(fmt, DXGI_ENUM_MODES_SCALING)` into a 512-mode stack buffer (`0x3840` B) | 1024 modes (`0x7080` B) |
+      | `0x85370C` (109 B in place) | FPS above `target_fps` → `Sleep(ms)` | QPC busy-wait to 8.333 ms after the frame start (`[0xA13BD8]` = ticks per ms): a fixed 120 FPS cap |
+      | `0x8543D7`, `0x8543E2` | loader event handler (`cengine::loader`) waits about 1 s and only accepts codes `0x105`/`0x10B` | both checks removed (probably "press any key" for gamepads; not fully traced) |
+      | `0x938F2C`, `0x938F71` | "Unsupported graphics card" and "video driver needs to be upgraded" popups | both popups disabled |
+
+    - The charmap race (14) is **not** patched in GOG: the bytes at `0x85B0A8` are the same.
+      Even so, GOG passed 10×130 s launches with 0 crashes. The charmap still switched on every start.
+      That run used `lang_text us` and Galaxy's language. Why it does not crash is open.
+18. **`r_vsync` does nothing under DX11 in the Steam build.** Proven with a Frida hook in `dxgi.dll`'s
+    `Present`. With `r_vsync off` and with `on` (bit `0x10` of `0x9F2820` set), the only per-frame call
+    sites, `0x7A1738` and `0x7A1D76`, pass `SyncInterval = 0`. The GOG build passes 1 from the same
+    sites. PresentMon agrees.
+19. **A Frida `Interceptor` on the game's own `.text` crashed a worker thread** (`c0000005` at `0x4163AD`,
+    a refcount decrement on a garbage pointer). A rerun without Frida, and one hooking `dxgi.dll` instead,
+    were clean.
+    - Hook system DLLs, not game code.
+    - PresentMon (2.6 console) gotchas:
+      - it writes no CSV, and can misreport `SyncInterval`, when it loses ETW events;
+      - a killed run leaves a session behind (`logman stop <name> -ets`);
+      - a non-ASCII output path passed from Python failed.
 
 ## Open questions
 - Does `unlock_content_folder` let a loose `content\scripts\<name>.bin` override the record inside
@@ -242,3 +275,10 @@ most option changes need only `user.cfg` (Gotchas 9–13).
   running process (read-only debugger) via xrefs to the `content\scripts.bin` string.
 - 187 unnamed `scripts.bin` records remain, mostly visual-script sequences and hand/weapon setups.
 - What is the 4-byte UPK chunk 2? Is the upk order really numeric?
+- Why does the GOG build survive the charmap race (17)? Is it the text language (`us` vs `ru`), timing, or
+  heap layout?
+- Is a 512-mode list ever exceeded in practice (4K/high-refresh/DSR setups), and what does the Steam build
+  do then?
+- Does GOG's 120 FPS busy-wait limiter give smoother frame pacing in gameplay than the Steam `Sleep`
+  limiter? In the window measured (70–110 s after start) both builds ran at exactly 30 FPS, so the
+  limiters were not compared.
