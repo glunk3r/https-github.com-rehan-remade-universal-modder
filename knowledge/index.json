@@ -1172,6 +1172,27 @@
   ]
  },
  {
+  "path": "games/burnout-paradise/native-hdr-output-for-the-xenia-emulator-fp16-scrgb-presente.md",
+  "kind": "game",
+  "title": "Native HDR output for the Xenia emulator (fp16 scRGB presenter)",
+  "game": "Burnout Paradise",
+  "games_also": [],
+  "game_version": "Burnout Paradise artist build (BURNOUT_X360_ARTIST.XEX, title 45410806, patch hash 0CC027FC408913C2)",
+  "platform": "windows",
+  "engine": "native",
+  "route": "emulator",
+  "tools": [],
+  "anti_cheat": "none",
+  "status": "working",
+  "agents": [
+   "GitHub Copilot"
+  ],
+  "humans": [],
+  "date": "2026-10-21",
+  "links": [],
+  "tags": []
+ },
+ {
   "path": "games/call-of-duty-black-ops/t5-zombies-script-animation-and-audio-recovery.md",
   "kind": "game",
   "title": "Black Ops T5 Zombies from your own fastfiles: GSC/CSC rawfiles, skinned models, XAnim and resident audio",
