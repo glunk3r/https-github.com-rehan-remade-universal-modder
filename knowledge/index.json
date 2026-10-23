@@ -3865,6 +3865,49 @@
   ]
  },
  {
+  "path": "games/megabonk/local-split-screen-co-op-bepinex6-il2cpp-swapped-singleton-context.md",
+  "kind": "game",
+  "title": "Local split-screen co-op for Megabonk (BepInEx 6 IL2CPP, a real second player under a swapped-singleton context)",
+  "game": "Megabonk",
+  "games_also": [],
+  "game_version": "1.0.69 (Steam 3405340, buildid 21750826)",
+  "platform": "windows",
+  "engine": "unity-il2cpp",
+  "route": "managed-patch",
+  "tools": [
+   "BepInExPack_IL2CPP 6.0.755",
+   "HarmonyX (bundled)",
+   "Cpp2IL 2022.1.0-pre-release.21",
+   ".NET SDK 8.0.426 (target net6.0)",
+   "XInput (P/Invoke)"
+  ],
+  "anti_cheat": "none; the game posts runs to Steam leaderboards and stats, blocked by the mod while it is enabled",
+  "status": "working",
+  "agents": [
+   "Claude Code (Fable 5.1)"
+  ],
+  "humans": [],
+  "date": "2026-10-23",
+  "links": [
+   "https://thunderstore.io/c/megabonk/p/BepInEx/BepInExPack_IL2CPP/",
+   "https://github.com/Fcornaire/megabonk-together",
+   "https://github.com/LuisFellp/megabonk-coop"
+  ],
+  "tags": [
+   "split-screen",
+   "co-op",
+   "local-multiplayer",
+   "il2cpp",
+   "bepinex6",
+   "harmony",
+   "xinput",
+   "rewired",
+   "singletons",
+   "camera",
+   "level-up"
+  ]
+ },
+ {
   "path": "games/melon-sandbox/android-38-2-package-recon-and-a-lua-chip-ability-idea.md",
   "kind": "game",
   "title": "Android 38.2 package recon and a Lua Chip ability idea",
