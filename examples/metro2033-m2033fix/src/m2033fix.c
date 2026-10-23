@@ -3,7 +3,7 @@
  * The exe on disk is never touched. On the game's first DirectInput8Create call (after SteamStub has
  * decrypted .text) the proxy checks the exe identity and the exact bytes at each site, applies the enabled
  * in-memory patches, then forwards to the system dinput8.dll. Any mismatch skips that patch (vanilla).
- * Mechanism, patch list, verification and rollback: README.md.
+ * Mechanism, patch list, verification and rollback: README.md (P1, P4, P5; P2 and P3 were dropped in 0.2).
  * Build: build.ps1 (zig cc, x86-windows-gnu, kernel32 only, no CRT).
  */
 #include <windows.h>
@@ -103,7 +103,7 @@ typedef struct {
     unsigned len;
     unsigned char expect[16];
     unsigned char repl[16];
-    int code; /* 1 = .text (needs VirtualProtect), 0 = .data */
+    int group; /* nonzero: every part with this group is applied, or none of them is */
 } Patch;
 
 static const Patch g_patches[] = {
@@ -111,14 +111,33 @@ static const Patch g_patches[] = {
        replaced in one store at 0x85B0C2 and the old table stays valid for concurrent readers (leaks once). */
     {"P1 lang_switch_race", L"lang_switch_race", 1, 0x0085B0A8, 15,
      {0xC7, 0x05, 0x88, 0x4F, 0xA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE8, 0xA9, 0x0F, 0xBB, 0xFF},
-     {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90}, 1},
-    /* P2: shutdown free of the charmap at 0x84F6C0 (unproven, off by default). */
-    {"P2 exit_charmap_free", L"exit_charmap_free", 0, 0x0084F6CB, 15,
-     {0xC7, 0x05, 0x88, 0x4F, 0xA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE8, 0x86, 0xC9, 0xBB, 0xFF},
-     {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90}, 1},
-    /* P3: cvar object mouse_inertion @0x9F3710, flags 0x00000101 -> 0x01000101 (saved to user.cfg). */
-    {"P3 save_mouse_inertion", L"save_mouse_inertion", 1, 0x009F371B, 1, {0x00}, {0x01}, 0},
+     {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90}, 0},
+    /* P2 (exit-time charmap free, never proven) and P3 (save mouse_inertion, convenience) were dropped in 0.2;
+       README.md says what they did and why they went. */
+    /* P4: 0x7A1F17 lists display modes with IDXGIOutput::GetDisplayModeList(fmt, DXGI_ENUM_MODES_SCALING)
+       into a stack buffer of 512 DXGI_MODE_DESC (28 B). Raise it to 1024, byte for byte as the GOG build does:
+       frame size for _alloca_probe, the buffer for the call, the capacity, the buffer for the copy loop.
+       Nothing else in the function touches the buffer. All four parts or none. */
+    {"P4 display_modes_1024 frame", L"display_modes_1024", 1, 0x007A1F1A, 5,
+     {0xB8, 0x40, 0x38, 0x00, 0x00}, {0xB8, 0x80, 0x70, 0x00, 0x00}, 4},
+    {"P4 display_modes_1024 buf", L"display_modes_1024", 1, 0x007A1F3F, 6,
+     {0x8D, 0x95, 0xC0, 0xC7, 0xFF, 0xFF}, {0x8D, 0x95, 0x80, 0x8F, 0xFF, 0xFF}, 4},
+    {"P4 display_modes_1024 count", L"display_modes_1024", 1, 0x007A1F4F, 7,
+     {0xC7, 0x45, 0xFC, 0x00, 0x02, 0x00, 0x00}, {0xC7, 0x45, 0xFC, 0x00, 0x04, 0x00, 0x00}, 4},
+    {"P4 display_modes_1024 copy", L"display_modes_1024", 1, 0x007A1F77, 6,
+     {0x8D, 0x8D, 0xC0, 0xC7, 0xFF, 0xFF}, {0x8D, 0x8D, 0x80, 0x8F, 0xFF, 0xFF}, 4},
 };
+
+/* every part of the group still holds either its original or its patched bytes */
+static int group_ok(int group) {
+    unsigned i;
+    for (i = 0; i < sizeof g_patches / sizeof g_patches[0]; i++) {
+        const Patch *p = &g_patches[i];
+        const unsigned char *at = (const unsigned char *)p->addr;
+        if (p->group == group && !same(at, p->expect, p->len) && !same(at, p->repl, p->len)) return 0;
+    }
+    return 1;
+}
 
 static int game_is_expected(void) {
     const unsigned char *base = (const unsigned char *)GetModuleHandleW(NULL);
@@ -144,11 +163,112 @@ static int game_is_expected(void) {
     return 1;
 }
 
-static int p3_object_ok(void) {
-    /* the cvar object must still be {vtable 0x9640A8 (float cvar), name -> "mouse_inertion"} */
-    const unsigned *obj = (const unsigned *)0x009F3710;
-    static const char name[] = "mouse_inertion";
-    return obj[0] == 0x009640A8 && same((const unsigned char *)obj[1], (const unsigned char *)name, sizeof name);
+/* ---- P5: Present's SyncInterval from r_vsync (README.md). The two per-frame call sites jump to stubs in this
+   DLL that push r_vsync ? 1 : 0 instead of the constant 0. (A stub in the exe's .text padding, as in the GOG build,
+   also passed the tests; it is not used.) ---- */
+#define SITE_A 0x007A1733u /* push ebx; push ebx; push edi; call ecx  (back at 0x7A1738) */
+#define SITE_B 0x007A1D71u /* push ebx; push ebp; call [eax+0x20]     (back at 0x7A1D76; Flags pushed at 0x7A1D70) */
+
+/* the stubs return through these, so they stay right if this DLL is rebased */
+__attribute__((used)) unsigned g_p5_back_a = SITE_A + 5;
+__attribute__((used)) unsigned g_p5_back_b = SITE_B + 5;
+void p5_stub_a(void);
+void p5_stub_b(void);
+__asm__(".text\n"
+        ".p2align 4\n"
+        ".globl _p5_stub_a\n"
+        "_p5_stub_a:\n"
+        "    pushl %ebx\n"          /* Flags, as before (0) */
+        "    movl 0x9F2820, %eax\n" /* eax is dead here: it held the vtable ecx came from */
+        "    shrl $4, %eax\n"
+        "    andl $1, %eax\n"
+        "    pushl %eax\n" /* SyncInterval = r_vsync ? 1 : 0 */
+        "    pushl %edi\n" /* the swap chain */
+        "    call *%ecx\n" /* IDXGISwapChain::Present, stdcall: pops 12 bytes, HRESULT in eax */
+        "    jmp *_g_p5_back_a\n"
+        ".p2align 4\n"
+        ".globl _p5_stub_b\n"
+        "_p5_stub_b:\n"
+        "    movl 0x9F2820, %ecx\n" /* ecx is dead here: eax holds the vtable for the call */
+        "    shrl $4, %ecx\n"
+        "    andl $1, %ecx\n"
+        "    pushl %ecx\n"
+        "    pushl %ebp\n"
+        "    call *0x20(%eax)\n"
+        "    jmp *_g_p5_back_b\n");
+
+/* the code that registers r_vsync must say: name "r_vsync", value word 0x9F2820, mask 0x10. It is plain .text,
+   so this holds before the game builds the cvar object (lazily, later than our first call). */
+static int p5_cvar_ok(void) {
+    static const unsigned char name_reg[] = {0xC7, 0x05, 0xC4, 0x86, 0xA4, 0x00, 0x48, 0x67, 0x97, 0x00};
+    static const unsigned char word_reg[] = {0xC7, 0x05, 0xD0, 0x86, 0xA4, 0x00, 0x20, 0x28, 0x9F, 0x00};
+    static const unsigned char mask_reg[] = {0xC7, 0x05, 0xD4, 0x86, 0xA4, 0x00, 0x10, 0x00, 0x00, 0x00};
+    static const char name[] = "r_vsync";
+    return same((const unsigned char *)0x0093A778, name_reg, sizeof name_reg) &&
+           same((const unsigned char *)0x0093A7A9, word_reg, sizeof word_reg) &&
+           same((const unsigned char *)0x0093A7B3, mask_reg, sizeof mask_reg) &&
+           same((const unsigned char *)0x00976748, (const unsigned char *)name, sizeof name);
+}
+
+static int unprotect(unsigned addr, unsigned len, DWORD *old) {
+    return VirtualProtect((void *)addr, len, PAGE_EXECUTE_READWRITE, old);
+}
+static void reprotect(unsigned addr, unsigned len, DWORD old) {
+    VirtualProtect((void *)addr, len, old, &old);
+    FlushInstructionCache(GetCurrentProcess(), (void *)addr, len);
+}
+
+/* 5-byte site -> "jmp to": the site sits inside one aligned qword, which is swapped with one cmpxchg8b, so a
+   thread can never see half an instruction (none runs this code yet anyway: Present starts ~2 s later). */
+static int put_jmp(unsigned site, unsigned to) {
+    unsigned q = site & ~7u, k = site - q, rel = to - (site + 5), i;
+    union { LONGLONG v; unsigned char b[8]; } was, now;
+    DWORD old;
+    if (k > 3) return 0;
+    was.v = *(volatile LONGLONG *)q;
+    now = was;
+    now.b[k] = 0xE9;
+    for (i = 0; i < 4; i++) now.b[k + 1 + i] = (unsigned char)(rel >> (8 * i));
+    if (!unprotect(q, 8, &old)) return 0;
+    i = InterlockedCompareExchange64((volatile LONGLONG *)q, now.v, was.v) == was.v;
+    reprotect(q, 8, old);
+    return (int)i;
+}
+
+static void apply_p5(const WCHAR *ini) {
+    static const unsigned char site_a[] = {0x8B, 0x48, 0x20, 0x53, 0x53, 0x57, 0xFF, 0xD1}; /* qword 0x7A1730 */
+    static const unsigned char site_b[] = {0x53, 0x53, 0x55, 0xFF, 0x50, 0x20, 0x5F, 0x5E}; /* qword 0x7A1D70 */
+    unsigned to_a = (unsigned)&p5_stub_a, to_b = (unsigned)&p5_stub_b;
+    put("P5 vsync_follow_cvar");
+    if (!GetPrivateProfileIntW(L"fix", L"vsync_follow_cvar", 1, ini)) {
+        put(": disabled in ini\r\n");
+        return;
+    }
+    if (!p5_cvar_ok()) {
+        put(": SKIP, r_vsync registration differs\r\n");
+        return;
+    }
+    if (!same((const unsigned char *)(SITE_A - 3), site_a, 8) || !same((const unsigned char *)(SITE_B - 1), site_b, 8)) {
+        put(": SKIP, bytes differ: A ");
+        put_bytes((const unsigned char *)(SITE_A - 3), 8);
+        put(" B ");
+        put_bytes((const unsigned char *)(SITE_B - 1), 8);
+        put("\r\n");
+        return;
+    }
+    put("\r\n    A @");
+    put_hex(SITE_A, 8);
+    put(" -> ");
+    put_hex(to_a, 8);
+    put(put_jmp(SITE_A, to_a) ? ": OK " : ": FAILED ");
+    put_bytes((const unsigned char *)(SITE_A - 3), 8);
+    put("\r\n    B @");
+    put_hex(SITE_B, 8);
+    put(" -> ");
+    put_hex(to_b, 8);
+    put(put_jmp(SITE_B, to_b) ? ": OK " : ": FAILED ");
+    put_bytes((const unsigned char *)(SITE_B - 1), 8);
+    put("\r\n");
 }
 
 static void apply_patch(const Patch *p, const WCHAR *ini) {
@@ -166,23 +286,24 @@ static void apply_patch(const Patch *p, const WCHAR *ini) {
         put(": already applied\r\n");
         return;
     }
-    if (!same(at, p->expect, p->len) || (p->addr == 0x009F371B && !p3_object_ok())) {
+    if (p->group && !group_ok(p->group)) {
+        put(": SKIP, another part of this group differs\r\n");
+        return;
+    }
+    if (!same(at, p->expect, p->len)) {
         put(": SKIP, bytes differ: found ");
         put_bytes(at, p->len);
         put("\r\n");
         return;
     }
-    if (p->code && !VirtualProtect(at, p->len, PAGE_EXECUTE_READWRITE, &old)) {
+    if (!unprotect(p->addr, p->len, &old)) {
         put(": SKIP, VirtualProtect failed ");
         put_hex(GetLastError(), 8);
         put("\r\n");
         return;
     }
     memcpy(at, p->repl, p->len);
-    if (p->code) {
-        VirtualProtect(at, p->len, old, &old);
-        FlushInstructionCache(GetCurrentProcess(), at, p->len);
-    }
+    reprotect(p->addr, p->len, old);
     put(": OK ");
     put_bytes(p->expect, p->len);
     put(" -> ");
@@ -197,7 +318,7 @@ static void init_once(void) {
     path_in_dir(log, L"m2033fix.log");
     if (GetPrivateProfileIntW(L"log", L"enabled", 1, ini))
         g_log = CreateFileW(log, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    put("m2033fix 0.1  first DirectInput8Create: tid ");
+    put("m2033fix 0.2-pre (P4, P5)  first DirectInput8Create: tid ");
     put_dec(GetCurrentThreadId());
     put(", ");
     put_dec(ms_since_start());
@@ -212,8 +333,10 @@ static void init_once(void) {
     }
     put(g_real ? "system dinput8: ok\r\n" : "system dinput8: FAILED, input will not work\r\n");
 
-    if (game_is_expected())
+    if (game_is_expected()) {
         for (i = 0; i < sizeof g_patches / sizeof g_patches[0]; i++) apply_patch(&g_patches[i], ini);
+        apply_p5(ini);
+    }
 
     if (g_log != INVALID_HANDLE_VALUE) {
         CloseHandle(g_log);

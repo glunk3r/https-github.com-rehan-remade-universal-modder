@@ -30,11 +30,14 @@ fully, patch packs included.
   recovered.
 - A dynamic pass then read the running process, read-only. It recovered the cvar table and the config
   loader, and found that the installed MetroDeveloper hangs this build (Gotchas 8–11).
-- A 9 KB `dinput8.dll` proxy (m2033fix, kernel32 only) patches two things in memory after SteamStub has
-  decrypted the code, and nothing else:
-  - a vanilla race that crashed half of all starts on an RTX laptop;
-  - the save flag of `mouse_inertion`.
-  - Verified with an A/B soak (Gotcha 14).
+- A 13 KB `dinput8.dll` proxy (m2033fix 0.2, kernel32 only) patches three things in memory after
+  SteamStub has decrypted the code, and nothing else:
+  - a vanilla race that crashed half of all starts on an RTX laptop (P1, verified with an A/B soak,
+    Gotcha 14);
+  - the display-mode buffer, 512 → 1024 modes, byte for byte as the GOG build (P4, Gotcha 17);
+  - `Present`'s SyncInterval, which now follows `r_vsync` (P5, Gotcha 18).
+  - 0.1 also set the save flag of `mouse_inertion` (Gotcha 13). 0.2 dropped that, along with an unproven
+    exit-time patch.
 
 ## Setup
 - **Install:** Steam app 43110 (a secondary Steam library), Windows 11.
@@ -203,7 +206,9 @@ most option changes need only `user.cfg` (Gotchas 9–13).
     - **Fix options:**
       - re-apply the line before each launch, e.g. a Steam launch-option wrapper;
       - from a runtime patch, set the cvar's save flag (`flags |= 0x01000000` on the object at
-        `0x9f3710`), so the game saves it itself.
+        `0x9f3710`), so the game saves it itself. m2033fix 0.1 did this (byte `0x9F371B`, `00` → `01`).
+        It worked, but 0.2 dropped it: `mouse_inertion` is in none of the original configs, so it is a
+        preference, not a fix.
 
 14. **Random access violation about 25–35 s after start, or at exit (`c0000005` reading `0xC` at
     `0x84F72A`), then "Previous launch was unsuccessful. Start in safe mode?" on the next start.**
@@ -259,6 +264,18 @@ most option changes need only `user.cfg` (Gotchas 9–13).
     `Present`. With `r_vsync off` and with `on` (bit `0x10` of `0x9F2820` set), the only per-frame call
     sites, `0x7A1738` and `0x7A1D76`, pass `SyncInterval = 0`. The GOG build passes 1 from the same
     sites. PresentMon agrees.
+    - **Fix (m2033fix P5):** at each site, a 5-byte `jmp` to a stub in the proxy DLL. The stub pushes
+      `([0x9F2820] >> 4) & 1` as SyncInterval, calls `Present` and jumps back.
+      - The jump is written with one `lock cmpxchg8b` on the aligned qword around it.
+      - The stubs return through a variable, so the DLL may be rebased.
+      - Before writing, check the `r_vsync` registration code (`0x93A778`, `0x93A7A9`, `0x93A7B3`, string
+        `0x976748`). That code is plain `.text`, while the cvar object is built later.
+    - **Measured:** the hook then sees 0 with `off` and 1 with `on` (from the first frame, and after the
+      bit is set live). 10×130 s with `on` and 10×130 s with `off`: 0 crashes.
+    - **Not measured:** a visible difference. On the hybrid laptop GOG's `Present(1, 0)` and Steam's
+      `Present(0, 0)` give the same frame times, probably because of the compositor.
+    - A stub in the exe's `.text` padding at `0x94E560` (GOG's place) passed the same tests. It was not
+      kept: it is 43 hand-encoded bytes in the game's code, and a crash in it would look like a game crash.
 19. **A Frida `Interceptor` on the game's own `.text` crashed a worker thread** (`c0000005` at `0x4163AD`,
     a refcount decrement on a garbage pointer). A rerun without Frida, and one hooking `dxgi.dll` instead,
     were clean.
@@ -278,7 +295,7 @@ most option changes need only `user.cfg` (Gotchas 9–13).
 - Why does the GOG build survive the charmap race (17)? Is it the text language (`us` vs `ru`), timing, or
   heap layout?
 - Is a 512-mode list ever exceeded in practice (4K/high-refresh/DSR setups), and what does the Steam build
-  do then?
+  do then? m2033fix P4 raises it to 1024 as GOG does, but the test laptop has only 62 modes.
 - Does GOG's 120 FPS busy-wait limiter give smoother frame pacing in gameplay than the Steam `Sleep`
   limiter? In the window measured (70–110 s after start) both builds ran at exactly 30 FPS, so the
   limiters were not compared.

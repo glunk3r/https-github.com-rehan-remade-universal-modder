@@ -4,10 +4,11 @@
 [fix]
 ; P1: crash 25-35 s after start (charmap freed during the text-language switch while a worker thread reads it)
 lang_switch_race = 1
-; P2: keep the charmap alive at shutdown. NOT proven to be needed; leave 0 unless an exit crash proves it.
-exit_charmap_free = 0
-; P3: let the game save mouse_inertion (mouse smoothing) to user.cfg like other options
-save_mouse_inertion = 1
+; P4: display-mode list for 1024 modes instead of 512 (as in the GOG build); matters with many modes (4K, high refresh, DSR)
+display_modes_1024 = 1
+; P5: the in-game V-Sync option (r_vsync) works under DX11; vanilla always presents with SyncInterval 0.
+; With r_vsync off nothing changes. 0 = vanilla behaviour
+vsync_follow_cvar = 1
 
 [log]
 ; m2033fix.log next to the dll, written once at startup
